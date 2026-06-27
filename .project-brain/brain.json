@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-27T23:39:53+00:00"
+    "updatedAt": "2026-06-27T23:50:18+00:00"
   },
   "layers": {
     "interaction": {
@@ -375,6 +375,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-27T21:34:35+00:00"
+        },
+        {
+          "id": "decisions:002",
+          "title": "Official Nubel Store logo assets",
+          "summary": "Converted the generated Nubel Store logo into black, white and brand-yellow web assets, updated the public header/dashboard branding, and replaced the default favicon with the new mark.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-27T23:50:17+00:00"
         }
       ]
     }

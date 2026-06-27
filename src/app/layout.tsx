@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   title: "Nubel Store",
   description:
     "Nubel Systems store for electronic components and embedded systems manufacturing support.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

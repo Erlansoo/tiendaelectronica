@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { logout } from "@/app/actions/auth";
 
 const items = [
@@ -16,8 +17,11 @@ export function DashboardNav() {
   return (
     <aside className="border-b border-slate-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
       <div className="px-5 py-5">
-        <Link href="/" className="text-lg font-semibold text-slate-950">
-          Nubel Store
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-slate-950">
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-950 p-1.5">
+            <Image src="/nubel-store-mark-dark.png" alt="" width={30} height={30} />
+          </span>
+          <span>Nubel Store</span>
         </Link>
         <p className="mt-1 text-sm text-slate-500">Nubel Systems dashboard</p>
       </div>
