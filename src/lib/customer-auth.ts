@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { isStoreAdminEmail } from "@/lib/store-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+
+export function safeNextPath(value: string | null | undefined, fallback = "/cuenta") {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return fallback;
+  return value;
+}
 
 export async function getCurrentCustomer() {
   const supabase = await createSupabaseServerClient();
@@ -24,5 +30,6 @@ export async function getCurrentCustomer() {
     email: user.email,
     name: profile?.name ?? user.user_metadata?.full_name ?? user.email,
     imageUrl: profile?.imageUrl ?? user.user_metadata?.avatar_url ?? null,
+    isStoreAdmin: isStoreAdminEmail(user.email),
   };
 }

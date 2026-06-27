@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function login(formData: FormData) {
   const configuredEmail = process.env.ADMIN_EMAIL;
@@ -31,5 +32,7 @@ export async function login(formData: FormData) {
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete("dashboard_session");
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
   redirect("/dashboard/login");
 }

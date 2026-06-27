@@ -29,12 +29,14 @@ Manage products, manual sales, stock, and auditable stock movements for internal
 - Sales completed through the dashboard decrement stock.
 - Stock changes must create `StockMovement` records.
 - Product category and supplier are simple fields for the MVP.
+- Google users listed in `STORE_ADMIN_EMAILS` can access the electronics dashboard.
 
 ## Risks
 
 - Stock updates must stay transactional.
 - Never bypass validation in server actions.
 - Admin and customer auth should remain separate until a deliberate unification is designed.
+- Do not reuse electronics admin access for 3D printing manufacturer accounts.
 
 ## Cómo modificar con seguridad
 

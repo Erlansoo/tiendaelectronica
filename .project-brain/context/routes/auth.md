@@ -22,7 +22,8 @@ Support Google-only customer accounts while keeping admin dashboard access contr
 - Customer accounts are created only through Google OAuth.
 - Supabase Auth owns the browser session.
 - Local `CustomerAccount` records store app-level customer profile data.
-- Admin dashboard protection remains a separate flow for now.
+- Electronics store admin access can be granted to Google users through `STORE_ADMIN_EMAILS`.
+- 3D printing manufacturer roles are not part of this admin path yet.
 
 ## Risks
 
@@ -35,3 +36,4 @@ Support Google-only customer accounts while keeping admin dashboard access contr
 - Run `npm run lint` and `npm run build`.
 - Test Google login redirect locally and in Vercel after env changes.
 - Confirm admin dashboard protection still works separately from customer sessions.
+- Confirm `erlan514@gmail.com` can access `/dashboard` after Google login when configured in Vercel.

@@ -50,6 +50,11 @@ export async function PublicHeader() {
                   <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/cuenta">
                     User dashboard
                   </Link>
+                  {customer.isStoreAdmin ? (
+                    <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/dashboard">
+                      Store admin
+                    </Link>
+                  ) : null}
                   <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/productos">
                     Browse catalog
                   </Link>
