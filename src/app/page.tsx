@@ -28,16 +28,16 @@ export default async function Home() {
 
       <section className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-8 overflow-x-auto px-6 py-3 text-sm font-semibold text-neutral-700 lg:px-8">
-          <a className="rounded-md bg-neutral-100 px-4 py-2 text-black" href="#overview">
+          <a className="rounded-full bg-neutral-100 px-4 py-2 text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:shadow-md hover:shadow-[#f5a524]/20" href="#overview">
             Overview
           </a>
-          <a className="whitespace-nowrap transition hover:text-[#f5a524]" href="#featured">
+          <a className="whitespace-nowrap rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-md hover:shadow-[#f5a524]/20" href="#featured">
             Featured products
           </a>
-          <a className="whitespace-nowrap transition hover:text-[#f5a524]" href="#manufacturing">
+          <a className="whitespace-nowrap rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-md hover:shadow-[#f5a524]/20" href="#manufacturing">
             Manufacturing
           </a>
-          <a className="whitespace-nowrap transition hover:text-[#f5a524]" href="#contact">
+          <a className="whitespace-nowrap rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-md hover:shadow-[#f5a524]/20" href="#contact">
             Contact
           </a>
         </div>
@@ -90,14 +90,14 @@ export default async function Home() {
           </div>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link
-              className="inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#f5a524]"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:shadow-xl hover:shadow-[#f5a524]/20"
               href="/productos"
             >
               Browse catalog
               <ArrowRight size={16} aria-hidden />
             </Link>
             <a
-              className="inline-flex items-center rounded-md border border-white/70 px-5 py-3 text-sm font-semibold text-white transition hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black"
+              className="inline-flex items-center rounded-full border border-white/70 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-xl hover:shadow-[#f5a524]/20"
               href="#manufacturing"
             >
               Manufacturing
@@ -117,7 +117,7 @@ export default async function Home() {
             <h2 className="text-2xl font-semibold text-slate-950">Featured inventory</h2>
             <p className="mt-1 text-sm text-slate-600">Products ready for technical projects.</p>
           </div>
-          <Link className="text-sm font-semibold text-black hover:text-[#f5a524]" href="/productos">
+          <Link className="rounded-full border border-transparent px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524]" href="/productos">
             View all
           </Link>
         </div>
@@ -182,7 +182,7 @@ export default async function Home() {
             <p className="mt-1 text-sm text-slate-300">Browse the catalog and request availability through WhatsApp.</p>
           </div>
           <Link
-            className="inline-flex items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#f5a524]"
+            className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:shadow-xl hover:shadow-[#f5a524]/20"
             href="/productos"
           >
             Open catalog

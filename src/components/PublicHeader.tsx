@@ -16,14 +16,14 @@ export async function PublicHeader() {
           Nubel Store
         </Link>
 
-        <nav className="hidden items-center gap-7 text-sm font-semibold text-white md:flex">
-          <Link className="transition hover:text-[#f5a524]" href="/">
+        <nav className="hidden items-center gap-2 text-sm font-semibold text-white md:flex">
+          <Link className="rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/">
             Nubel Systems
           </Link>
-          <Link className="transition hover:text-[#f5a524]" href="/#manufacturing">
+          <Link className="rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/#manufacturing">
             Manufacturing
           </Link>
-          <Link className="transition hover:text-[#f5a524]" href="/productos">
+          <Link className="rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/productos">
             Catalog
           </Link>
         </nav>
@@ -32,12 +32,12 @@ export async function PublicHeader() {
           {customer ? (
             <>
               <form action={logoutCustomer}>
-                <button className="rounded-md border border-white/70 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black">
+                <button className="rounded-full border border-white/70 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20">
                   Logout
                 </button>
               </form>
               <div className="group relative">
-                <button className="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-black transition hover:bg-[#f5a524]">
+                <button className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:shadow-lg hover:shadow-[#f5a524]/20">
                   {customer.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img className="h-7 w-7 rounded-full object-cover" src={customer.imageUrl} alt={customer.name} />
@@ -58,10 +58,10 @@ export async function PublicHeader() {
             </>
           ) : (
             <>
-              <Link className="rounded-md border border-white/70 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black" href="/login">
+              <Link className="rounded-full border border-white/70 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/login">
                 Login
               </Link>
-              <Link className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#f5a524]" href="/crear-cuenta">
+              <Link className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:shadow-lg hover:shadow-[#f5a524]/20" href="/crear-cuenta">
                 Create account
               </Link>
             </>
