@@ -1,19 +1,8 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { signInWithGoogle } from "@/app/actions/customer-auth";
 import { PublicHeader } from "@/components/PublicHeader";
-import { getCurrentCustomer, safeNextPath } from "@/lib/customer-auth";
 
-export default async function CreateAccountPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ next?: string }>;
-}) {
-  const { next } = await searchParams;
-  const nextPath = safeNextPath(next);
-  const customer = await getCurrentCustomer();
-  if (customer) redirect(nextPath);
-
+export default function CreateAccountPage() {
   return (
     <>
       <PublicHeader />
@@ -25,7 +14,6 @@ export default async function CreateAccountPage({
             Customer accounts are created only through Google, so your profile picture and identity stay linked safely.
           </p>
           <form action={signInWithGoogle} className="mt-6">
-            <input name="next" type="hidden" value={nextPath} />
             <button className="flex w-full items-center justify-center gap-3 rounded-full border border-black px-4 py-3 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:shadow-lg hover:shadow-[#f5a524]/20">
               <span className="text-lg">G</span>
               Continue with Google
