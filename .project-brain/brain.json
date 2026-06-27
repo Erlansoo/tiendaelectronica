@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-27T21:14:31+00:00"
+    "updatedAt": "2026-06-27T21:34:36+00:00"
   },
   "layers": {
     "interaction": {
@@ -330,6 +330,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-27T21:14:30+00:00"
+        },
+        {
+          "id": "work:004",
+          "title": "Landing hero trust imagery",
+          "summary": "Added rotating Nubel Store customer-service imagery to the public storefront hero using the three new generated images in public/, preserving text contrast and excluding 3D printing workflow changes.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-27T21:30:45+00:00"
         }
       ]
     },
@@ -343,7 +351,16 @@
     },
     "decisions": {
       "summary": "Accepted decisions with rationale and affected files.",
-      "nodes": []
+      "nodes": [
+        {
+          "id": "decisions:001",
+          "title": "Landing hero image rotation",
+          "summary": "Use imageoneforlandingpage.png, mujer_vendiendo.png and masgrande.png as rotating public storefront hero backgrounds; keep vendoedoramadre.png out of the rotation because masgrande.png is a cleaner wide crop of the same trust scene.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-27T21:34:35+00:00"
+        }
+      ]
     }
   },
   "files": [

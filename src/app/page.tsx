@@ -38,8 +38,13 @@ export default async function Home() {
         id="overview"
         className="relative min-h-[620px] overflow-hidden bg-black text-white"
       >
-        <div className="absolute inset-0 opacity-45">
-          <div className="absolute left-0 top-0 h-full w-full bg-[radial-gradient(circle_at_22%_18%,rgba(245,165,36,0.32),transparent_28%),linear-gradient(90deg,rgba(0,0,0,0.25),rgba(0,0,0,0.94))]" />
+        <div className="absolute inset-0">
+          <div className="hero-trust-image hero-trust-image-one" />
+          <div className="hero-trust-image hero-trust-image-two" />
+          <div className="hero-trust-image hero-trust-image-three" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.84),rgba(0,0,0,0.62)_46%,rgba(0,0,0,0.88)),radial-gradient(circle_at_50%_30%,rgba(245,165,36,0.22),transparent_34%)]" />
+        </div>
+        <div className="absolute inset-0 opacity-35">
           <div className="absolute left-[8%] top-[16%] h-72 w-72 rounded-full border border-white/10" />
           <div className="absolute bottom-[8%] left-[5%] grid grid-cols-6 gap-2 opacity-70">
             {Array.from({ length: 36 }).map((_, index) => (
@@ -47,22 +52,6 @@ export default async function Home() {
             ))}
           </div>
           <div className="absolute right-[8%] top-[18%] h-[420px] w-[420px] rotate-6 rounded-md border border-white/10 bg-white/5" />
-          {featuredProducts[0]?.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className="absolute right-[12%] top-[22%] h-72 w-72 rotate-6 rounded-2xl object-contain opacity-85 blur-[0.2px]"
-              src={featuredProducts[0].imageUrl}
-              alt=""
-            />
-          ) : null}
-          {featuredProducts[1]?.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className="absolute bottom-[12%] right-[28%] h-44 w-44 -rotate-12 rounded-2xl object-contain opacity-75"
-              src={featuredProducts[1].imageUrl}
-              alt=""
-            />
-          ) : null}
         </div>
 
         <div className="relative mx-auto flex min-h-[620px] max-w-7xl flex-col items-center justify-center px-6 py-20 text-center lg:px-8">
