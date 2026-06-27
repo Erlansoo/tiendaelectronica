@@ -19,6 +19,7 @@
 - Google customer profiles are ensured from the Supabase user session instead of only being created in the callback.
 - OAuth redirect generation now prefers `NEXT_PUBLIC_SITE_URL` over request origin to avoid production login returning to localhost.
 - Production OAuth redirect generation now ignores localhost values and falls back to Vercel/request host.
+- Google OAuth now uses the exact `/auth/callback` redirect URL without query parameters to match Supabase URL Configuration.
 
 ## Next
 
