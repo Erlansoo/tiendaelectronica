@@ -98,9 +98,7 @@ export default async function Home() {
             </Link>
             <a
               className="inline-flex items-center rounded-full border border-white/70 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-xl hover:shadow-[#f5a524]/20"
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ""}?text=${encodeURIComponent("Hola, quiero ordenar una impresión 3D. ¿Me pueden ayudar con la cotización?")}`}
-              target="_blank"
-              rel="noreferrer"
+              href="/cotizar-impresion-3d"
             >
               Ordenar impresión 3D
             </a>
