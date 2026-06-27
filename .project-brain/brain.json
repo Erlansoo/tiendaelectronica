@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-27T20:52:06+00:00"
+    "updatedAt": "2026-06-27T21:14:31+00:00"
   },
   "layers": {
     "interaction": {
@@ -322,6 +322,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-27T20:49:23+00:00"
+        },
+        {
+          "id": "work:003",
+          "title": "Electronics inventory research shortlist",
+          "summary": "Created docs/recommended-electronics-inventory.md with a first China purchasing shortlist for the electronics store, using public catalog signals from EPY Electronica, Ardunel and Sawers. Excluded the 3D printing workflow.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-27T21:14:30+00:00"
         }
       ]
     },
