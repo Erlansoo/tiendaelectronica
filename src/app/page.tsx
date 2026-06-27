@@ -42,6 +42,7 @@ export default async function Home() {
           <div className="hero-trust-image hero-trust-image-one" />
           <div className="hero-trust-image hero-trust-image-two" />
           <div className="hero-trust-image hero-trust-image-three" />
+          <div className="hero-trust-image hero-trust-image-four" />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.84),rgba(0,0,0,0.62)_46%,rgba(0,0,0,0.88)),radial-gradient(circle_at_50%_30%,rgba(245,165,36,0.22),transparent_34%)]" />
         </div>
         <div className="absolute inset-0 opacity-35">

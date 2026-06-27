@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-27T23:02:48+00:00"
+    "updatedAt": "2026-06-27T23:39:53+00:00"
   },
   "layers": {
     "interaction": {
@@ -346,6 +346,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-27T23:02:47+00:00"
+        },
+        {
+          "id": "work:006",
+          "title": "Updated storefront hero image order",
+          "summary": "Moved mujer_vendiendo.png to the first hero slide and added universitarioscomprando.png as a new trust image in the storefront hero rotation.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-27T23:39:52+00:00"
         }
       ]
     },

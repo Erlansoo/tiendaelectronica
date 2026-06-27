@@ -18,7 +18,7 @@ body {
 }
 
 .hero-trust-image {
-  animation: hero-trust-fade 18s infinite;
+  animation: hero-trust-fade 24s infinite;
   background-position: center;
   background-size: cover;
   inset: 0;
@@ -29,16 +29,21 @@ body {
 
 .hero-trust-image-one {
   animation-delay: 0s;
-  background-image: url("/imageoneforlandingpage.png");
+  background-image: url("/mujer_vendiendo.png");
 }
 
 .hero-trust-image-two {
   animation-delay: 6s;
-  background-image: url("/mujer_vendiendo.png");
+  background-image: url("/universitarioscomprando.png");
 }
 
 .hero-trust-image-three {
   animation-delay: 12s;
+  background-image: url("/imageoneforlandingpage.png");
+}
+
+.hero-trust-image-four {
+  animation-delay: 18s;
   background-image: url("/masgrande.png");
 }
 
@@ -50,10 +55,10 @@ body {
   8% {
     opacity: 1;
   }
-  30% {
+  22% {
     opacity: 1;
   }
-  42% {
+  32% {
     opacity: 0;
     transform: scale(1.08);
   }
