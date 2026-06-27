@@ -2,27 +2,57 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three-stdlib";
-import { STLLoader } from "three-stdlib";
+import { OrbitControls, STLLoader } from "three-stdlib";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const allowedExtensions = [".stl", ".obj", ".step", ".stp", ".3mf"];
+const scalePresets = [1, 0.1, 0.01, 0.001];
+const printerBeds = [
+  { label: "200 x 200 x 200 mm", x: 200, y: 200, z: 200 },
+  { label: "250 x 250 x 250 mm", x: 250, y: 250, z: 250 },
+  { label: "300 x 300 x 300 mm", x: 300, y: 300, z: 300 },
+  { label: "400 x 400 x 400 mm", x: 400, y: 400, z: 400 },
+];
+
+type Dimensions = {
+  x: number;
+  y: number;
+  z: number;
+};
 
 export function PrintQuoteWorkspace() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const modelRef = useRef<THREE.Object3D | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [previewNote, setPreviewNote] = useState("Upload an STL file to preview it here.");
+  const [dimensions, setDimensions] = useState<Dimensions | null>(null);
+  const [scaleFactor, setScaleFactor] = useState(1);
+  const [bedIndex, setBedIndex] = useState(1);
 
+  const selectedBed = printerBeds[bedIndex];
   const fileSummary = useMemo(() => {
     if (!file) return "No file selected";
-    return `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    return `${file.name} - ${(file.size / 1024 / 1024).toFixed(2)} MB`;
   }, [file]);
+  const scaledDimensions = dimensions
+    ? {
+        x: dimensions.x * scaleFactor,
+        y: dimensions.y * scaleFactor,
+        z: dimensions.z * scaleFactor,
+      }
+    : null;
+  const suggestedScale = dimensions ? suggestScale(dimensions, selectedBed) : 1;
+  const fitsSelectedBed = scaledDimensions
+    ? scaledDimensions.x <= selectedBed.x && scaledDimensions.y <= selectedBed.y && scaledDimensions.z <= selectedBed.z
+    : true;
+  const modelLooksTiny = scaledDimensions
+    ? Math.max(scaledDimensions.x, scaledDimensions.y, scaledDimensions.z) > 0 &&
+      Math.max(scaledDimensions.x, scaledDimensions.y, scaledDimensions.z) < 5
+    : false;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -39,7 +69,6 @@ export function PrintQuoteWorkspace() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -54,26 +83,10 @@ export function PrintQuoteWorkspace() {
     key.position.set(4, 5, 6);
     scene.add(key);
 
-    function frameSceneObject(object: THREE.Object3D) {
-      const box = new THREE.Box3().setFromObject(object);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
-      const maxSize = Math.max(size.x, size.y, size.z) || 1;
-      const distance = maxSize * 1.9;
-
-      object.position.sub(center);
-      camera.position.set(distance, distance * 0.75, distance);
-      camera.near = distance / 100;
-      camera.far = distance * 100;
-      camera.updateProjectionMatrix();
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-
     const placeholder = createPlaceholderModel();
     modelRef.current = placeholder;
     scene.add(placeholder);
-    frameSceneObject(placeholder);
+    frameModel(placeholder);
 
     let frameId = 0;
     function animate() {
@@ -135,10 +148,31 @@ export function PrintQuoteWorkspace() {
     frameModel(object);
   }
 
+  function applyModelScale(nextScale: number) {
+    const safeScale = Number.isFinite(nextScale) && nextScale > 0 ? nextScale : 1;
+    setScaleFactor(safeScale);
+    if (modelRef.current) {
+      modelRef.current.scale.setScalar(safeScale);
+      frameModel(modelRef.current);
+    }
+  }
+
   async function loadStlPreview(selected: File) {
     const buffer = await selected.arrayBuffer();
     const geometry = new STLLoader().parse(buffer);
     geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+
+    const size = geometry.boundingBox?.getSize(new THREE.Vector3()) ?? new THREE.Vector3();
+    const detectedDimensions = {
+      x: Math.abs(size.x),
+      y: Math.abs(size.y),
+      z: Math.abs(size.z),
+    };
+    const recommendedScale = suggestScale(detectedDimensions, selectedBed);
+
+    setDimensions(detectedDimensions);
+    setScaleFactor(recommendedScale);
 
     const material = new THREE.MeshStandardMaterial({
       color: "#f5a524",
@@ -147,6 +181,7 @@ export function PrintQuoteWorkspace() {
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2;
+    mesh.scale.setScalar(recommendedScale);
     replaceModel(mesh);
     setPreviewNote("STL preview loaded. Rotate, zoom and pan with your mouse.");
   }
@@ -155,6 +190,8 @@ export function PrintQuoteWorkspace() {
     const selected = event.target.files?.[0] ?? null;
     setError("");
     setFile(null);
+    setDimensions(null);
+    applyModelScale(1);
 
     if (!selected) return;
     const lowerName = selected.name.toLowerCase();
@@ -187,7 +224,7 @@ export function PrintQuoteWorkspace() {
       <div className="rounded-md border border-black/10 bg-white p-6 shadow-sm">
         <h2 className="text-2xl font-semibold text-black">Quote your 3D print</h2>
         <p className="mt-2 text-sm text-neutral-600">
-          Upload a 3D file under 100 MB and add print preferences. STL files are shown in the viewer.
+          Upload a 3D file under 100 MB. STL dimensions are detected and checked against printer bed size.
         </p>
 
         <label className="mt-6 grid gap-2 text-sm font-semibold text-black">
@@ -203,6 +240,20 @@ export function PrintQuoteWorkspace() {
         {error ? <p className="mt-2 rounded-md bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm font-semibold text-black">
+            Printer bed
+            <select
+              className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
+              value={bedIndex}
+              onChange={(event) => setBedIndex(Number(event.target.value))}
+            >
+              {printerBeds.map((bed, index) => (
+                <option key={bed.label} value={index}>
+                  {bed.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
             Print technology
             <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
@@ -250,6 +301,67 @@ export function PrintQuoteWorkspace() {
           </label>
         </div>
 
+        {dimensions ? (
+          <div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-black">Detected dimensions</h3>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Original: X {formatMm(dimensions.x)} / Y {formatMm(dimensions.y)} / Z {formatMm(dimensions.z)}
+                </p>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Scaled: X {formatMm(scaledDimensions!.x)} / Y {formatMm(scaledDimensions!.y)} / Z {formatMm(scaledDimensions!.z)}
+                </p>
+              </div>
+              <button
+                className="rounded-full border border-black px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524]"
+                type="button"
+                onClick={() => applyModelScale(suggestedScale)}
+              >
+                Use suggested scale {suggestedScale}
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <label className="grid gap-1 text-sm font-semibold text-black">
+                Scale factor
+                <input
+                  aria-label="Scale factor"
+                  className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
+                  min={0.0001}
+                  step={0.001}
+                  type="number"
+                  value={scaleFactor}
+                  onChange={(event) => applyModelScale(Number(event.target.value))}
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {scalePresets.map((preset) => (
+                  <button
+                    className="rounded-full border border-neutral-300 px-3 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524]"
+                    key={preset}
+                    type="button"
+                    onClick={() => applyModelScale(preset)}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {!fitsSelectedBed ? (
+              <p className="mt-4 rounded-md bg-red-50 p-3 text-sm font-semibold text-red-700">
+                This model is outside the selected printer bed. Choose a larger machine or apply a smaller scale.
+              </p>
+            ) : null}
+            {modelLooksTiny ? (
+              <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+                This model looks extremely small. Confirm units or increase scale if the STL was exported in meters.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         <label className="mt-4 grid gap-1 text-sm font-semibold text-black">
           Notes
           <textarea className="min-h-28 rounded-md border border-neutral-300 px-3 py-2 text-neutral-800" placeholder="Dimensions, finish, deadline or special requirements." />
@@ -257,7 +369,7 @@ export function PrintQuoteWorkspace() {
 
         <button
           className="mt-5 w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:text-black hover:shadow-xl hover:shadow-[#f5a524]/20 disabled:cursor-not-allowed disabled:bg-neutral-400"
-          disabled={!file || Boolean(error)}
+          disabled={!file || Boolean(error) || !fitsSelectedBed}
           type="button"
         >
           Send quote request
@@ -277,6 +389,21 @@ export function PrintQuoteWorkspace() {
       </div>
     </section>
   );
+}
+
+function suggestScale(dimensions: Dimensions, bed: Dimensions) {
+  const fittingScale = scalePresets.find(
+    (scale) => dimensions.x * scale <= bed.x && dimensions.y * scale <= bed.y && dimensions.z * scale <= bed.z,
+  );
+  if (fittingScale) return fittingScale;
+
+  const maxRatio = Math.max(dimensions.x / bed.x, dimensions.y / bed.y, dimensions.z / bed.z);
+  if (maxRatio <= 0) return 1;
+  return Number((1 / maxRatio).toFixed(4));
+}
+
+function formatMm(value: number) {
+  return `${value.toFixed(value >= 10 ? 1 : 3)} mm`;
 }
 
 function createPlaceholderModel() {
