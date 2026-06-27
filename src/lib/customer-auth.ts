@@ -9,10 +9,15 @@ export async function getCurrentCustomer() {
 
   if (!user?.email) return null;
 
-  const profile = await prisma.customerAccount.findUnique({
-    where: { id: user.id },
-    select: { id: true, name: true, email: true, imageUrl: true },
-  });
+  const profile = await prisma.customerAccount
+    .findUnique({
+      where: { id: user.id },
+      select: { id: true, name: true, email: true, imageUrl: true },
+    })
+    .catch((error) => {
+      console.error("Customer profile lookup failed", error);
+      return null;
+    });
 
   return {
     id: user.id,

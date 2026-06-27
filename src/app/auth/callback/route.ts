@@ -9,28 +9,36 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createSupabaseServerClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (exchangeError) {
+      return NextResponse.redirect(new URL("/login?error=oauth", request.url));
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (user?.email) {
-      await prisma.customerAccount.upsert({
-        where: { id: user.id },
-        update: {
-          name: user.user_metadata?.full_name ?? user.email,
-          email: user.email,
-          imageUrl: user.user_metadata?.avatar_url,
-          provider: "google",
-        },
-        create: {
-          id: user.id,
-          name: user.user_metadata?.full_name ?? user.email,
-          email: user.email,
-          imageUrl: user.user_metadata?.avatar_url,
-          provider: "google",
-        },
-      });
+      try {
+        await prisma.customerAccount.upsert({
+          where: { id: user.id },
+          update: {
+            name: user.user_metadata?.full_name ?? user.email,
+            email: user.email,
+            imageUrl: user.user_metadata?.avatar_url,
+            provider: "google",
+          },
+          create: {
+            id: user.id,
+            name: user.user_metadata?.full_name ?? user.email,
+            email: user.email,
+            imageUrl: user.user_metadata?.avatar_url,
+            provider: "google",
+          },
+        });
+      } catch (error) {
+        console.error("Customer profile sync failed", error);
+      }
     }
   }
 
