@@ -2,8 +2,9 @@
 
 import { PaymentStatus, SaleStatus, StockMovementReason, StockMovementType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { saleSchema } from "@/lib/validators";
 
@@ -13,6 +14,7 @@ function makeSaleNumber() {
 }
 
 export async function createSale(formData: FormData) {
+  await requireStoreAdmin();
   const rawItems = String(formData.get("items") ?? "[]");
   const parsed = saleSchema.parse({
     items: JSON.parse(rawItems),
@@ -99,6 +101,7 @@ export async function createSale(formData: FormData) {
     }
   });
 
+  updateTag("products");
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/ventas");
   revalidatePath("/dashboard/inventario");

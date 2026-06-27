@@ -1,8 +1,9 @@
 "use server";
 
 import { StockMovementReason, StockMovementType } from "@prisma/client";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { stockAdjustmentSchema } from "@/lib/validators";
 
@@ -13,6 +14,7 @@ function movementType(previousStock: number, newStock: number) {
 }
 
 export async function adjustStock(formData: FormData) {
+  await requireStoreAdmin();
   const parsed = stockAdjustmentSchema.parse({
     productId: formData.get("productId"),
     newStock: formData.get("newStock"),
@@ -44,6 +46,7 @@ export async function adjustStock(formData: FormData) {
     });
   });
 
+  updateTag("products");
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/inventario");
   revalidatePath("/dashboard/stock-movements");

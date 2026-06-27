@@ -2,6 +2,19 @@ import { PaymentMethod, SaleStatus, StockMovementReason } from "@prisma/client";
 import { z } from "zod";
 
 const optionalText = z.string().trim().optional().transform((value) => value || undefined);
+const optionalUrl = optionalText.refine(
+  (value) => {
+    if (!value) return true;
+    if (value.startsWith("/")) return !value.startsWith("//");
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+      return false;
+    }
+  },
+  { message: "Use a relative URL or an http(s) URL" },
+);
 const optionalNumber = z.preprocess(
   (value) => (value === "" || value === null ? undefined : value),
   z.coerce.number().min(0).optional(),
@@ -10,7 +23,7 @@ const optionalNumber = z.preprocess(
 export const productSchema = z.object({
   sku: z.string().trim().min(1, "SKU is required"),
   name: z.string().trim().min(1, "Name is required"),
-  slug: z.string().trim().min(1, "Slug is required"),
+  slug: z.string().trim().min(1, "Slug is required").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a URL-safe slug"),
   category: z.string().trim().min(1, "Category is required"),
   subcategory: optionalText,
   brand: optionalText,
@@ -22,10 +35,10 @@ export const productSchema = z.object({
   minStock: z.coerce.number().int().min(0, "Minimum stock cannot be negative"),
   location: optionalText,
   supplier: optionalText,
-  imageUrl: optionalText,
-  datasheetUrl: optionalText,
-  manualUrl: optionalText,
-  externalUrl: optionalText,
+  imageUrl: optionalUrl,
+  datasheetUrl: optionalUrl,
+  manualUrl: optionalUrl,
+  externalUrl: optionalUrl,
   technicalAttributes: optionalText,
   tags: optionalText,
   metaTitle: optionalText,

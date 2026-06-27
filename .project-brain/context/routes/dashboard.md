@@ -18,6 +18,7 @@ Manage products, manual sales, stock, and auditable stock movements for internal
 - `src/app/actions/products.ts`
 - `src/app/actions/sales.ts`
 - `src/app/actions/stock.ts`
+- `src/lib/admin-auth.ts`
 - `src/components/DashboardNav.tsx`
 - `src/components/ProductForm.tsx`
 - `src/components/ProductTable.tsx`

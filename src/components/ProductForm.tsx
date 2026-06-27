@@ -18,7 +18,14 @@ export function ProductForm({ product }: { product?: Product }) {
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <Input name="name" label="Name" defaultValue={fieldValue(product?.name)} required />
           <Input name="sku" label="SKU" defaultValue={fieldValue(product?.sku)} required />
-          <Input name="slug" label="Slug" defaultValue={fieldValue(product?.slug)} required />
+          <Input
+            name="slug"
+            label="Slug"
+            defaultValue={fieldValue(product?.slug)}
+            pattern="[a-z0-9]+(-[a-z0-9]+)*"
+            title="Use lowercase letters, numbers and hyphens only."
+            required
+          />
           <Input name="category" label="Category" defaultValue={fieldValue(product?.category)} required />
           <Input name="subcategory" label="Subcategory" defaultValue={fieldValue(product?.subcategory)} />
           <Input name="brand" label="Brand" defaultValue={fieldValue(product?.brand)} />
@@ -52,10 +59,10 @@ export function ProductForm({ product }: { product?: Product }) {
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <Textarea name="technicalAttributes" label="Technical attributes JSON" defaultValue={technicalAttributes} />
           <Input name="tags" label="Tags, comma separated" defaultValue={product?.tags.join(", ") ?? ""} />
-          <Input name="imageUrl" label="Image URL" defaultValue={fieldValue(product?.imageUrl)} />
-          <Input name="datasheetUrl" label="Datasheet URL" defaultValue={fieldValue(product?.datasheetUrl)} />
-          <Input name="manualUrl" label="Manual URL" defaultValue={fieldValue(product?.manualUrl)} />
-          <Input name="externalUrl" label="External URL" defaultValue={fieldValue(product?.externalUrl)} />
+          <Input name="imageUrl" label="Image URL" defaultValue={fieldValue(product?.imageUrl)} placeholder="/products/example.png" />
+          <Input name="datasheetUrl" label="Datasheet URL" defaultValue={fieldValue(product?.datasheetUrl)} placeholder="https://..." />
+          <Input name="manualUrl" label="Manual URL" defaultValue={fieldValue(product?.manualUrl)} placeholder="https://..." />
+          <Input name="externalUrl" label="External URL" defaultValue={fieldValue(product?.externalUrl)} placeholder="https://..." />
           <Input name="metaTitle" label="Meta title" defaultValue={fieldValue(product?.metaTitle)} />
           <Input name="metaDescription" label="Meta description" defaultValue={fieldValue(product?.metaDescription)} />
         </div>

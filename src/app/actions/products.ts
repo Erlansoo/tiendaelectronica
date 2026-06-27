@@ -1,8 +1,9 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { parseJsonObject, parseTags, productSchema } from "@/lib/validators";
 
@@ -28,10 +29,12 @@ function productPayload(formData: FormData) {
 }
 
 export async function createProduct(formData: FormData) {
+  await requireStoreAdmin();
   await prisma.product.create({
     data: productPayload(formData),
   });
 
+  updateTag("products");
   revalidatePath("/");
   revalidatePath("/productos");
   revalidatePath("/dashboard/productos");
@@ -39,11 +42,13 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function updateProduct(id: string, formData: FormData) {
+  await requireStoreAdmin();
   await prisma.product.update({
     where: { id },
     data: productPayload(formData),
   });
 
+  updateTag("products");
   revalidatePath("/");
   revalidatePath("/productos");
   revalidatePath("/dashboard/productos");
@@ -51,11 +56,13 @@ export async function updateProduct(id: string, formData: FormData) {
 }
 
 export async function toggleProductActive(id: string, isActive: boolean) {
+  await requireStoreAdmin();
   await prisma.product.update({
     where: { id },
     data: { isActive: !isActive },
   });
 
+  updateTag("products");
   revalidatePath("/");
   revalidatePath("/productos");
   revalidatePath("/dashboard/productos");

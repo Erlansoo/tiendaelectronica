@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-27T20:31:59+00:00"
+    "updatedAt": "2026-06-27T20:52:06+00:00"
   },
   "layers": {
     "interaction": {
@@ -306,7 +306,24 @@
     },
     "work": {
       "summary": "Completed, pending, approved, or blocked implementation work.",
-      "nodes": []
+      "nodes": [
+        {
+          "id": "work:001",
+          "title": "Google store admin access",
+          "summary": "Enabled electronics store dashboard access for allowlisted Google accounts through STORE_ADMIN_EMAILS, keeping it separate from future 3D printing manufacturer roles.",
+          "status": "active",
+          "confidence": "user-confirmed",
+          "createdAt": "2026-06-27T20:42:53+00:00"
+        },
+        {
+          "id": "work:002",
+          "title": "Store security and caching pass",
+          "summary": "Added server-side admin guards to electronics store actions, product cache tags, product URL validation, browser cache headers for product images, and baseline security headers. Excluded the 3D printing workflow.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-27T20:49:23+00:00"
+        }
+      ]
     },
     "todo": {
       "summary": "Product tasks and implementation checklist.",
@@ -340,12 +357,12 @@
     {
       "path": "src/app/crear-cuenta/page.tsx",
       "kind": "frontend-component",
-      "size": 1603
+      "size": 1635
     },
     {
       "path": "src/app/cuenta/page.tsx",
       "kind": "frontend-component",
-      "size": 2317
+      "size": 2890
     },
     {
       "path": "src/app/dashboard/configuracion/page.tsx",
@@ -365,7 +382,7 @@
     {
       "path": "src/app/dashboard/login/page.tsx",
       "kind": "frontend-component",
-      "size": 2070
+      "size": 2782
     },
     {
       "path": "src/app/dashboard/page.tsx",
@@ -410,12 +427,12 @@
     {
       "path": "src/app/login/page.tsx",
       "kind": "frontend-component",
-      "size": 1837
+      "size": 1876
     },
     {
       "path": "src/app/page.tsx",
       "kind": "frontend-component",
-      "size": 10546
+      "size": 10330
     },
     {
       "path": "src/app/productos/[slug]/page.tsx",
@@ -455,7 +472,7 @@
     {
       "path": "src/components/ProductForm.tsx",
       "kind": "frontend-component",
-      "size": 5797
+      "size": 6083
     },
     {
       "path": "src/components/ProductTable.tsx",
@@ -465,7 +482,7 @@
     {
       "path": "src/components/PublicHeader.tsx",
       "kind": "frontend-component",
-      "size": 4366
+      "size": 4643
     },
     {
       "path": "src/components/SaleForm.tsx",
@@ -495,17 +512,17 @@
     {
       "path": "middleware.ts",
       "kind": "logic",
-      "size": 602
+      "size": 1554
     },
     {
       "path": "next-env.d.ts",
       "kind": "logic",
-      "size": 251
+      "size": 247
     },
     {
       "path": "next.config.ts",
       "kind": "logic",
-      "size": 133
+      "size": 1045
     },
     {
       "path": "postcss.config.mjs",
@@ -530,37 +547,42 @@
     {
       "path": "src/app/actions/auth.ts",
       "kind": "logic",
-      "size": 986
+      "size": 1142
     },
     {
       "path": "src/app/actions/customer-auth.ts",
       "kind": "logic",
-      "size": 836
+      "size": 1017
     },
     {
       "path": "src/app/actions/products.ts",
       "kind": "logic",
-      "size": 1736
+      "size": 1963
     },
     {
       "path": "src/app/actions/sales.ts",
       "kind": "logic",
-      "size": 3625
+      "size": 3744
     },
     {
       "path": "src/app/actions/stock.ts",
       "kind": "logic",
-      "size": 1665
+      "size": 1784
     },
     {
       "path": "src/app/auth/callback/route.ts",
       "kind": "logic",
-      "size": 1182
+      "size": 1477
+    },
+    {
+      "path": "src/lib/admin-auth.ts",
+      "kind": "logic",
+      "size": 659
     },
     {
       "path": "src/lib/customer-auth.ts",
       "kind": "logic",
-      "size": 677
+      "size": 1101
     },
     {
       "path": "src/lib/format.ts",
@@ -575,7 +597,12 @@
     {
       "path": "src/lib/products.ts",
       "kind": "logic",
-      "size": 1588
+      "size": 2669
+    },
+    {
+      "path": "src/lib/store-admin.ts",
+      "kind": "logic",
+      "size": 530
     },
     {
       "path": "src/lib/supabase-server.ts",
@@ -585,7 +612,7 @@
     {
       "path": "src/lib/validators.ts",
       "kind": "logic",
-      "size": 2592
+      "size": 3010
     },
     {
       "path": "src/lib/whatsapp.ts",
@@ -595,12 +622,12 @@
     {
       "path": ".env",
       "kind": "other",
-      "size": 580
+      "size": 739
     },
     {
       "path": ".env.example",
       "kind": "other",
-      "size": 203
+      "size": 223
     },
     {
       "path": ".gitignore",

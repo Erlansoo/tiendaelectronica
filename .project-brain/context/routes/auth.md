@@ -12,7 +12,9 @@ Support Google-only customer accounts while keeping admin dashboard access contr
 - `src/app/auth/callback/route.ts`
 - `src/app/actions/customer-auth.ts`
 - `src/app/actions/auth.ts`
+- `src/lib/admin-auth.ts`
 - `src/lib/customer-auth.ts`
+- `src/lib/store-admin.ts`
 - `src/lib/supabase-server.ts`
 - `middleware.ts`
 - `prisma/schema.prisma`

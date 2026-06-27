@@ -3,23 +3,14 @@ import { ArrowRight, Cpu, Factory, PackageCheck, PackageSearch, RadioTower, Shie
 import { ProductCard } from "@/components/ProductCard";
 import { PublicHeader } from "@/components/PublicHeader";
 import { SearchInput } from "@/components/SearchInput";
-import { prisma } from "@/lib/prisma";
+import { getFeaturedProducts, getPublicCategories } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [featuredProducts, categories] = await Promise.all([
-    prisma.product.findMany({
-      where: { isActive: true, isFeatured: true },
-      take: 4,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.groupBy({
-      by: ["category"],
-      where: { isActive: true },
-      _count: { category: true },
-      orderBy: { category: "asc" },
-    }),
+    getFeaturedProducts(),
+    getPublicCategories(),
   ]);
 
   return (
