@@ -34,8 +34,10 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_WHATSAPP_NUMBER=
+NEXT_PUBLIC_SITE_URL=
 ADMIN_EMAIL=
 ADMIN_PASSWORD=
+AUTH_SECRET=
 ```
 
 Never commit a real `.env` file. `.env.example` is safe to commit.
@@ -98,6 +100,7 @@ npm run prisma:seed
 ## Security Notes
 
 - Dashboard access is protected by a simple `ADMIN_PASSWORD` cookie flow for the MVP.
+- Customer accounts use Supabase Auth with Google OAuth only.
 - Server actions validate critical inputs with Zod.
 - Product totals, sale totals and stock updates are calculated on the server.
 - `SUPABASE_SERVICE_ROLE_KEY` must remain server-only.

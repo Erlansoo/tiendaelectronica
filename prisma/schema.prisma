@@ -121,11 +121,11 @@ model StockMovement {
 }
 
 model CustomerAccount {
-  id           String   @id @default(cuid())
+  id           String   @id
   name         String
   email        String   @unique
-  passwordHash String
   imageUrl     String?
+  provider     String   @default("google")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

@@ -1,55 +1,30 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { clearCustomerSession, hashPassword, setCustomerSession, verifyPassword } from "@/lib/customer-auth";
-import { prisma } from "@/lib/prisma";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
-export async function registerCustomer(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
-  const imageUrl = String(formData.get("imageUrl") ?? "").trim() || undefined;
+export async function signInWithGoogle() {
+  const requestHeaders = await headers();
+  const origin = requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const supabase = await createSupabaseServerClient();
 
-  if (!name || !email || password.length < 8) {
-    redirect("/crear-cuenta?error=invalid");
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback?next=/cuenta`,
+    },
+  });
+
+  if (error || !data.url) {
+    redirect("/login?error=oauth");
   }
 
-  try {
-    const customer = await prisma.customerAccount.create({
-      data: {
-        name,
-        email,
-        passwordHash: hashPassword(password),
-        imageUrl,
-      },
-    });
-
-    await setCustomerSession(customer.id);
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      redirect("/crear-cuenta?error=exists");
-    }
-    throw error;
-  }
-
-  redirect("/cuenta");
-}
-
-export async function loginCustomer(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
-
-  const customer = await prisma.customerAccount.findUnique({ where: { email } });
-  if (!customer || !verifyPassword(password, customer.passwordHash)) {
-    redirect("/login?error=1");
-  }
-
-  await setCustomerSession(customer.id);
-  redirect("/cuenta");
+  redirect(data.url);
 }
 
 export async function logoutCustomer() {
-  await clearCustomerSession();
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
   redirect("/");
 }
