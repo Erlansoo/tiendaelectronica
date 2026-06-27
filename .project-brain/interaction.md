@@ -17,7 +17,6 @@
 - Public admin dashboard link was removed from normal storefront navigation.
 - STL scale ambiguity is handled by showing dimensions and scale controls.
 - Google customer profiles are ensured from the Supabase user session instead of only being created in the callback.
-- OAuth redirect generation now prefers `NEXT_PUBLIC_SITE_URL` over request origin to avoid production login returning to localhost.
 
 ## Next
 
