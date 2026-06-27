@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa Mental del Proyecto</title>
+  <style>
+    :root {
+      --bg:  #07111f; --bg2: #091a2d; --bg3: #0b1b2e;
+      --bd:  #17324f; --bd2: #244866;
+      --tx:  #dbeafe; --mu:  #6a8098;
+      font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--tx); min-height: 100vh; }
+
+    header {
+      padding: 13px 22px; border-bottom: 1px solid var(--bd);
+      background: #081526; position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .hdr-l h1 { font-size: 16px; font-weight: 700; }
+    .hdr-l .sub { color: var(--mu); font-size: 11px; margin-top: 2px; }
+    .hdr-pills { display: flex; gap: 6px; align-items: center; }
+    .hpill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; display: none; }
+    .hpill.on { display: inline-block; }
+    .hpill-w { background: #b45309; color: #fef3c7; }
+    .hpill-t { background: #1d4ed8; color: #bfdbfe; }
+
+    .layout { display: flex; min-height: calc(100vh - 50px); }
+    nav {
+      width: 200px; min-width: 200px; flex-shrink: 0;
+      border-right: 1px solid var(--bd); background: var(--bg2);
+      padding: 12px 10px; display: flex; flex-direction: column; gap: 1px;
+    }
+    .nl  { font-size: 10px; color: var(--mu); text-transform: uppercase; letter-spacing: .08em; padding: 10px 8px 4px; }
+    .nb  {
+      width: 100%; padding: 8px 11px; border-radius: 8px;
+      border: 1px solid transparent; background: transparent;
+      color: var(--tx); text-align: left; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: space-between; transition: background .12s;
+    }
+    .nb:hover { background: #0d2238; border-color: var(--bd2); }
+    .nb.on { border-color: #8bff4f; color: #caff00; background: #071810; }
+    .nc { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
+    .nc-w { background: #b45309; color: #fef3c7; }
+    .nc-t { background: #1d4ed8; color: #bfdbfe; }
+
+    .content { flex: 1; padding: 22px 26px; overflow: auto; min-width: 0; }
+    .lh { margin-bottom: 18px; }
+    .lh h2 { font-size: 19px; font-weight: 700; }
+    .lh p  { color: var(--mu); font-size: 13px; margin-top: 4px; }
+    .sr { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .pill { border: 1px solid var(--bd2); border-radius: 999px; padding: 4px 11px; font-size: 12px; color: #a7f3d0; }
+    .pill.y  { color: #fbbf24; border-color: #78350f; }
+    .pill.g  { color: #4ade80; border-color: #14532d; }
+    .pill.r  { color: #f87171; border-color: #7f1d1d; }
+    .pill.b  { color: #93c5fd; border-color: #1e3a5f; }
+    .pill.mu { color: var(--mu); border-color: var(--bd); }
+
+    /* work grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(295px, 1fr)); gap: 13px; }
+    .card {
+      border: 1px solid var(--bd); background: var(--bg3);
+      border-radius: 13px; padding: 14px;
+      display: flex; flex-direction: column; gap: 9px;
+      transition: border-color .18s, background .18s;
+    }
+    .card.st-approved { border-color: #166534; background: #041a0e; }
+    .card.st-rejected { border-color: #7f1d1d; background: #150404; }
+    .card.st-approved.dp-frozen { border-color: #1e40af; background: #030c1e; }
+    .card-top { display: flex; align-items: flex-start; gap: 8px; }
+    .card-top h3 { flex: 1; font-size: 14px; color: #f0f8ff; line-height: 1.35; }
+    .badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .sbadge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+    .sbadge.pending-approval { background: #b45309; color: #fef3c7; }
+    .sbadge.approved { background: #14532d; color: #4ade80; border: 1px solid #166534; }
+    .sbadge.rejected { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .sbadge.active   { background: #8bff4f; color: #050f05; }
+    .sbadge.verified { background: #1d4ed8; color: #bfdbfe; }
+    .dbadge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+    .dbadge.frozen       { background: #0c1a3a; color: #93c5fd; border: 1px solid #1e40af; }
+    .dbadge.will-change  { background: #1c0f00; color: #fb923c; border: 1px solid #7c2d12; }
+    .dbadge.might-change { background: #1a1200; color: #fbbf24; border: 1px solid #78350f; }
+    .dbadge.wont-do      { background: #111827; color: #6b7280; border: 1px solid #374151; }
+    .summary-tx { color: #8fa8c0; font-size: 13px; line-height: 1.5; }
+    .mr { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .iter { font-size: 11px; border: 1px solid var(--bd2); border-radius: 6px; padding: 2px 8px; color: #7aa0c0; }
+    .iter b { color: var(--tx); }
+    .ftag { font-family: ui-monospace,Consolas,monospace; font-size: 11px;
+      background: #0a1828; border: 1px solid #1a3050; border-radius: 5px; padding: 2px 7px; color: var(--mu); }
+    .ts { font-size: 11px; color: #3d566e; display: flex; flex-direction: column; gap: 2px; }
+    .nw { position: relative; }
+    .nl2 { font-size: 10px; color: var(--mu); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
+    textarea.notes {
+      width: 100%; min-height: 50px; resize: vertical;
+      background: #061120; border: 1px solid var(--bd2); border-radius: 8px;
+      color: #8fa8c0; font-size: 12px; font-family: inherit;
+      padding: 7px 10px; line-height: 1.5; outline: none; transition: border-color .15s;
+    }
+    textarea.notes:focus { border-color: #3b82f6; color: var(--tx); }
+    textarea.notes::placeholder { color: #2d4a62; }
+    .nsaved { font-size: 10px; color: #4ade80; position: absolute; right: 6px; bottom: 6px; opacity: 0; transition: opacity .3s; }
+    .nsaved.on { opacity: 1; }
+    hr.dv { border: none; border-top: 1px solid var(--bd); margin: 2px 0; }
+    .ar { display: flex; gap: 7px; }
+    .btn { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid transparent;
+      cursor: pointer; font-size: 12px; font-weight: 600; transition: transform .1s; }
+    .btn:active { transform: scale(.96); }
+    .btn-ok { background: #052010; color: #4ade80; border-color: #166534; }
+    .btn-ok:hover { background: #073018; }
+    .btn-ng { background: #150404; color: #f87171; border-color: #7f1d1d; }
+    .btn-ng:hover { background: #200505; }
+    .btn-un { background: #0d1e30; color: var(--mu); border-color: var(--bd2); }
+    .btn-un:hover { background: #152738; }
+    .dl { font-size: 10px; color: var(--mu); text-transform: uppercase; letter-spacing: .07em; }
+    .dc { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      padding: 5px 10px; border-radius: 7px; cursor: pointer;
+      font-size: 11px; font-weight: 600; border: 1px solid var(--bd2);
+      background: #0a1828; color: var(--mu); transition: background .12s, border-color .12s, color .12s;
+    }
+    .chip:hover { border-color: #3b82f6; color: var(--tx); }
+    .chip.on.frozen       { background: #0c1a3a; color: #93c5fd; border-color: #1e40af; }
+    .chip.on.will-change  { background: #1c0f00; color: #fb923c; border-color: #7c2d12; }
+    .chip.on.might-change { background: #1a1200; color: #fbbf24; border-color: #78350f; }
+    .chip.on.wont-do      { background: #111827; color: #9ca3af; border-color: #374151; }
+    .chip.clr { color: #3d566e; }
+    .chip.clr:hover { color: var(--mu); }
+
+    /* todo */
+    .todo-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-btns { display: flex; gap: 4px; }
+    .fbtn { padding: 5px 12px; border-radius: 7px; border: 1px solid var(--bd2);
+      background: #0a1828; color: var(--mu); cursor: pointer; font-size: 12px; font-weight: 600; }
+    .fbtn.on { background: #0d2238; color: var(--tx); border-color: #3b82f6; }
+    .area-filter { padding: 5px 10px; border-radius: 7px; border: 1px solid var(--bd2);
+      background: #0a1828; color: var(--mu); font-size: 12px; outline: none; cursor: pointer; }
+    .prog-wrap { margin-bottom: 18px; }
+    .prog-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--mu); margin-bottom: 5px; }
+    .prog-label b { color: var(--tx); }
+    .prog-bar { height: 6px; background: #0d2238; border-radius: 999px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#4ade80,#22d3ee); transition: width .4s; }
+    .todo-list { display: flex; flex-direction: column; gap: 8px; }
+    .ti {
+      border: 1px solid var(--bd); background: var(--bg3);
+      border-radius: 12px; padding: 14px 16px;
+      display: flex; gap: 13px; align-items: flex-start;
+      transition: border-color .18s, background .18s, opacity .2s;
+    }
+    .ti.done-user { border-color: #166534; background: #041a0e; opacity: .75; }
+    .ti.done-ai   { border-color: #1e40af; background: #030c1e; }
+    .tcheck {
+      width: 22px; height: 22px; min-width: 22px; border-radius: 7px;
+      border: 2px solid var(--bd2); background: #0a1828;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; transition: all .15s; flex-shrink: 0; margin-top: 1px;
+    }
+    .tcheck:hover { border-color: #4ade80; }
+    .ti.done-user .tcheck { background: #14532d; border-color: #4ade80; color: #4ade80; }
+    .ti.done-ai:not(.done-user) .tcheck { border-color: #3b82f6; }
+    .ti-body { flex: 1; min-width: 0; }
+    .ti-top { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .ti-title { font-size: 14px; font-weight: 600; color: #e2eaf4; flex: 1; line-height: 1.3; }
+    .ti.done-user .ti-title { text-decoration: line-through; color: var(--mu); }
+    .ti-desc { font-size: 13px; color: #7a95ae; line-height: 1.5; margin-bottom: 6px; }
+    .ti-ts { font-size: 11px; color: #3d566e; margin-top: 3px; }
+    .pri { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+    .pri.high   { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .pri.medium { background: #1c0f00; color: #fb923c; border: 1px solid #7c2d12; }
+    .pri.low    { background: #0c1a3a; color: #93c5fd; border: 1px solid #1e3a5f; }
+    .area-tag { font-size: 10px; padding: 2px 7px; border-radius: 5px;
+      background: #0a1828; color: var(--mu); border: 1px solid var(--bd2); }
+    .ai-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px;
+      background: #030c1e; color: #93c5fd; border: 1px solid #1e40af; }
+    .add-task-form {
+      margin-top: 18px; border: 1px dashed var(--bd2);
+      border-radius: 12px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .add-task-form input, .add-task-form textarea, .add-task-form select {
+      width: 100%; background: #061120; border: 1px solid var(--bd2); border-radius: 8px;
+      color: var(--tx); font-size: 13px; font-family: inherit; padding: 7px 10px; outline: none;
+    }
+    .add-task-form input:focus, .add-task-form textarea:focus { border-color: #3b82f6; }
+    .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .add-row select { flex: 1; min-width: 100px; cursor: pointer; background: #061120; }
+    .btn-add { padding: 8px 18px; border-radius: 8px; border: none;
+      background: #1d4ed8; color: #fff; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .btn-add:hover { background: #2563eb; }
+    .btn-add:active { transform: scale(.97); }
+
+    /* export bar */
+    .expbar {
+      margin-top: 22px; border: 1px dashed var(--bd2);
+      border-radius: 12px; padding: 13px 16px;
+      display: none; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .expbar.on { display: flex; }
+    .expbar p { font-size: 13px; color: var(--mu); }
+    .btn-exp { padding: 7px 14px; border-radius: 8px; background: #0d2238; color: #60a5fa;
+      border: 1px solid var(--bd2); cursor: pointer; font-size: 13px; }
+    .btn-exp:hover { background: #142f4a; }
+    .cok { font-size: 12px; color: #4ade80; display: none; }
+    .cok.on { display: inline; }
+    .empty { color: var(--mu); font-size: 13px; padding: 16px 0; }
+
+    /* routes + graph (v4.2) */
+    .route-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .route-detail { border: 1px solid var(--bd); background: var(--bg3); border-radius: 13px;
+      padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; }
+    .rsec { display: flex; flex-direction: column; gap: 6px; }
+    .node-chip { font-size: 12px; background: #0a1828; border: 1px solid var(--bd2);
+      border-radius: 7px; padding: 3px 9px; color: #a7c5e0; cursor: pointer; }
+    .node-chip:hover { border-color: #3b82f6; color: var(--tx); }
+    .mini { border: 1px solid var(--bd); border-radius: 9px; padding: 8px 11px;
+      font-size: 13px; color: #cdd9e6; }
+    .sev { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
+    .sev-low { background: #0c1a3a; color: #93c5fd; }
+    .sev-medium { background: #1c0f00; color: #fb923c; }
+    .sev-high { background: #450a0a; color: #f87171; }
+    .sev-critical { background: #4a044e; color: #f0abfc; }
+    .rel-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+    .rel-arrow { color: var(--mu); white-space: nowrap; }
+
+
+    /* product map: human-facing cognitive map */
+    .map-hero { border: 1px solid #244866; background: linear-gradient(135deg,#071810,#0b1b2e 55%,#07111f); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+    .map-hero h3 { font-size: 16px; margin-bottom: 6px; color: #eaffd4; }
+    .map-hero p { color: #9fb5ca; font-size: 13px; line-height: 1.5; max-width: 900px; }
+    .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 13px; }
+    .room-card { border: 1px solid var(--bd); background: var(--bg3); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .room-card.green { border-color: #14532d; box-shadow: inset 0 0 0 1px rgba(34,197,94,.1); }
+    .room-card.yellow { border-color: #7c2d12; box-shadow: inset 0 0 0 1px rgba(251,146,60,.08); }
+    .room-card.red { border-color: #7f1d1d; box-shadow: inset 0 0 0 1px rgba(248,113,113,.08); }
+    .room-top { display: flex; gap: 10px; align-items: flex-start; }
+    .room-light { width: 10px; height: 10px; border-radius: 999px; margin-top: 5px; flex-shrink: 0; background: #4ade80; box-shadow: 0 0 12px rgba(74,222,128,.6); }
+    .room-card.yellow .room-light { background: #fbbf24; box-shadow: 0 0 12px rgba(251,191,36,.55); }
+    .room-card.red .room-light { background: #f87171; box-shadow: 0 0 12px rgba(248,113,113,.55); }
+    .room-title { font-size: 14px; font-weight: 800; color: #f0f8ff; line-height: 1.35; }
+    .room-sub { color: #8fa8c0; font-size: 12px; line-height: 1.45; margin-top: 2px; }
+    .room-metrics { display: flex; gap: 6px; flex-wrap: wrap; }
+    .room-section { display: flex; flex-direction: column; gap: 5px; }
+    .alias-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .alias-chip { border: 1px solid #1e3a5f; background: #061427; color: #93c5fd; border-radius: 999px; padding: 2px 8px; font-size: 11px; }
+    .insight { border-left: 3px solid #8bff4f; background: #071810; border-radius: 8px; padding: 8px 10px; color: #b9d3ea; font-size: 12px; line-height: 1.45; }
+    .insight b { color: #eaffd4; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-l">
+    <h1 id="hTitle">Mapa Mental del Proyecto</h1>
+    <div class="sub" id="hSub"></div>
+  </div>
+  <div class="hdr-pills">
+    <span class="hpill hpill-w" id="hPillW"></span>
+    <span class="hpill hpill-t" id="hPillT"></span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav id="nav"></nav>
+  <div class="content">
+    <div class="lh">
+      <h2 id="lTitle"></h2>
+      <p  id="lSummary"></p>
+      <div class="sr" id="sr"></div>
+    </div>
+    <div id="main"></div>
+    <div class="expbar" id="expbar">
+      <p>Pegá esto en Codex para que actualice <code>brain.json</code>:</p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-exp" onclick="copyExport()">Copiar estado para Codex</button>
+        <span class="cok" id="cok">¡Copiado!</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── brain data (sincronizar con brain.json al actualizar) ───────────────────
+const brain = {"schema": "project-brain-map", "version": 5, "project": {"name": "electronics-store", "displayName": "electronics-store", "root": "C:\\Users\\Erlan\\tiendaelectronica", "createdAt": "2026-06-27T19:33:41+00:00", "updatedAt": "2026-06-27T19:38:04+00:00"}, "layers": {"interaction": {"summary": "Human and AI working memory. Update after important sessions.", "nodes": []}, "product": {"summary": "Product intent, users, flows, and constraints.", "nodes": []}, "architecture": {"summary": "Real code modules, data flow, and technical constraints.", "nodes": [{"id": "arch--env", "title": ".env", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": [".env"]}, {"id": "arch--env-example", "title": ".env.example", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": [".env.example"]}, {"id": "arch--gitignore", "title": ".gitignore", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": [".gitignore"]}, {"id": "arch-AGENTS-md", "title": "AGENTS.md", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["AGENTS.md"]}, {"id": "arch-CLAUDE-md", "title": "CLAUDE.md", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["CLAUDE.md"]}, {"id": "arch-README-md", "title": "README.md", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["README.md"]}, {"id": "arch-eslint-config-mjs", "title": "eslint.config.mjs", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["eslint.config.mjs"]}, {"id": "arch-middleware-ts", "title": "middleware.ts", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["middleware.ts"]}, {"id": "arch-next-env-d-ts", "title": "next-env.d.ts", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["next-env.d.ts"]}, {"id": "arch-next-config-ts", "title": "next.config.ts", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["next.config.ts"]}, {"id": "arch-package-lock-json", "title": "package-lock.json", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["package-lock.json"]}, {"id": "arch-package-json", "title": "package.json", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["package.json"]}, {"id": "arch-postcss-config-mjs", "title": "postcss.config.mjs", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["postcss.config.mjs"]}, {"id": "arch-prisma", "title": "prisma", "status": "active", "confidence": "observed", "summary": "6 tracked file(s)", "files": ["prisma/migrations/migration_lock.toml", "prisma/seed.ts", "prisma/migrations/0001_initial/migration.sql", "prisma/migrations/0002_customer_accounts/migration.sql", "prisma/migrations/0003_google_customer_accounts/migration.sql", "prisma/schema.prisma"]}, {"id": "arch-prisma-config-ts", "title": "prisma.config.ts", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["prisma.config.ts"]}, {"id": "arch-public", "title": "public", "status": "active", "confidence": "observed", "summary": "6 tracked file(s)", "files": ["public/file.svg", "public/globe.svg", "public/next.svg", "public/products/.gitkeep", "public/vercel.svg", "public/window.svg"]}, {"id": "arch-scripts", "title": "scripts", "status": "active", "confidence": "observed", "summary": "2 tracked file(s)", "files": ["scripts/project-brain/brain.py", "scripts/project-brain/viewer_template.html"]}, {"id": "arch-src", "title": "src", "status": "active", "confidence": "observed", "summary": "6 tracked file(s)", "files": ["src/app/cotizar-impresion-3d/page.tsx", "src/app/crear-cuenta/page.tsx", "src/app/cuenta/page.tsx", "src/app/dashboard/configuracion/page.tsx", "src/app/dashboard/inventario/page.tsx", "src/app/dashboard/layout.tsx"]}, {"id": "arch-tsconfig-json", "title": "tsconfig.json", "status": "active", "confidence": "observed", "summary": "1 tracked file(s)", "files": ["tsconfig.json"]}, {"id": "arch-route-storefront", "title": "Public storefront and catalog", "status": "active", "confidence": "observed", "summary": "Route-specific files for storefront.", "files": ["src/app/page.tsx", "src/app/productos/page.tsx", "src/app/productos/[slug]/page.tsx", "src/components/PublicHeader.tsx", "src/components/ProductCard.tsx", "src/components/SearchInput.tsx", "src/components/WhatsAppButton.tsx", "src/lib/products.ts", "src/lib/whatsapp.ts"]}, {"id": "arch-route-dashboard", "title": "Admin dashboard, products and operations", "status": "active", "confidence": "observed", "summary": "Route-specific files for dashboard.", "files": ["src/app/dashboard/page.tsx", "src/app/dashboard/layout.tsx", "src/app/dashboard/productos/page.tsx", "src/app/dashboard/productos/nuevo/page.tsx", "src/app/dashboard/productos/[id]/editar/page.tsx", "src/app/dashboard/ventas/page.tsx", "src/app/dashboard/ventas/nueva/page.tsx", "src/app/dashboard/inventario/page.tsx", "src/app/dashboard/stock-movements/page.tsx", "src/app/actions/products.ts", "src/app/actions/sales.ts", "src/app/actions/stock.ts", "src/components/DashboardNav.tsx", "src/components/ProductForm.tsx", "src/components/ProductTable.tsx", "src/components/SaleForm.tsx", "prisma/schema.prisma"]}, {"id": "arch-route-auth", "title": "Customer and admin authentication", "status": "active", "confidence": "observed", "summary": "Route-specific files for auth.", "files": ["src/app/login/page.tsx", "src/app/crear-cuenta/page.tsx", "src/app/cuenta/page.tsx", "src/app/auth/callback/route.ts", "src/app/actions/customer-auth.ts", "src/app/actions/auth.ts", "src/lib/customer-auth.ts", "src/lib/supabase-server.ts", "middleware.ts", "prisma/schema.prisma"]}, {"id": "arch-route-print-quote", "title": "3D print quote workflow", "status": "active", "confidence": "observed", "summary": "Route-specific files for print-quote.", "files": ["src/app/cotizar-impresion-3d/page.tsx", "src/components/PrintQuoteWorkspace.tsx", "src/components/PublicHeader.tsx", "prisma/schema.prisma"]}]}, "work": {"summary": "Completed, pending, approved, or blocked implementation work.", "nodes": []}, "todo": {"summary": "Product tasks and implementation checklist.", "nodes": []}, "risks": {"summary": "Fragile areas and implementation risks.", "nodes": []}, "decisions": {"summary": "Accepted decisions with rationale and affected files.", "nodes": []}}, "files": [{"path": "package-lock.json", "kind": "configuration", "size": 276479}, {"path": "prisma/migrations/migration_lock.toml", "kind": "configuration", "size": 64}, {"path": "src/app/cotizar-impresion-3d/page.tsx", "kind": "frontend-component", "size": 2581}, {"path": "src/app/crear-cuenta/page.tsx", "kind": "frontend-component", "size": 1603}, {"path": "src/app/cuenta/page.tsx", "kind": "frontend-component", "size": 2317}, {"path": "src/app/dashboard/configuracion/page.tsx", "kind": "frontend-component", "size": 465}, {"path": "src/app/dashboard/inventario/page.tsx", "kind": "frontend-component", "size": 3198}, {"path": "src/app/dashboard/layout.tsx", "kind": "frontend-component", "size": 303}, {"path": "src/app/dashboard/login/page.tsx", "kind": "frontend-component", "size": 2070}, {"path": "src/app/dashboard/page.tsx", "kind": "frontend-component", "size": 3085}, {"path": "src/app/dashboard/productos/[id]/editar/page.tsx", "kind": "frontend-component", "size": 615}, {"path": "src/app/dashboard/productos/nuevo/page.tsx", "kind": "frontend-component", "size": 282}, {"path": "src/app/dashboard/productos/page.tsx", "kind": "frontend-component", "size": 1368}, {"path": "src/app/dashboard/stock-movements/page.tsx", "kind": "frontend-component", "size": 2198}, {"path": "src/app/dashboard/ventas/nueva/page.tsx", "kind": "frontend-component", "size": 860}, {"path": "src/app/dashboard/ventas/page.tsx", "kind": "frontend-component", "size": 2220}, {"path": "src/app/layout.tsx", "kind": "frontend-component", "size": 793}, {"path": "src/app/login/page.tsx", "kind": "frontend-component", "size": 1837}, {"path": "src/app/page.tsx", "kind": "frontend-component", "size": 10546}, {"path": "src/app/productos/[slug]/page.tsx", "kind": "frontend-component", "size": 4358}, {"path": "src/app/productos/page.tsx", "kind": "frontend-component", "size": 1549}, {"path": "src/components/DashboardCard.tsx", "kind": "frontend-component", "size": 465}, {"path": "src/components/DashboardNav.tsx", "kind": "frontend-component", "size": 1450}, {"path": "src/components/EmptyState.tsx", "kind": "frontend-component", "size": 345}, {"path": "src/components/PrintQuoteWorkspace.tsx", "kind": "frontend-component", "size": 17225}, {"path": "src/components/ProductCard.tsx", "kind": "frontend-component", "size": 2115}, {"path": "src/components/ProductForm.tsx", "kind": "frontend-component", "size": 5797}, {"path": "src/components/ProductTable.tsx", "kind": "frontend-component", "size": 2832}, {"path": "src/components/PublicHeader.tsx", "kind": "frontend-component", "size": 4366}, {"path": "src/components/SaleForm.tsx", "kind": "frontend-component", "size": 6456}, {"path": "src/components/SearchInput.tsx", "kind": "frontend-component", "size": 676}, {"path": "src/components/StockBadge.tsx", "kind": "frontend-component", "size": 640}, {"path": "src/components/WhatsAppButton.tsx", "kind": "frontend-component", "size": 678}, {"path": "eslint.config.mjs", "kind": "logic", "size": 465}, {"path": "middleware.ts", "kind": "logic", "size": 602}, {"path": "next-env.d.ts", "kind": "logic", "size": 251}, {"path": "next.config.ts", "kind": "logic", "size": 133}, {"path": "postcss.config.mjs", "kind": "logic", "size": 94}, {"path": "prisma.config.ts", "kind": "logic", "size": 303}, {"path": "prisma/seed.ts", "kind": "logic", "size": 2631}, {"path": "scripts/project-brain/brain.py", "kind": "logic", "size": 71527}, {"path": "src/app/actions/auth.ts", "kind": "logic", "size": 986}, {"path": "src/app/actions/customer-auth.ts", "kind": "logic", "size": 836}, {"path": "src/app/actions/products.ts", "kind": "logic", "size": 1736}, {"path": "src/app/actions/sales.ts", "kind": "logic", "size": 3625}, {"path": "src/app/actions/stock.ts", "kind": "logic", "size": 1665}, {"path": "src/app/auth/callback/route.ts", "kind": "logic", "size": 1182}, {"path": "src/lib/customer-auth.ts", "kind": "logic", "size": 677}, {"path": "src/lib/format.ts", "kind": "logic", "size": 869}, {"path": "src/lib/prisma.ts", "kind": "logic", "size": 369}, {"path": "src/lib/products.ts", "kind": "logic", "size": 1588}, {"path": "src/lib/supabase-server.ts", "kind": "logic", "size": 744}, {"path": "src/lib/validators.ts", "kind": "logic", "size": 2592}, {"path": "src/lib/whatsapp.ts", "kind": "logic", "size": 523}, {"path": ".env", "kind": "other", "size": 580}, {"path": ".env.example", "kind": "other", "size": 203}, {"path": ".gitignore", "kind": "other", "size": 494}, {"path": "prisma/migrations/0001_initial/migration.sql", "kind": "other", "size": 3855}, {"path": "prisma/migrations/0002_customer_accounts/migration.sql", "kind": "other", "size": 440}, {"path": "prisma/migrations/0003_google_customer_accounts/migration.sql", "kind": "other", "size": 195}, {"path": "prisma/schema.prisma", "kind": "other", "size": 3299}, {"path": "public/file.svg", "kind": "other", "size": 391}, {"path": "public/globe.svg", "kind": "other", "size": 1035}, {"path": "public/next.svg", "kind": "other", "size": 1375}, {"path": "public/products/.gitkeep", "kind": "other", "size": 1}, {"path": "public/vercel.svg", "kind": "other", "size": 128}, {"path": "public/window.svg", "kind": "other", "size": 385}, {"path": "scripts/project-brain/viewer_template.html", "kind": "other", "size": 47336}, {"path": "AGENTS.md", "kind": "project-control", "size": 556}, {"path": "CLAUDE.md", "kind": "project-control", "size": 11}, {"path": "README.md", "kind": "project-control", "size": 3152}, {"path": "package.json", "kind": "project-control", "size": 1502}, {"path": "tsconfig.json", "kind": "project-control", "size": 670}, {"path": "src/app/globals.css", "kind": "ui", "size": 334}], "links": [], "routes": [{"slug": "storefront", "title": "Public storefront and catalog", "nodes": ["arch-route-storefront"]}, {"slug": "dashboard", "title": "Admin dashboard, products and operations", "nodes": ["arch-route-dashboard"]}, {"slug": "auth", "title": "Customer and admin authentication", "nodes": ["arch-route-auth"]}, {"slug": "print-quote", "title": "3D print quote workflow", "nodes": ["arch-route-print-quote"]}], "aliases": [], "insights": [], "language": "es"};
+const WK = `pb_work_${brain.project.name}`;
+const TK = `pb_todo_${brain.project.name}`;
+function wLoad() { try { return JSON.parse(localStorage.getItem(WK)||'{}'); } catch { return {}; } }
+function tLoad() { try { return JSON.parse(localStorage.getItem(TK)||'{}'); } catch { return {}; } }
+function wSave(s) { localStorage.setItem(WK, JSON.stringify(s)); }
+function tSave(s) { localStorage.setItem(TK, JSON.stringify(s)); }
+let wStore = wLoad();
+let tStore = tLoad();
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+// Sanitiza IDs como "work:001" → "work-001" para usarlos en atributos HTML/querySelector
+function sid(id) { return String(id).replace(/[^a-zA-Z0-9_-]/g, '-'); }
+
+function fmt(iso) {
+  if (!iso) return null;
+  try { return new Date(iso).toLocaleString('es',{dateStyle:'short',timeStyle:'short'}); } catch { return iso; }
+}
+
+const LL = { map:'Mapa de Producto', work:'Trabajo', todo:'Tareas / PRD', interaction:'Interacci?n', product:'Producto', architecture:'Arquitectura', risks:'Riesgos', decisions:'Decisiones', routes:'Rutas IA', graph:'Relaciones' };
+const LO = ['map','work','todo','interaction','product','architecture','risks','decisions','routes','graph'];
+const DISP = {
+  frozen:        { icon:'🔒', label:'Congelar',    title:'No se modificará más' },
+  'will-change': { icon:'🔄', label:'Se cambiará', title:'Volveré a modificar esto' },
+  'might-change':{ icon:'💭', label:'Posible',     title:'Puede que lo cambie' },
+  'wont-do':     { icon:'✗',  label:'No se hará', title:'Descartado' },
+};
+let cur = 'work';
+let todoFilter = 'all';
+let todoArea   = 'all';
+let selectedRoute = null;
+let graphFocus    = null;
+
+function pendingWork() {
+  return (brain.layers.work?.nodes||[]).filter(n => {
+    const s = wStore[n.id];
+    return !s?.status || s.status === 'pending-approval';
+  }).length;
+}
+function pendingTodo() {
+  return allTodos().filter(n => !tStore[n.id]?.checkedByUser).length;
+}
+
+// ── nav ──────────────────────────────────────────────────────────────────────
+function renderNav() {
+  const nav = document.getElementById('nav');
+  nav.innerHTML = '<div class="nl">Capas</div>';
+  LO.forEach(k => {
+    if (!brain.layers[k] && !['todo','routes','graph'].includes(k)) return;
+    const btn = document.createElement('button');
+    btn.className = 'nb' + (k === cur ? ' on' : '');
+    const pw = k==='work' ? pendingWork() : 0;
+    const pt = k==='todo' ? pendingTodo() : 0;
+    const badge = pw ? `<span class="nc nc-w">${pw}</span>` : pt ? `<span class="nc nc-t">${pt}</span>` : '';
+    btn.innerHTML = `<span>${LL[k]||k}</span>${badge}`;
+    btn.onclick = () => { cur = k; render(); };
+    nav.appendChild(btn);
+  });
+  const pw = pendingWork(), pt = pendingTodo();
+  const pillW = document.getElementById('hPillW');
+  const pillT = document.getElementById('hPillT');
+  pillW.textContent = `${pw} trabajo${pw!==1?'s':''}`;
+  pillW.classList.toggle('on', pw > 0);
+  pillT.textContent = `${pt} tarea${pt!==1?'s':''}`;
+  pillT.classList.toggle('on', pt > 0);
+}
+
+// ── work cards ───────────────────────────────────────────────────────────────
+function makeWorkCard(node) {
+  const s      = wStore[node.id]||{};
+  const status = s.status || node.status || 'pending-approval';
+  const disp   = s.disposition||null;
+  const cc     = [
+    status==='approved'?'st-approved': status==='rejected'?'st-rejected':'',
+    disp ? `dp-${disp}` : ''
+  ].filter(Boolean).join(' ');
+
+  const statusLabels = {'pending-approval':'⏳ Pendiente', approved:'✓ Aprobado', rejected:'✗ Revisión'};
+  const dispBadge  = disp ? `<span class="dbadge ${disp}">${DISP[disp].icon} ${DISP[disp].label}</span>` : '';
+  const iterHtml   = node.iterations!=null ? `<span class="iter"><b>${node.iterations}</b> iter.</span>` : '';
+  const filesHtml  = (node.files||[]).map(f=>`<span class="ftag">${f}</span>`).join('');
+  const ts = [];
+  if (node.aiVerifiedAt) ts.push(`IA: ${fmt(node.aiVerifiedAt)}`);
+  if (s.at) ts.push(`${status==='approved'?'Aprobado':'Revisión'}: ${fmt(s.at)}`);
+  if (s.dispositionAt && disp) ts.push(`${DISP[disp].label}: ${fmt(s.dispositionAt)}`);
+
+  const approvalBtns = status==='approved'||status==='rejected'
+    ? `<button class="btn btn-un" onclick="wUndo('${node.id}')">↩ Deshacer</button>`
+    : `<button class="btn btn-ok" onclick="wSet('${node.id}','approved')">✓ Aprobar</button>
+       <button class="btn btn-ng" onclick="wSet('${node.id}','rejected')">✗ Pedir revisión</button>`;
+
+  const chips = Object.entries(DISP).map(([k,d])=>
+    `<button class="chip ${disp===k?'on '+k:''}" title="${d.title}"
+      onclick="wDisp('${node.id}','${k}')">${d.icon} ${d.label}</button>`
+  ).join('');
+  const clearChip = disp
+    ? `<button class="chip clr" onclick="wDisp('${node.id}',null)">· limpiar</button>` : '';
+
+  const card = document.createElement('article');
+  card.className = `card ${cc}`;
+  card.innerHTML = `
+    <div class="card-top">
+      <h3>${node.title||node.id}</h3>
+      <div class="badges">
+        <span class="sbadge ${status}">${statusLabels[status]||status}</span>
+        ${dispBadge}
+      </div>
+    </div>
+    <div class="summary-tx">${node.summary||''}</div>
+    <div class="mr">${iterHtml}${filesHtml}</div>
+    ${ts.length ? `<div class="ts">${ts.map(t=>`<span>${t}</span>`).join('')}</div>` : ''}
+    <div class="nw">
+      <div class="nl2">Nota del usuario</div>
+      <textarea class="notes" id="nt-${sid(node.id)}"
+        placeholder="Contexto, decisiones pendientes, por qué se hizo así…">${s.note||''}</textarea>
+      <span class="nsaved" id="ns-${sid(node.id)}">guardado</span>
+    </div>
+    <hr class="dv">
+    <div>
+      <div class="dl" style="margin-bottom:6px">¿Qué pasa con esto después?</div>
+      <div class="dc">${chips}${clearChip}</div>
+    </div>
+    <div class="ar">${approvalBtns}</div>
+  `;
+
+  // auto-save notes — usar querySelector('textarea.notes') evita el bug con ":" en selectores CSS
+  const ta = card.querySelector('textarea.notes');
+  let tmr;
+  ta.addEventListener('input', () => {
+    clearTimeout(tmr);
+    tmr = setTimeout(() => {
+      wStore[node.id] = {...(wStore[node.id]||{}), note: ta.value};
+      wSave(wStore);
+      const ns = document.getElementById(`ns-${sid(node.id)}`);
+      if (ns) { ns.classList.add('on'); setTimeout(()=>ns.classList.remove('on'),1200); }
+    }, 500);
+  });
+  return card;
+}
+
+function wSet(id, status) { wStore[id]={...(wStore[id]||{}),status,at:new Date().toISOString()}; wSave(wStore); render(); }
+function wUndo(id)        { if(wStore[id]){delete wStore[id].status; delete wStore[id].at;} wSave(wStore); render(); }
+function wDisp(id, disp)  {
+  wStore[id]={...(wStore[id]||{}), disposition:disp, dispositionAt:disp?new Date().toISOString():null};
+  wSave(wStore); render();
+}
+
+// ── todo ─────────────────────────────────────────────────────────────────────
+function allTodos() {
+  const base      = brain.layers.todo?.nodes||[];
+  const userAdded = Object.values(tStore).filter(v=>v.isUserAdded);
+  return [...base, ...userAdded];
+}
+function uniqueAreas() {
+  const areas = new Set(allTodos().map(n=>n.area||'otra'));
+  return ['all', ...Array.from(areas).sort()];
+}
+
+function makeTodoItem(node) {
+  const s        = tStore[node.id]||{};
+  const doneUser = !!s.checkedByUser;
+  const doneAi   = node.checkedByAi||false;
+  const cls      = doneUser ? 'ti done-user' : doneAi ? 'ti done-ai' : 'ti';
+  const pri      = node.priority||'low';
+  const aiBadge  = doneAi && !doneUser ? `<span class="ai-badge">🤖 IA implementó — ¿confirmás?</span>` : '';
+  const ts       = s.checkedAt ? `<div class="ti-ts">✓ Confirmado: ${fmt(s.checkedAt)}</div>` : '';
+  const aiNote   = node.aiNote ? `<div class="ti-ts" style="color:#5a7a9a">🤖 ${node.aiNote}</div>` : '';
+
+  const item = document.createElement('div');
+  item.className = cls;
+  item.innerHTML = `
+    <div class="tcheck" onclick="tToggle('${node.id}')">${doneUser?'✓':doneAi?'·':''}</div>
+    <div class="ti-body">
+      <div class="ti-top">
+        <span class="ti-title">${node.title}</span>
+        <span class="pri ${pri}">${pri==='high'?'Alta':pri==='medium'?'Media':'Baja'}</span>
+        <span class="area-tag">${node.area||'otra'}</span>
+        ${aiBadge}
+      </div>
+      ${node.description?`<div class="ti-desc">${node.description}</div>`:''}
+      ${ts}${aiNote}
+    </div>
+  `;
+  return item;
+}
+
+function tToggle(id) {
+  const s   = tStore[id]||{};
+  const now = s.checkedByUser;
+  tStore[id] = {...s, checkedByUser:!now, checkedAt:!now?new Date().toISOString():null};
+  tSave(tStore); render();
+}
+
+function addTodo() {
+  const titleEl = document.getElementById('add-title');
+  const descEl  = document.getElementById('add-desc');
+  const priEl   = document.getElementById('add-pri');
+  const areaEl  = document.getElementById('add-area');
+  const title   = titleEl.value.trim();
+  if (!title) { titleEl.focus(); return; }
+  const id = `user-${Date.now()}`;
+  tStore[id] = {
+    id, title, description: descEl.value.trim(),
+    priority: priEl.value, area: areaEl.value.trim()||'otra',
+    isUserAdded: true, checkedByUser: false, checkedAt: null,
+  };
+  tSave(tStore);
+  titleEl.value=''; descEl.value=''; priEl.value='medium'; areaEl.value='';
+  render();
+}
+
+function setTF(f) { todoFilter=f; render(); }
+function setTA(a) { todoArea=a; render(); }
+
+// ── render layers ─────────────────────────────────────────────────────────────
+function renderWork() {
+  const main = document.getElementById('main');
+  const sr   = document.getElementById('sr');
+  document.getElementById('expbar').classList.add('on');
+
+  const nodes    = brain.layers.work?.nodes||[];
+  const total    = nodes.length;
+  const approved = nodes.filter(n=>(wStore[n.id]?.status||n.status)==='approved').length;
+  const rejected = nodes.filter(n=>(wStore[n.id]?.status||n.status)==='rejected').length;
+  const pending  = total - approved - rejected;
+  const frozen   = nodes.filter(n=>wStore[n.id]?.disposition==='frozen').length;
+  const willChg  = nodes.filter(n=>wStore[n.id]?.disposition==='will-change').length;
+
+  sr.innerHTML = `
+    <span class="pill">${total} total</span>
+    <span class="pill g">✓ ${approved} aprobado${approved!==1?'s':''}</span>
+    <span class="pill y">⏳ ${pending} pendiente${pending!==1?'s':''}</span>
+    ${rejected ? `<span class="pill r">✗ ${rejected} revisión</span>` : ''}
+    ${frozen   ? `<span class="pill b">🔒 ${frozen} congelado${frozen!==1?'s':''}</span>` : ''}
+    ${willChg  ? `<span class="pill y">🔄 ${willChg} se cambiará${willChg!==1?'n':''}</span>` : ''}
+  `;
+
+  if (!total) { main.innerHTML = '<div class="empty">No hay trabajos registrados aún.</div>'; return; }
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  nodes.forEach(n => grid.appendChild(makeWorkCard(n)));
+  main.innerHTML = '';
+  main.appendChild(grid);
+}
+
+function renderTodo() {
+  const main = document.getElementById('main');
+  const sr   = document.getElementById('sr');
+  document.getElementById('expbar').classList.add('on');
+
+  let todos     = allTodos();
+  const total   = todos.length;
+  const doneU   = todos.filter(n=>tStore[n.id]?.checkedByUser).length;
+  const doneAI  = todos.filter(n=>n.checkedByAi&&!tStore[n.id]?.checkedByUser).length;
+  const pending = total - doneU;
+  const pct     = total ? Math.round((doneU/total)*100) : 0;
+
+  sr.innerHTML = `
+    <span class="pill g">✓ ${doneU} confirmado${doneU!==1?'s':''}</span>
+    <span class="pill y">⏳ ${pending} pendiente${pending!==1?'s':''}</span>
+    ${doneAI ? `<span class="pill b">🤖 ${doneAI} listo${doneAI!==1?'s':''} por IA</span>` : ''}
+    <span class="pill mu">${total} total</span>
+  `;
+
+  if (todoFilter==='pending') todos = todos.filter(n=>!tStore[n.id]?.checkedByUser);
+  else if (todoFilter==='done') todos = todos.filter(n=>tStore[n.id]?.checkedByUser);
+  if (todoArea!=='all') todos = todos.filter(n=>(n.area||'otra')===todoArea);
+
+  const areas    = uniqueAreas();
+  const areaOpts = areas.map(a=>
+    `<option value="${a}" ${todoArea===a?'selected':''}>${a==='all'?'Todas las áreas':a}</option>`
+  ).join('');
+
+  main.innerHTML = `
+    <div class="prog-wrap">
+      <div class="prog-label"><span>Progreso del PRD</span><b>${doneU} / ${total} (${pct}%)</b></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="todo-toolbar">
+      <div class="filter-btns">
+        <button class="fbtn ${todoFilter==='all'?'on':''}"     onclick="setTF('all')">Todas</button>
+        <button class="fbtn ${todoFilter==='pending'?'on':''}" onclick="setTF('pending')">Pendientes</button>
+        <button class="fbtn ${todoFilter==='done'?'on':''}"    onclick="setTF('done')">Hechas</button>
+      </div>
+      <select class="area-filter" onchange="setTA(this.value)">${areaOpts}</select>
+    </div>
+    <div class="todo-list" id="tlist"></div>
+    <div class="add-task-form">
+      <div class="nl2">+ Agregar tarea</div>
+      <input id="add-title" type="text" placeholder="Título de la tarea…"
+        onkeydown="if(event.key==='Enter')addTodo()">
+      <textarea id="add-desc" rows="2" placeholder="Descripción opcional…"></textarea>
+      <div class="add-row">
+        <select id="add-pri">
+          <option value="high">Alta prioridad</option>
+          <option value="medium" selected>Media prioridad</option>
+          <option value="low">Baja prioridad</option>
+        </select>
+        <input id="add-area" type="text" placeholder="Área (editor, ui, auth…)" style="flex:1">
+        <button class="btn-add" onclick="addTodo()">Agregar</button>
+      </div>
+    </div>
+  `;
+
+  const list = document.getElementById('tlist');
+  if (!todos.length) { list.innerHTML = '<div class="empty">No hay tareas con este filtro.</div>'; return; }
+  todos.forEach(n => list.appendChild(makeTodoItem(n)));
+}
+
+// ── grafo: helpers ────────────────────────────────────────────────────────────
+function nodeById(id) {
+  for (const L of Object.values(brain.layers)) {
+    for (const n of (L.nodes||[])) if (n.id === id) return n;
+  }
+  return null;
+}
+function nodeLayer(id) {
+  for (const [k, L] of Object.entries(brain.layers)) {
+    for (const n of (L.nodes||[])) if (n.id === id) return k;
+  }
+  return null;
+}
+
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function aliasesForRoute(slug) { return (brain.aliases||[]).filter(a => a.route === slug); }
+function insightsForRoute(slug) { return (brain.insights||[]).filter(i => i.route === slug); }
+function routeHealth(ctx) {
+  const maxSev = ctx.risks.some(r => ['critical','high'].includes(r.severity)) ? 'red'
+    : ctx.risks.some(r => r.severity === 'medium') ? 'yellow'
+    : ctx.files.length > 6 ? 'yellow'
+    : 'green';
+  return maxSev;
+}
+function routeHumanSummary(route, ctx, aliases, insights) {
+  const own = insights[0];
+  if (own) return `<div class="insight"><b>${esc(own.title||'Lectura humana')}</b><br>${esc(own.summary||'')}</div>`;
+  const risks = ctx.risks.length ? `Tiene ${ctx.risks.length} riesgo${ctx.risks.length!==1?'s':''} registrado${ctx.risks.length!==1?'s':''}.` : 'Sin riesgos fuertes registrados.';
+  const words = aliases.length ? `Lenguaje aprendido: ${aliases.slice(0,3).map(a=>'?'+esc(a.phrase)+'?').join(', ')}.` : 'A?n no tiene lenguaje humano aprendido.';
+  return `<div class="insight"><b>Lectura r?pida</b><br>${risks} ${words}</div>`;
+}
+
+function renderProductMap() {
+  const main = document.getElementById('main');
+  const sr   = document.getElementById('sr');
+  document.getElementById('expbar').classList.remove('on');
+  const routes = brain.routes || [];
+  const aliasCount = (brain.aliases||[]).length;
+  const insightCount = (brain.insights||[]).length;
+  sr.innerHTML = `<span class="pill g">${routes.length} habitaciones</span><span class="pill b">${aliasCount} migajas</span><span class="pill y">${insightCount} s?ntesis IA</span>`;
+  if (!routes.length) {
+    main.innerHTML = '<div class="empty">No hay rutas todav?a. El mapa de producto nace de las rutas del Brain.</div>';
+    return;
+  }
+  const cards = routes.map(route => {
+    const ctx = routeContext(route);
+    const aliases = aliasesForRoute(route.slug);
+    const insights = insightsForRoute(route.slug);
+    const health = routeHealth(ctx);
+    const riskTxt = ctx.risks.length ? `${ctx.risks.length} riesgo${ctx.risks.length!==1?'s':''}` : 'estable';
+    const workTxt = ctx.work.length ? `${ctx.work.length} trabajo${ctx.work.length!==1?'s':''}` : 'sin trabajo abierto';
+    const aliasHtml = aliases.length
+      ? `<div class="alias-list">${aliases.slice(0,8).map(a=>`<span class="alias-chip">${esc(a.phrase)}</span>`).join('')}</div>`
+      : `<div class="summary-tx">Sin migajas: si el usuario usa palabras raras ac?, conviene aprenderlas.</div>`;
+    return `<article class="room-card ${health}">
+      <div class="room-top"><span class="room-light"></span><div><div class="room-title">${esc(route.title||route.slug)}</div><div class="room-sub">${esc(route.slug)}</div></div></div>
+      <div class="room-metrics"><span class="pill mu">${ctx.files.length} archivos</span><span class="pill ${health==='red'?'r':health==='yellow'?'y':'g'}">${riskTxt}</span><span class="pill b">${workTxt}</span></div>
+      ${routeHumanSummary(route, ctx, aliases, insights)}
+      <div class="room-section"><div class="nl2">Palabras del usuario ? esta habitaci?n</div>${aliasHtml}</div>
+      <div class="room-section"><div class="nl2">Entrada t?cnica para IA</div><div class="mr">${ctx.files.slice(0,4).map(f=>`<span class="ftag">${esc(f)}</span>`).join('')}${ctx.files.length>4?`<span class="ftag">+${ctx.files.length-4}</span>`:''}</div></div>
+    </article>`;
+  }).join('');
+  main.innerHTML = `<div class="map-hero"><h3>Mapa mental de producto</h3><p>Esta vista traduce la complejidad t?cnica a habitaciones humanas. La IA mantiene se?ales peque?as; el viewer arma el mapa desde datos, aliases, riesgos y s?ntesis breves.</p></div><div class="room-grid">${cards}</div>`;
+}
+function isFileRef(ref) { return typeof ref === 'string' && ref.startsWith('file:'); }
+function fileRef(ref)   { return isFileRef(ref) ? ref.slice(5) : ref; }
+
+// Resuelve el contexto completo de una ruta a partir del grafo.
+function routeContext(route) {
+  const ids   = new Set(route.nodes||[]);
+  const nodes = (route.nodes||[]).map(nodeById).filter(Boolean);
+  const files = new Set();
+  nodes.forEach(n => (n.files||[]).forEach(f => files.add(f)));
+  const related = { decisions: new Set(), work: new Set(), risks: new Set() };
+  // nodos directos de la ruta que sean decisión/riesgo/trabajo también cuentan
+  (route.nodes||[]).forEach(x => {
+    const lay = nodeLayer(x);
+    if (related[lay]) related[lay].add(x);
+  });
+  (brain.links||[]).forEach(l => {
+    const touches = ids.has(l.from) || ids.has(l.to);
+    if (!touches) return;
+    [l.from, l.to].forEach(x => {
+      if (ids.has(x)) return;
+      const lay = nodeLayer(x);
+      if (lay === 'decisions') related.decisions.add(x);
+      if (lay === 'work')      related.work.add(x);
+      if (lay === 'risks')     related.risks.add(x);
+    });
+  });
+  // riesgos por solapamiento de archivos (los riesgos no siempre tienen links)
+  (brain.layers.risks?.nodes||[]).forEach(r => {
+    if ((r.files||[]).some(f => files.has(f))) related.risks.add(r.id);
+  });
+  return {
+    nodes,
+    files: [...files],
+    decisions: [...related.decisions].map(nodeById).filter(Boolean),
+    work:      [...related.work].map(nodeById).filter(Boolean),
+    risks:     [...related.risks].map(nodeById).filter(Boolean),
+  };
+}
+
+// ── vista: Rutas ────────────────────────────────────────────────────────────
+function renderRoutes() {
+  const main = document.getElementById('main');
+  const sr   = document.getElementById('sr');
+  document.getElementById('expbar').classList.remove('on');
+  const routes = brain.routes||[];
+  sr.innerHTML = `<span class="pill">${routes.length} ruta${routes.length!==1?'s':''}</span>`;
+  if (!routes.length) {
+    main.innerHTML = '<div class="empty">No hay rutas registradas. Creá una con: '
+      + '<code>python brain.py route . --slug stage-0-preforma</code></div>';
+    return;
+  }
+  if (!selectedRoute || !routes.some(r => r.slug === selectedRoute)) selectedRoute = routes[0].slug;
+  const picker = routes.map(r =>
+    `<button class="chip ${r.slug===selectedRoute?'on will-change':''}" onclick="selRoute('${r.slug}')">${r.title||r.slug}</button>`
+  ).join('');
+  const route = routes.find(r => r.slug === selectedRoute);
+  const ctx   = routeContext(route);
+  const sec = (title, html) => html ? `<div class="rsec"><div class="nl2">${title}</div>${html}</div>` : '';
+  const filesHtml = ctx.files.map(f => `<span class="ftag">${f}</span>`).join('');
+  const nodesHtml = ctx.nodes.map(n => `<span class="node-chip">${n.title||n.id}</span>`).join('');
+  const decHtml   = ctx.decisions.map(d => `<div class="mini">⚖ <b>${d.title}</b><div class="summary-tx">${d.summary||''}</div></div>`).join('');
+  const riskHtml  = ctx.risks.map(r => `<div class="mini"><span class="sev sev-${r.severity||'low'}">${r.severity||'?'}</span> <b>${r.title}</b><div class="summary-tx">${r.summary||''}</div></div>`).join('');
+  const workHtml  = ctx.work.map(w => `<div class="mini">🔧 ${w.title} <span class="sbadge ${w.status||'active'}">${w.status||'active'}</span></div>`).join('');
+  main.innerHTML = `
+    <div class="route-pick">${picker}</div>
+    <div class="route-detail">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="font-size:15px;flex:1">${route.title||route.slug}</h3>
+        <button class="btn-exp" onclick="copyRoute('${route.slug}')">📋 Copiar contexto para IA</button>
+        <span class="cok" id="rok">¡Copiado!</span>
+      </div>
+      ${sec('Nodos', `<div class="dc">${nodesHtml||'<span class="summary-tx">sin nodos</span>'}</div>`)}
+      ${sec('Archivos', filesHtml ? `<div class="mr">${filesHtml}</div>` : '')}
+      ${sec('Decisiones vigentes', decHtml)}
+      ${sec('Riesgos', riskHtml)}
+      ${sec('Trabajos relacionados', workHtml)}
+    </div>`;
+}
+function selRoute(slug) { selectedRoute = slug; render(); }
+
+function copyRoute(slug) {
+  const route = (brain.routes||[]).find(r => r.slug === slug);
+  if (!route) return;
+  const ctx = routeContext(route);
+  let t = `# Contexto de ruta: ${route.title||route.slug}\n\n`;
+  if (ctx.files.length)     t += `## Archivos\n` + ctx.files.map(f=>`- ${f}`).join('\n') + '\n\n';
+  if (ctx.decisions.length) t += `## Decisiones vigentes\n` + ctx.decisions.map(d=>`- ${d.title}: ${d.summary||''}`).join('\n') + '\n\n';
+  if (ctx.risks.length)     t += `## Riesgos\n` + ctx.risks.map(r=>`- [${r.severity||'?'}] ${r.title}: ${r.summary||''}`).join('\n') + '\n\n';
+  if (ctx.work.length)      t += `## Trabajos relacionados\n` + ctx.work.map(w=>`- ${w.title} (${w.status||'?'})`).join('\n') + '\n\n';
+  if (ctx.nodes.length)     t += `## Nodos\n` + ctx.nodes.map(n=>`- ${n.id}: ${n.title||''}`).join('\n') + '\n';
+  navigator.clipboard.writeText(t).then(() => {
+    const e = document.getElementById('rok');
+    if (e) { e.classList.add('on'); setTimeout(()=>e.classList.remove('on'), 2200); }
+  });
+}
+
+// ── vista: Relaciones (grafo) ───────────────────────────────────────────────
+function renderGraph() {
+  const main = document.getElementById('main');
+  const sr   = document.getElementById('sr');
+  document.getElementById('expbar').classList.remove('on');
+  const links = brain.links||[];
+  sr.innerHTML = `<span class="pill">${links.length} relaciones</span>`;
+  if (!links.length) { main.innerHTML = '<div class="empty">No hay links en el grafo.</div>'; return; }
+  const bySource = {};
+  links.forEach(l => { (bySource[l.from] = bySource[l.from]||[]).push(l); });
+  const opts = Object.keys(bySource).sort()
+    .map(id => `<option value="${id}" ${graphFocus===id?'selected':''}>${id}</option>`).join('');
+  const focusSel = `<select class="area-filter" onchange="setGraphFocus(this.value)">`
+    + `<option value="">Todos los nodos origen</option>${opts}</select>`;
+  const sources = graphFocus ? [graphFocus] : Object.keys(bySource).sort();
+  const blocks = sources.filter(s => bySource[s]).map(s => {
+    const n = nodeById(s);
+    const rows = bySource[s].map(l => {
+      const tgtNode = nodeById(l.to);
+      const tgt = isFileRef(l.to)
+        ? `<span class="ftag">${fileRef(l.to)}</span>`
+        : `<span class="node-chip" onclick="setGraphFocus('${l.to}')">${tgtNode?tgtNode.title:l.to}</span>`;
+      return `<div class="rel-row"><span class="rel-arrow">→ ${l.label||l.type}</span> ${tgt}</div>`;
+    }).join('');
+    return `<div class="card"><div class="card-top"><h3>${n?n.title:s}</h3><span class="ftag">${s}</span></div>${rows}</div>`;
+  }).join('');
+  main.innerHTML = `<div class="todo-toolbar">${focusSel}`
+    + (graphFocus ? ` <button class="fbtn" onclick="setGraphFocus('')">↺ ver todos</button>` : '')
+    + `</div><div class="grid">${blocks}</div>`;
+}
+function setGraphFocus(id) { graphFocus = id||null; render(); }
+
+function renderDefault(key) {
+  const main  = document.getElementById('main');
+  const sr    = document.getElementById('sr');
+  document.getElementById('expbar').classList.remove('on');
+  const nodes = brain.layers[key]?.nodes||[];
+  sr.innerHTML = `<span class="pill">${nodes.length} nodo${nodes.length!==1?'s':''}</span>`;
+  if (!nodes.length) { main.innerHTML = '<div class="empty">Todavía no hay nodos en esta capa.</div>'; return; }
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  nodes.forEach(n => {
+    const files = (n.files||[]).map(f=>`<span class="ftag">${f}</span>`).join('');
+    const card  = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-top">
+        <h3>${n.title||n.id}</h3>
+        <div class="badges"><span class="sbadge ${n.status||'active'}">${n.status||'active'}</span></div>
+      </div>
+      <div class="summary-tx">${n.summary||''}</div>
+      ${files?`<div class="mr">${files}</div>`:''}
+      ${n.createdAt?`<div class="ts"><span>${fmt(n.createdAt)}</span></div>`:''}
+    `;
+    grid.appendChild(card);
+  });
+  main.innerHTML = '';
+  main.appendChild(grid);
+}
+
+// ── export ────────────────────────────────────────────────────────────────────
+function copyExport() {
+  const work = {};
+  (brain.layers.work?.nodes||[]).forEach(n => {
+    const s = wStore[n.id]||{};
+    work[n.id] = {
+      status:      s.status||n.status||'pending-approval',
+      disposition: s.disposition||null,
+      note:        s.note||n.notes||'',
+      approvedAt:  s.status==='approved'?s.at:null,
+    };
+  });
+  const todos = {};
+  allTodos().forEach(n => {
+    const s = tStore[n.id]||{};
+    todos[n.id] = { checkedByUser: !!s.checkedByUser, checkedAt: s.checkedAt||null };
+  });
+  const text = `// Estado Mapa Mental del Proyecto — pegar en Codex para actualizar brain.json\n// Trabajo:\n${JSON.stringify(work,null,2)}\n// Tareas:\n${JSON.stringify(todos,null,2)}`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const el = document.getElementById('cok');
+    el.classList.add('on');
+    setTimeout(()=>el.classList.remove('on'),2200);
+  });
+}
+
+// ── main render ───────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('hTitle').textContent =
+    `Mapa Mental del Proyecto — ${brain.project.displayName||brain.project.name}`;
+  document.getElementById('hSub').textContent =
+    `${brain.project.root} · v${brain.version}`;
+  const specialSummaries = {
+    routes: 'Rutas de navegación: zonas del proyecto con sus archivos, decisiones y riesgos. Decí "andá a la ruta X".',
+    graph:  'Relaciones del grafo: cómo se conectan trabajos, decisiones, arquitectura, riesgos y archivos.',
+  };
+  document.getElementById('lTitle').textContent   = LL[cur]||cur;
+  document.getElementById('lSummary').textContent = brain.layers[cur]?.summary || specialSummaries[cur] || '';
+
+  renderNav();
+
+  if      (cur === 'map')    renderProductMap();
+  else if (cur === 'work')   renderWork();
+  else if (cur === 'todo')   renderTodo();
+  else if (cur === 'routes') renderRoutes();
+  else if (cur === 'graph')  renderGraph();
+  else                       renderDefault(cur);
+}
+
+render();
+</script>
+</body>
+</html>

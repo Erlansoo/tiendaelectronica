@@ -10,7 +10,13 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "brain:init": "python scripts/project-brain/brain.py init .",
+    "brain:scan": "python scripts/project-brain/brain.py scan .",
+    "brain:sync": "python scripts/project-brain/brain.py sync .",
+    "brain:validate": "python scripts/project-brain/brain.py validate .",
+    "brain:open": "python scripts/project-brain/brain.py open .",
+    "brain:context": "python scripts/project-brain/brain.py context ."
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
