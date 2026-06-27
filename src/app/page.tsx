@@ -28,13 +28,13 @@ export default async function Home() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
               <Cpu size={16} aria-hidden />
-              Electronic components in Bolivia
+              Nubel Systems · Store
             </div>
             <h1 className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-              Electronics Store
+              Nubel Store
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              Public catalog with live stock, technical product details and direct ordering through WhatsApp.
+              Public catalog for electronic components, connected to Nubel Systems and its embedded systems manufacturing work.
             </p>
             <div className="mt-8 max-w-2xl">
               <SearchInput placeholder="Search MOSFET, HC-12, Arduino, SKU..." />
@@ -45,7 +45,7 @@ export default async function Home() {
                 <ArrowRight size={16} aria-hidden />
               </Link>
               <Link className="inline-flex items-center rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-100" href="/dashboard">
-                Admin dashboard
+                Dashboard
               </Link>
             </div>
           </div>

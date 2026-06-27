@@ -1,6 +1,8 @@
-# Electronics Store
+# Nubel Store
 
-Professional MVP for an electronic components store in Bolivia. It provides a public product catalog with stock and WhatsApp ordering, plus a private dashboard for products, manual sales, inventory adjustments and auditable stock movements.
+Professional MVP for Nubel Store, the electronic components catalog and sales subsection of Nubel Systems. It provides a public product catalog with stock and WhatsApp ordering, plus a private dashboard for products, manual sales, inventory adjustments and auditable stock movements.
+
+Nubel Systems can grow with multiple business sections. This project covers Nubel Store and leaves room for a future section focused on Manufacturing of Embedded Systems.
 
 ## Stack
 

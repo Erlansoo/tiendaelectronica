@@ -17,9 +17,9 @@ export function DashboardNav() {
     <aside className="border-b border-slate-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
       <div className="px-5 py-5">
         <Link href="/" className="text-lg font-semibold text-slate-950">
-          Electronics Store
+          Nubel Store
         </Link>
-        <p className="mt-1 text-sm text-slate-500">Admin dashboard</p>
+        <p className="mt-1 text-sm text-slate-500">Nubel Systems dashboard</p>
       </div>
       <nav className="flex gap-1 overflow-x-auto px-3 pb-4 lg:grid lg:overflow-visible">
         {items.map(([label, href]) => (

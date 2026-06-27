@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Electronics Store Bolivia",
-  description: "Professional catalog and inventory dashboard for electronic components.",
+  title: "Nubel Store",
+  description:
+    "Nubel Systems store for electronic components and embedded systems manufacturing support.",
 };
 
 export default function RootLayout({
