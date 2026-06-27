@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Electronics Store
 
-## Getting Started
+Professional MVP for an electronic components store in Bolivia. It provides a public product catalog with stock and WhatsApp ordering, plus a private dashboard for products, manual sales, inventory adjustments and auditable stock movements.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Prisma
+- PostgreSQL on Supabase
+- Zod
+- Vercel
+
+## Local Setup
+
+```bash
+npm install
+cp .env.example .env
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+npm run dev
+```
+
+Required environment variables:
+
+```bash
+DATABASE_URL=
+DIRECT_URL=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_WHATSAPP_NUMBER=
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+```
+
+Never commit a real `.env` file. `.env.example` is safe to commit.
+
+## Commands
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
+npm run lint
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:studio
+npm run prisma:seed
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The production build runs `prisma generate && next build`, which is required for Vercel.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Main Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/` public home with featured categories and products.
+- `/productos` searchable public catalog.
+- `/productos/[slug]` product detail with technical attributes and WhatsApp ordering.
+- `/dashboard` private summary.
+- `/dashboard/productos` product administration.
+- `/dashboard/productos/nuevo` create product.
+- `/dashboard/productos/[id]/editar` edit product.
+- `/dashboard/ventas` sales history.
+- `/dashboard/ventas/nueva` manual sale registration.
+- `/dashboard/inventario` inventory and manual stock adjustment.
+- `/dashboard/stock-movements` stock audit trail.
 
-## Learn More
+## Sales and Stock Flow
 
-To learn more about Next.js, take a look at the following resources:
+Manual sales are created on the server. When a sale is registered as `COMPLETED`, the app runs a Prisma transaction that:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- validates stock availability,
+- creates the `Sale`,
+- creates the `SaleItem` records,
+- discounts product stock,
+- creates `StockMovement` records with reason `SALE_OUT`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Pending or cancelled sales do not change stock. Manual stock adjustments also run on the server and always create a stock movement with a mandatory note.
 
-## Deploy on Vercel
+## Supabase and Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Create a Supabase project and copy the pooled PostgreSQL connection string to `DATABASE_URL`.
+2. Copy the direct connection string to `DIRECT_URL`.
+3. Add all variables from `.env.example` to Vercel.
+4. Run migrations against Supabase from local development:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+5. Deploy to Vercel.
+
+## Security Notes
+
+- Dashboard access is protected by a simple `ADMIN_PASSWORD` cookie flow for the MVP.
+- Server actions validate critical inputs with Zod.
+- Product totals, sale totals and stock updates are calculated on the server.
+- `SUPABASE_SERVICE_ROLE_KEY` must remain server-only.
+- The dashboard structure is ready to be replaced by Supabase Auth later.
