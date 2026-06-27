@@ -6,7 +6,9 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.product.upsert({
     where: { sku: "MOS-IRFZ44N-TO220" },
-    update: {},
+    update: {
+      imageUrl: "/products/IRF44N.png",
+    },
     create: {
       name: "IRFZ44N MOSFET N-Channel TO-220",
       sku: "MOS-IRFZ44N-TO220",
@@ -20,6 +22,7 @@ async function main() {
       priceSale: 8,
       stock: 400,
       minStock: 30,
+      imageUrl: "/products/IRF44N.png",
       location: "Initial inventory",
       isActive: true,
       isFeatured: true,
@@ -38,7 +41,9 @@ async function main() {
 
   await prisma.product.upsert({
     where: { sku: "RF-HC12-433-UART" },
-    update: {},
+    update: {
+      imageUrl: "/products/HC12.png",
+    },
     create: {
       name: "HC-12 433MHz UART Module",
       sku: "RF-HC12-433-UART",
@@ -52,6 +57,7 @@ async function main() {
       priceSale: 45,
       stock: 30,
       minStock: 5,
+      imageUrl: "/products/HC12.png",
       location: "Initial inventory",
       isActive: true,
       isFeatured: true,
