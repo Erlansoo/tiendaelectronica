@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-27T21:34:36+00:00"
+    "updatedAt": "2026-06-27T23:02:48+00:00"
   },
   "layers": {
     "interaction": {
@@ -338,6 +338,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-27T21:30:45+00:00"
+        },
+        {
+          "id": "work:005",
+          "title": "Updated family storefront hero image",
+          "summary": "Replaced public/masgrande.png with the updated mother-and-daughter electronics store trust image used in the storefront hero rotation.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-27T23:02:47+00:00"
         }
       ]
     },
