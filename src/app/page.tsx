@@ -35,7 +35,7 @@ export default async function Home() {
             Featured products
           </a>
           <a className="whitespace-nowrap rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-md hover:shadow-[#f5a524]/20" href="#manufacturing">
-            Manufacturing
+            Embedded systems
           </a>
           <a className="whitespace-nowrap rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-md hover:shadow-[#f5a524]/20" href="#contact">
             Contact
@@ -98,9 +98,11 @@ export default async function Home() {
             </Link>
             <a
               className="inline-flex items-center rounded-full border border-white/70 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-xl hover:shadow-[#f5a524]/20"
-              href="#manufacturing"
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ""}?text=${encodeURIComponent("Hola, quiero ordenar una impresión 3D. ¿Me pueden ayudar con la cotización?")}`}
+              target="_blank"
+              rel="noreferrer"
             >
-              Manufacturing
+              Ordenar impresión 3D
             </a>
           </div>
           <div className="mt-10 grid w-full max-w-3xl gap-3 text-sm text-white sm:grid-cols-3">
