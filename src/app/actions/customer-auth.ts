@@ -7,14 +7,15 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function signInWithGoogle(formData?: FormData) {
   const requestHeaders = await headers();
-  const origin = requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const requestOrigin = requestHeaders.get("origin") ?? "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL ?? requestOrigin;
   const next = safeNextPath(String(formData?.get("next") ?? "/cuenta"));
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      redirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
