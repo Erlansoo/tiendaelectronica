@@ -1,13 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { signInWithGoogle } from "@/app/actions/customer-auth";
 import { PublicHeader } from "@/components/PublicHeader";
+import { getCurrentCustomer, safeNextPath } from "@/lib/customer-auth";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
+  const nextPath = safeNextPath(next);
+  const customer = await getCurrentCustomer();
+  if (customer) redirect(nextPath);
 
   return (
     <>
@@ -19,8 +24,9 @@ export default async function LoginPage({
           <p className="mt-2 text-sm text-neutral-600">
             Nubel Store accounts are created and accessed only with Google.
           </p>
-          {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm font-medium text-red-700">Google login could not be completed.</p> : null}
+          {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm font-medium text-red-700">Google login could not be completed. Please try again.</p> : null}
           <form action={signInWithGoogle} className="mt-6">
+            <input name="next" type="hidden" value={nextPath} />
             <button className="flex w-full items-center justify-center gap-3 rounded-full border border-black px-4 py-3 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:shadow-lg hover:shadow-[#f5a524]/20">
               <span className="text-lg">G</span>
               Continue with Google

@@ -6,13 +6,16 @@ Build Nubel Store as a professional electronics storefront with a private operat
 
 ## Active Work Area
 
-`print-quote`: STL preview, dimension detection, scale correction, printer bed fit, and future manufacturer matching.
+`auth`: consolidate Google-only customer accounts while keeping admin dashboard authentication separate.
 
 ## Relevant Files
 
-- `src/components/PrintQuoteWorkspace.tsx`
-- `src/app/cotizar-impresion-3d/page.tsx`
-- `src/components/PublicHeader.tsx`
+- `src/app/login/page.tsx`
+- `src/app/crear-cuenta/page.tsx`
+- `src/app/auth/callback/route.ts`
+- `src/app/actions/customer-auth.ts`
+- `src/lib/customer-auth.ts`
+- `src/lib/supabase-server.ts`
 - `prisma/schema.prisma`
 
 ## Decisions
@@ -31,4 +34,4 @@ Build Nubel Store as a professional electronics storefront with a private operat
 
 ## Next Step
 
-Design the manufacturer registration and machine/pricing data model before implementing provider matching.
+Test Google OAuth in Supabase/Vercel with the production callback URL and confirm local `CustomerAccount` records are created.
