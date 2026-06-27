@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
+import { PublicHeader } from "@/components/PublicHeader";
 import { SearchInput } from "@/components/SearchInput";
 import { prisma } from "@/lib/prisma";
 
@@ -31,24 +32,7 @@ export default async function Home() {
 
   return (
     <main>
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-          <Link href="/" className="text-lg font-semibold text-slate-950">
-            Nubel Store
-          </Link>
-          <nav className="flex items-center gap-5 text-sm font-medium text-slate-600">
-            <Link className="hover:text-slate-950" href="/productos">
-              Catalog
-            </Link>
-            <a className="hover:text-slate-950" href="#manufacturing">
-              Manufacturing
-            </a>
-            <a className="hover:text-slate-950" href="#contact">
-              Contact
-            </a>
-          </nav>
-        </div>
-      </section>
+      <PublicHeader />
 
       <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f1f5f9_100%)]">
         <div className="mx-auto grid min-h-[620px] max-w-7xl content-center gap-10 px-6 py-14 lg:grid-cols-[1.08fr_0.92fr] lg:px-8">
@@ -69,14 +53,14 @@ export default async function Home() {
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-md bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f5a524] hover:text-black"
                 href="/productos"
               >
                 Browse catalog
                 <ArrowRight size={16} aria-hidden />
               </Link>
               <a
-                className="inline-flex items-center rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-white"
+                className="inline-flex items-center rounded-md border border-black px-5 py-3 text-sm font-semibold text-black transition hover:border-[#f5a524] hover:bg-[#f5a524]"
                 href="#manufacturing"
               >
                 Embedded systems
@@ -170,7 +154,7 @@ export default async function Home() {
       <section id="manufacturing" className="border-t border-slate-200 bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-slate-950 text-white">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-black text-white">
               <Factory size={22} aria-hidden />
             </div>
             <h2 className="mt-5 text-3xl font-semibold text-slate-950">Manufacturing of Embedded Systems</h2>
@@ -188,14 +172,14 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="contact" className="border-t border-slate-200 bg-slate-950 text-white">
+      <section id="contact" className="border-t border-slate-200 bg-black text-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <div>
             <h2 className="text-xl font-semibold">Need components for a project?</h2>
             <p className="mt-1 text-sm text-slate-300">Browse the catalog and request availability through WhatsApp.</p>
           </div>
           <Link
-            className="inline-flex items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-slate-200"
+            className="inline-flex items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#f5a524]"
             href="/productos"
           >
             Open catalog

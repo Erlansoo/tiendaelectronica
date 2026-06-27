@@ -11,7 +11,7 @@ export function WhatsAppButton({
 }) {
   return (
     <a
-      className={`inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f5a524] hover:text-black ${className}`}
       href={buildWhatsAppUrl(product)}
       target="_blank"
       rel="noreferrer"

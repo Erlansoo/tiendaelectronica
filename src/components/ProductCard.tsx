@@ -31,7 +31,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           <Link
-            className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
+            className="inline-flex items-center justify-center rounded-md border border-black px-4 py-2 text-sm font-semibold text-black transition hover:border-[#f5a524] hover:bg-[#f5a524]"
             href={`/productos/${product.slug}`}
           >
             View detail

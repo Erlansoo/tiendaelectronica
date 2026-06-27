@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Cpu } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
+import { PublicHeader } from "@/components/PublicHeader";
 import { StockBadge } from "@/components/StockBadge";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { formatMoney } from "@/lib/format";
@@ -25,7 +26,9 @@ export default async function ProductDetailPage({
       : [];
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
+    <>
+      <PublicHeader />
+      <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
       <Link className="text-sm font-semibold text-slate-600 hover:text-slate-950" href="/productos">
         Back to products
       </Link>
@@ -89,6 +92,7 @@ export default async function ProductDetailPage({
           </div>
         </section>
       ) : null}
-    </main>
+      </main>
+    </>
   );
 }
