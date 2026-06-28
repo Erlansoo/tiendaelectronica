@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, Cpu, Factory, PackageCheck, PackageSearch, RadioTower, ShieldCheck } from "lucide-react";
+import { ArrowRight, Cpu, Factory, PackageCheck, RadioTower, ShieldCheck } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { LocalizedText } from "@/components/LocalizedText";
 import { PublicHeader } from "@/components/PublicHeader";
 import { SearchInput } from "@/components/SearchInput";
-import { getFeaturedProducts, getPublicCategories } from "@/lib/products";
+import { getFeaturedProducts } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
@@ -75,10 +75,7 @@ const recommendedCategoryNavigation = [
 ];
 
 export default async function Home() {
-  const [featuredProducts, categories] = await Promise.all([
-    getFeaturedProducts(),
-    getPublicCategories(),
-  ]);
+  const featuredProducts = await getFeaturedProducts();
 
   return (
     <main>
@@ -215,34 +212,6 @@ export default async function Home() {
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-neutral-200 bg-neutral-50">
-        <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            {categories.slice(0, 6).map((category) => (
-              <Link
-                key={category.category}
-                className="flex items-center justify-between rounded-md border border-neutral-200 bg-white p-5 transition hover:border-[#f5a524] hover:shadow-sm"
-                href={`/productos?q=${encodeURIComponent(category.category)}`}
-              >
-                <div>
-                  <p className="font-semibold text-black">{category.category}</p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    {category._count.category} <LocalizedText es="productos disponibles" en="products available" />
-                  </p>
-                </div>
-                <ArrowRight size={18} className="text-neutral-400" aria-hidden />
-              </Link>
-            ))}
-            {categories.length === 0 ? (
-              <div className="rounded-md border border-dashed border-neutral-300 bg-white p-8 text-center text-neutral-500 md:col-span-3">
-                <PackageSearch className="mx-auto mb-3" aria-hidden />
-                <LocalizedText es="Ejecutá el seed para cargar los productos iniciales." en="Run the seed to load initial products." />
-              </div>
-            ) : null}
           </div>
         </div>
       </section>

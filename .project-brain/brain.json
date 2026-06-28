@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T02:19:47+00:00"
+    "updatedAt": "2026-06-28T02:35:19+00:00"
   },
   "layers": {
     "interaction": {
@@ -479,6 +479,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T02:19:46+00:00"
+        },
+        {
+          "id": "decisions:015",
+          "title": "Removed duplicated category cards",
+          "summary": "Removed the secondary category card band below featured inventory because the lateral category navigation already provides that browsing function.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T02:35:18+00:00"
         }
       ]
     }
