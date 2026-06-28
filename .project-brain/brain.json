@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T00:10:35+00:00"
+    "updatedAt": "2026-06-28T00:15:35+00:00"
   },
   "layers": {
     "interaction": {
@@ -399,6 +399,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T00:10:20+00:00"
+        },
+        {
+          "id": "decisions:005",
+          "title": "Serious brand hover animation",
+          "summary": "Added a restrained corporate-tech hover animation for the Nubel Store lockup: amber halo, scan sweep, icon lift, and wordmark micro-motion.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T00:14:08+00:00"
         }
       ]
     }

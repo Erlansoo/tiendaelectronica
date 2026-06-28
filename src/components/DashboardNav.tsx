@@ -17,11 +17,11 @@ export function DashboardNav() {
   return (
     <aside className="border-b border-slate-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
       <div className="px-5 py-5">
-        <Link href="/" className="flex items-center gap-2 text-slate-950">
-          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5 shadow-sm ring-1 ring-slate-200">
+        <Link href="/" className="brand-lockup group flex items-center gap-2 rounded-full px-1.5 py-1 text-slate-950">
+          <span className="brand-lockup-mark flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5 shadow-sm ring-1 ring-slate-200">
             <Image src="/nubel-store-mark.png" alt="" width={30} height={30} />
           </span>
-          <span className="font-mono text-[15px] font-black uppercase leading-none tracking-[0.08em]">
+          <span className="brand-lockup-text font-mono text-[15px] font-black uppercase leading-none tracking-[0.08em]">
             Nubel <span className="text-[#f5a524]">Store</span>
           </span>
         </Link>

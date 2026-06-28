@@ -10,11 +10,11 @@ export async function PublicHeader() {
   return (
     <header className="border-b border-white/10 bg-[#111111] text-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 text-white">
-          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5">
+        <Link href="/" className="brand-lockup group flex items-center gap-2 rounded-full px-1.5 py-1 text-white">
+          <span className="brand-lockup-mark flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5">
             <Image src="/nubel-store-mark.png" alt="" width={30} height={30} priority />
           </span>
-          <span className="font-mono text-[15px] font-black uppercase leading-none tracking-[0.08em]">
+          <span className="brand-lockup-text font-mono text-[15px] font-black uppercase leading-none tracking-[0.08em]">
             Nubel <span className="text-[#f5a524]">Store</span>
           </span>
         </Link>
