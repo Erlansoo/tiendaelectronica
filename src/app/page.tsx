@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Cpu, Factory, PackageCheck, RadioTower, ShieldCheck } from "lucide-react";
-import { ProductCard } from "@/components/ProductCard";
+import { FeaturedInventoryFilter } from "@/components/FeaturedInventoryFilter";
 import { LocalizedText } from "@/components/LocalizedText";
 import { PublicHeader } from "@/components/PublicHeader";
 import { SearchInput } from "@/components/SearchInput";
@@ -13,6 +13,7 @@ const recommendedCategoryNavigation = [
     label: "Placas de inicio",
     labelEn: "Starter boards",
     query: "Placas de inicio",
+    color: "#2563eb",
     description: "Arduino, STM32 y placas para empezar",
     descriptionEn: "Arduino, STM32 and first dev boards",
   },
@@ -20,6 +21,7 @@ const recommendedCategoryNavigation = [
     label: "IoT e inalámbricos",
     labelEn: "Wireless and IoT",
     query: "IoT e inalámbricos",
+    color: "#0891b2",
     description: "ESP32, ESP8266 y módulos de radio",
     descriptionEn: "ESP32, ESP8266 and radio modules",
   },
@@ -27,6 +29,7 @@ const recommendedCategoryNavigation = [
     label: "Módulos de potencia",
     labelEn: "Power modules",
     query: "Módulos de potencia",
+    color: "#f59e0b",
     description: "Step-down, step-up y energía con baterías",
     descriptionEn: "Step-down, step-up and battery power",
   },
@@ -34,6 +37,7 @@ const recommendedCategoryNavigation = [
     label: "Componentes pasivos",
     labelEn: "Passive components",
     query: "Componentes pasivos",
+    color: "#7c3aed",
     description: "Resistencias, capacitores y potenciómetros",
     descriptionEn: "Resistors, capacitors and potentiometers",
   },
@@ -41,6 +45,7 @@ const recommendedCategoryNavigation = [
     label: "Semiconductores",
     labelEn: "Semiconductors",
     query: "Semiconductores",
+    color: "#16a34a",
     description: "Diodos, transistores, MOSFETs y reguladores",
     descriptionEn: "Diodes, transistors, MOSFETs and regulators",
   },
@@ -48,6 +53,7 @@ const recommendedCategoryNavigation = [
     label: "Sensores",
     labelEn: "Sensors",
     query: "Sensores",
+    color: "#db2777",
     description: "Distancia, temperatura, movimiento y RFID",
     descriptionEn: "Distance, temperature, motion and RFID",
   },
@@ -55,6 +61,7 @@ const recommendedCategoryNavigation = [
     label: "Pantallas",
     labelEn: "Displays",
     query: "Pantallas",
+    color: "#4f46e5",
     description: "OLED, LCD y pantallas de interfaz",
     descriptionEn: "OLED, LCD and interface screens",
   },
@@ -62,6 +69,7 @@ const recommendedCategoryNavigation = [
     label: "Robótica y drivers",
     labelEn: "Robotics and drivers",
     query: "Robótica y drivers",
+    color: "#dc2626",
     description: "Motores, drivers y módulos de robótica",
     descriptionEn: "Motors, drivers and robotics modules",
   },
@@ -69,13 +77,25 @@ const recommendedCategoryNavigation = [
     label: "Prototipado y cables",
     labelEn: "Prototyping and cables",
     query: "Prototipado y cables",
+    color: "#64748b",
     description: "Protoboards, jumpers y conectores",
     descriptionEn: "Breadboards, jumpers and connectors",
   },
 ];
 
 export default async function Home() {
-  const featuredProducts = await getFeaturedProducts();
+  const featuredProducts = (await getFeaturedProducts()).map((product) => ({
+    id: product.id,
+    name: product.name,
+    sku: product.sku,
+    slug: product.slug,
+    category: product.category,
+    shortDescription: product.shortDescription,
+    imageUrl: product.imageUrl,
+    stock: product.stock,
+    minStock: product.minStock,
+    priceSale: product.priceSale.toString(),
+  }));
 
   return (
     <main>
@@ -157,63 +177,10 @@ export default async function Home() {
       </section>
 
       <section id="featured" className="scroll-mt-40 mx-auto max-w-[1680px] px-5 py-12 sm:px-6 lg:px-8 2xl:px-10">
-        <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="lg:sticky lg:top-28 lg:self-start">
-            <div className="border-l-4 border-[#f5a524] bg-white pl-5">
-              <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#b16a00]">
-                <LocalizedText es="Estructura de compra" en="Browse structure" />
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                <LocalizedText es="Categorías de inventario" en="Inventory categories" />
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                <LocalizedText es="Organizadas desde la lista recomendada de compra para electrónica, prototipado y sistemas embebidos." en="Organized from the recommended purchasing list for electronics, prototyping and embedded systems." />
-              </p>
-            </div>
-
-            <nav className="mt-5 grid gap-2" aria-label="Recommended inventory categories">
-              {recommendedCategoryNavigation.map((category) => (
-                <Link
-                  key={category.label}
-                  className="group rounded-md border border-slate-200 bg-white px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#f5a524] hover:shadow-sm"
-                  href={`/productos?q=${encodeURIComponent(category.query)}`}
-                >
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="font-semibold text-slate-950">
-                      <LocalizedText es={category.label} en={category.labelEn} />
-                    </span>
-                    <ArrowRight
-                      size={16}
-                      className="text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#f5a524]"
-                      aria-hidden
-                    />
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-slate-500">
-                    <LocalizedText es={category.description} en={category.descriptionEn} />
-                  </span>
-                </Link>
-              ))}
-            </nav>
-          </aside>
-
-          <div>
-            <div className="mb-6">
-              <div>
-                <h2 className="text-2xl font-semibold text-slate-950">
-                  <LocalizedText es="Inventario destacado" en="Featured inventory" />
-                </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  <LocalizedText es="Productos listos para proyectos técnicos." en="Products ready for technical projects." />
-                </p>
-              </div>
-            </div>
-            <div className="grid justify-start gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,225px),255px))] 2xl:gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </div>
-        </div>
+        <FeaturedInventoryFilter
+          categories={recommendedCategoryNavigation}
+          products={featuredProducts}
+        />
       </section>
 
       <section id="manufacturing" className="bg-white">

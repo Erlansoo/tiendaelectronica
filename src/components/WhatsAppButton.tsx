@@ -7,7 +7,7 @@ export function WhatsAppButton({
   product,
   className = "",
 }: {
-  product: Pick<Product, "name" | "sku" | "priceSale">;
+  product: Pick<Product, "name" | "sku"> & { priceSale: string | number | { toString(): string } };
   className?: string;
 }) {
   return (

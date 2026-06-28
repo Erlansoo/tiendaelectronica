@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T02:45:23+00:00"
+    "updatedAt": "2026-06-28T03:13:38+00:00"
   },
   "layers": {
     "interaction": {
@@ -495,6 +495,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T02:44:58+00:00"
+        },
+        {
+          "id": "decisions:017",
+          "title": "Interactive featured inventory filters",
+          "summary": "Changed the storefront featured inventory categories from product-page navigation links into in-place multi-select filters. No selected category shows all featured products; selected categories color their buttons and matching product cards.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T03:13:29+00:00"
         }
       ]
     }

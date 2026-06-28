@@ -1,4 +1,5 @@
 import type { Product } from "@prisma/client";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Cpu } from "lucide-react";
 import { formatMoney } from "@/lib/format";
@@ -6,9 +7,25 @@ import { LocalizedText } from "@/components/LocalizedText";
 import { StockBadge } from "@/components/StockBadge";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
-export function ProductCard({ product }: { product: Product }) {
+export type ProductCardProduct = Pick<
+  Product,
+  "name" | "sku" | "slug" | "category" | "shortDescription" | "imageUrl" | "stock" | "minStock"
+> & {
+  priceSale: string | number | { toString(): string };
+};
+
+export function ProductCard({
+  product,
+  accentColor,
+}: {
+  product: ProductCardProduct;
+  accentColor?: string;
+}) {
   return (
-    <article className="flex h-full flex-col rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+    <article
+      className="flex h-full flex-col rounded-md border border-t-4 border-slate-200 bg-white p-4 shadow-sm"
+      style={{ borderTopColor: accentColor ?? "#e2e8f0" } as CSSProperties}
+    >
       <div className="flex aspect-[4/3] shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

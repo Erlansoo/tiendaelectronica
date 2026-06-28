@@ -1,6 +1,10 @@
-import { Product } from "@prisma/client";
+import type { Product } from "@prisma/client";
 
-export function buildWhatsAppUrl(product: Pick<Product, "name" | "sku" | "priceSale">) {
+type WhatsAppProduct = Pick<Product, "name" | "sku"> & {
+  priceSale: string | number | { toString(): string };
+};
+
+export function buildWhatsAppUrl(product: WhatsAppProduct) {
   const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
   const message = [
     "Hola, quiero cotizar este producto:",
