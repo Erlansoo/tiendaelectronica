@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T00:51:22+00:00"
+    "updatedAt": "2026-06-28T01:03:32+00:00"
   },
   "layers": {
     "interaction": {
@@ -439,6 +439,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T00:51:08+00:00"
+        },
+        {
+          "id": "decisions:010",
+          "title": "Responsive featured inventory width",
+          "summary": "Expanded the featured inventory section to a wider responsive container, removed the View all action, and changed product layout to fluid auto-fit columns that use available browser width.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T01:00:28+00:00"
         }
       ]
     }

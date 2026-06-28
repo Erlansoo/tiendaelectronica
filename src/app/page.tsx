@@ -159,8 +159,8 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="featured" className="scroll-mt-24 mx-auto max-w-7xl px-6 py-12 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+      <section id="featured" className="scroll-mt-40 mx-auto max-w-[1680px] px-5 py-12 sm:px-6 lg:px-8 2xl:px-10">
+        <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
           <aside className="lg:sticky lg:top-28 lg:self-start">
             <div className="border-l-4 border-[#f5a524] bg-white pl-5">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#b16a00]">
@@ -200,7 +200,7 @@ export default async function Home() {
           </aside>
 
           <div>
-            <div className="mb-6 flex items-end justify-between gap-4">
+            <div className="mb-6">
               <div>
                 <h2 className="text-2xl font-semibold text-slate-950">
                   <LocalizedText es="Inventario destacado" en="Featured inventory" />
@@ -209,11 +209,8 @@ export default async function Home() {
                   <LocalizedText es="Productos listos para proyectos técnicos." en="Products ready for technical projects." />
                 </p>
               </div>
-              <Link className="rounded-full border border-transparent px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524]" href="/productos">
-                <LocalizedText es="Ver todo" en="View all" />
-              </Link>
             </div>
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))] 2xl:gap-6">
               {featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
