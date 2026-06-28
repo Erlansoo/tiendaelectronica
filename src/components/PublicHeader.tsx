@@ -8,7 +8,7 @@ export async function PublicHeader() {
   const customer = await getCurrentCustomer();
 
   return (
-    <header className="border-b border-white/10 bg-[#111111] text-white">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#111111]/95 text-white shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-8">
         <Link href="/" className="brand-lockup group flex items-center gap-2 rounded-full px-1.5 py-1 text-white">
           <span className="brand-lockup-mark flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5">

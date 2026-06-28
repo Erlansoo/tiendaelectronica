@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T00:15:35+00:00"
+    "updatedAt": "2026-06-28T00:24:01+00:00"
   },
   "layers": {
     "interaction": {
@@ -407,6 +407,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T00:14:08+00:00"
+        },
+        {
+          "id": "decisions:006",
+          "title": "Sticky public header",
+          "summary": "Made the public top header sticky with high z-index, subtle translucent black background, backdrop blur, and shadow so navigation remains available while scrolling.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T00:23:42+00:00"
         }
       ]
     }
