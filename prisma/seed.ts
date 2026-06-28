@@ -7,13 +7,15 @@ async function main() {
   await prisma.product.upsert({
     where: { sku: "MOS-IRFZ44N-TO220" },
     update: {
+      category: "Semiconductores",
+      subcategory: "MOSFETs",
       imageUrl: "/products/IRF44N.png",
     },
     create: {
       name: "IRFZ44N MOSFET N-Channel TO-220",
       sku: "MOS-IRFZ44N-TO220",
       slug: "irfz44n-mosfet-n-channel-to220",
-      category: "Semiconductors",
+      category: "Semiconductores",
       subcategory: "MOSFETs",
       brand: "Generic",
       shortDescription: "N-Channel MOSFET in TO-220 package for power switching.",
@@ -42,13 +44,15 @@ async function main() {
   await prisma.product.upsert({
     where: { sku: "RF-HC12-433-UART" },
     update: {
+      category: "IoT e inalámbricos",
+      subcategory: "RF",
       imageUrl: "/products/HC12.png",
     },
     create: {
       name: "HC-12 433MHz UART Module",
       sku: "RF-HC12-433-UART",
       slug: "modulo-hc12-433mhz-uart",
-      category: "Wireless Communication",
+      category: "IoT e inalámbricos",
       subcategory: "RF",
       brand: "Generic",
       shortDescription: "433MHz UART wireless module for embedded projects.",
