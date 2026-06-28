@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { UserCircle } from "lucide-react";
 import { logoutCustomer } from "@/app/actions/customer-auth";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { LocalizedText } from "@/components/LocalizedText";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { PublicHeaderScrollState } from "@/components/PublicHeaderScrollState";
 
@@ -26,19 +28,20 @@ export async function PublicHeader() {
             Nubel Systems
           </Link>
           <Link className="rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/#manufacturing">
-            Manufacturing
+            <LocalizedText es="Manufactura" en="Manufacturing" />
           </Link>
           <Link className="rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/productos">
-            Catalog
+            <LocalizedText es="Catálogo" en="Catalog" />
           </Link>
         </nav>
 
         <div className="flex items-center gap-2">
+          <LanguageToggle />
           {customer ? (
             <>
               <form action={logoutCustomer}>
                 <button className="rounded-full border border-white/70 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20">
-                  Logout
+                  <LocalizedText es="Salir" en="Logout" />
                 </button>
               </form>
               <div className="group relative">
@@ -53,15 +56,15 @@ export async function PublicHeader() {
                 </button>
                 <div className="invisible absolute right-0 z-20 mt-2 w-56 rounded-md border border-black/10 bg-white p-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                   <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/cuenta">
-                    User dashboard
+                    <LocalizedText es="Mi cuenta" en="User dashboard" />
                   </Link>
                   {customer.isStoreAdmin ? (
                     <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/dashboard">
-                      Store admin
+                      <LocalizedText es="Administrar tienda" en="Store admin" />
                     </Link>
                   ) : null}
                   <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/productos">
-                    Browse catalog
+                    <LocalizedText es="Ver catálogo" en="Browse catalog" />
                   </Link>
                 </div>
               </div>
@@ -69,10 +72,10 @@ export async function PublicHeader() {
           ) : (
             <>
               <Link className="rounded-full border border-white/70 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/login">
-                Login
+                <LocalizedText es="Ingresar" en="Login" />
               </Link>
               <Link className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:shadow-lg hover:shadow-[#f5a524]/20" href="/crear-cuenta">
-                Create account
+                <LocalizedText es="Crear cuenta" en="Create account" />
               </Link>
             </>
           )}

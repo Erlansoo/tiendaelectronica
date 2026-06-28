@@ -2,6 +2,7 @@ import type { Product } from "@prisma/client";
 import Link from "next/link";
 import { Cpu } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+import { LocalizedText } from "@/components/LocalizedText";
 import { StockBadge } from "@/components/StockBadge";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
@@ -24,7 +25,9 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
           <StockBadge product={product} />
         </div>
-        <p className="mt-3 text-sm text-slate-600">{product.shortDescription ?? "Electronic component."}</p>
+        <p className="mt-3 text-sm text-slate-600">
+          {product.shortDescription ?? <LocalizedText es="Componente electrónico." en="Electronic component." />}
+        </p>
         <div className="mt-4 flex items-center justify-between">
           <span className="text-xl font-semibold text-slate-950">{formatMoney(product.priceSale.toString())}</span>
           <span className="text-sm text-slate-600">Stock: {product.stock}</span>
@@ -34,7 +37,7 @@ export function ProductCard({ product }: { product: Product }) {
             className="inline-flex items-center justify-center rounded-md border border-black px-4 py-2 text-sm font-semibold text-black transition hover:border-[#f5a524] hover:bg-[#f5a524]"
             href={`/productos/${product.slug}`}
           >
-            View detail
+            <LocalizedText es="Ver detalle" en="View detail" />
           </Link>
           <WhatsAppButton product={product} />
         </div>

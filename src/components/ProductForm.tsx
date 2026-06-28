@@ -14,51 +14,51 @@ export function ProductForm({ product }: { product?: Product }) {
   return (
     <form action={action} className="space-y-6">
       <section className="rounded-md border border-slate-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-slate-950">Basic data</h2>
+        <h2 className="text-base font-semibold text-slate-950">Datos básicos</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Input name="name" label="Name" defaultValue={fieldValue(product?.name)} required />
+          <Input name="name" label="Nombre" defaultValue={fieldValue(product?.name)} required />
           <Input name="sku" label="SKU" defaultValue={fieldValue(product?.sku)} required />
           <Input
             name="slug"
             label="Slug"
             defaultValue={fieldValue(product?.slug)}
             pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            title="Use lowercase letters, numbers and hyphens only."
+            title="Usá solo minúsculas, números y guiones."
             required
           />
-          <Input name="category" label="Category" defaultValue={fieldValue(product?.category)} required />
-          <Input name="subcategory" label="Subcategory" defaultValue={fieldValue(product?.subcategory)} />
-          <Input name="brand" label="Brand" defaultValue={fieldValue(product?.brand)} />
-          <Textarea name="shortDescription" label="Short description" defaultValue={fieldValue(product?.shortDescription)} />
-          <Textarea name="longDescription" label="Long description" defaultValue={fieldValue(product?.longDescription)} />
+          <Input name="category" label="Categoría" defaultValue={fieldValue(product?.category)} required />
+          <Input name="subcategory" label="Subcategoría" defaultValue={fieldValue(product?.subcategory)} />
+          <Input name="brand" label="Marca" defaultValue={fieldValue(product?.brand)} />
+          <Textarea name="shortDescription" label="Descripción corta" defaultValue={fieldValue(product?.shortDescription)} />
+          <Textarea name="longDescription" label="Descripción larga" defaultValue={fieldValue(product?.longDescription)} />
           <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
             <input name="isActive" type="checkbox" defaultChecked={product?.isActive ?? true} />
-            Published
+            Publicado
           </label>
           <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
             <input name="isFeatured" type="checkbox" defaultChecked={product?.isFeatured ?? false} />
-            Featured
+            Destacado
           </label>
         </div>
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-slate-950">Price and stock</h2>
+        <h2 className="text-base font-semibold text-slate-950">Precio y stock</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Input name="priceSale" label="Sale price" type="number" step="0.01" defaultValue={fieldValue(product?.priceSale.toString())} required />
-          <Input name="priceCost" label="Cost price" type="number" step="0.01" defaultValue={fieldValue(product?.priceCost?.toString())} />
-          <Input name="stock" label="Current stock" type="number" defaultValue={fieldValue(product?.stock ?? 0)} required />
-          <Input name="minStock" label="Minimum stock" type="number" defaultValue={fieldValue(product?.minStock ?? 0)} required />
-          <Input name="location" label="Physical location" defaultValue={fieldValue(product?.location)} />
-          <Input name="supplier" label="Supplier" defaultValue={fieldValue(product?.supplier)} />
+          <Input name="priceSale" label="Precio de venta" type="number" step="0.01" defaultValue={fieldValue(product?.priceSale.toString())} required />
+          <Input name="priceCost" label="Precio de costo" type="number" step="0.01" defaultValue={fieldValue(product?.priceCost?.toString())} />
+          <Input name="stock" label="Stock actual" type="number" defaultValue={fieldValue(product?.stock ?? 0)} required />
+          <Input name="minStock" label="Stock mínimo" type="number" defaultValue={fieldValue(product?.minStock ?? 0)} required />
+          <Input name="location" label="Ubicación física" defaultValue={fieldValue(product?.location)} />
+          <Input name="supplier" label="Proveedor" defaultValue={fieldValue(product?.supplier)} />
         </div>
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-slate-950">Technical, media and SEO</h2>
+        <h2 className="text-base font-semibold text-slate-950">Técnico, multimedia y SEO</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Textarea name="technicalAttributes" label="Technical attributes JSON" defaultValue={technicalAttributes} />
-          <Input name="tags" label="Tags, comma separated" defaultValue={product?.tags.join(", ") ?? ""} />
+          <Textarea name="technicalAttributes" label="Atributos técnicos JSON" defaultValue={technicalAttributes} />
+          <Input name="tags" label="Etiquetas separadas por coma" defaultValue={product?.tags.join(", ") ?? ""} />
           <Input name="imageUrl" label="Image URL" defaultValue={fieldValue(product?.imageUrl)} placeholder="/products/example.png" />
           <Input name="datasheetUrl" label="Datasheet URL" defaultValue={fieldValue(product?.datasheetUrl)} placeholder="https://..." />
           <Input name="manualUrl" label="Manual URL" defaultValue={fieldValue(product?.manualUrl)} placeholder="https://..." />
@@ -69,16 +69,16 @@ export function ProductForm({ product }: { product?: Product }) {
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-slate-950">Internal notes</h2>
+        <h2 className="text-base font-semibold text-slate-950">Notas internas</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Textarea name="internalNotes" label="Private notes" defaultValue={fieldValue(product?.internalNotes)} />
-          <Textarea name="supplierNotes" label="Supplier observations" defaultValue={fieldValue(product?.supplierNotes)} />
-          <Textarea name="technicalWarnings" label="Technical warnings" defaultValue={fieldValue(product?.technicalWarnings)} />
+          <Textarea name="internalNotes" label="Notas privadas" defaultValue={fieldValue(product?.internalNotes)} />
+          <Textarea name="supplierNotes" label="Observaciones del proveedor" defaultValue={fieldValue(product?.supplierNotes)} />
+          <Textarea name="technicalWarnings" label="Advertencias técnicas" defaultValue={fieldValue(product?.technicalWarnings)} />
         </div>
       </section>
 
       <button className="rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-        Save product
+        Guardar producto
       </button>
     </form>
   );

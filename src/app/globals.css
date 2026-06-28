@@ -17,12 +17,28 @@ body {
   color: var(--foreground);
 }
 
+.lang-en {
+  display: none;
+}
+
+html[data-lang="en"] .lang-es {
+  display: none;
+}
+
+html[data-lang="en"] .lang-en {
+  display: inline;
+}
+
 .public-header {
+  backface-visibility: hidden;
+  isolation: isolate;
   position: relative;
+  transform: translateZ(0);
   z-index: 40;
   transition:
     background-color 220ms ease,
     box-shadow 220ms ease;
+  will-change: transform;
 }
 
 html[data-public-header-docked] .public-header {

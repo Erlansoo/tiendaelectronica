@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Nubel Store",
   description:
-    "Nubel Systems store for electronic components and embedded systems manufacturing support.",
+    "Tienda de Nubel Systems para componentes electrónicos y soporte de manufactura de sistemas embebidos.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-slate-50 text-slate-950">{children}</body>

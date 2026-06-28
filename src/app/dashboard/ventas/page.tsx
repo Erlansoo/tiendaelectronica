@@ -14,22 +14,22 @@ export default async function SalesPage() {
     <div>
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-950">Sales</h1>
-          <p className="mt-1 text-sm text-slate-600">Manual sales history.</p>
+          <h1 className="text-3xl font-semibold text-slate-950">Ventas</h1>
+          <p className="mt-1 text-sm text-slate-600">Historial de ventas manuales.</p>
         </div>
         <Link className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" href="/dashboard/ventas/nueva">
-          New sale
+          Nueva venta
         </Link>
       </div>
       <div className="mt-5 overflow-x-auto rounded-md border border-slate-200 bg-white">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-4 py-3">Number</th>
-              <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Items</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Payment</th>
+              <th className="px-4 py-3">Número</th>
+              <th className="px-4 py-3">Cliente</th>
+              <th className="px-4 py-3">Ítems</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3">Pago</th>
               <th className="px-4 py-3">Total</th>
             </tr>
           </thead>
@@ -37,7 +37,7 @@ export default async function SalesPage() {
             {sales.map((sale) => (
               <tr key={sale.id}>
                 <td className="px-4 py-3 font-mono text-xs text-slate-700">{sale.saleNumber}</td>
-                <td className="px-4 py-3 text-slate-700">{sale.customerName ?? "Walk-in"}</td>
+                <td className="px-4 py-3 text-slate-700">{sale.customerName ?? "Mostrador"}</td>
                 <td className="px-4 py-3 text-slate-700">{sale.items.length}</td>
                 <td className="px-4 py-3 text-slate-700">{sale.saleStatus}</td>
                 <td className="px-4 py-3 text-slate-700">{sale.paymentMethod}</td>

@@ -20,15 +20,15 @@ export default async function DashboardProductsPage({
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-950">Products</h1>
-          <p className="mt-1 text-sm text-slate-600">Manage catalog, stock basics and publication state.</p>
+          <h1 className="text-3xl font-semibold text-slate-950">Productos</h1>
+          <p className="mt-1 text-sm text-slate-600">Gestioná el catálogo, stock básico y estado de publicación.</p>
         </div>
         <Link className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" href="/dashboard/productos/nuevo">
-          New product
+          Nuevo producto
         </Link>
       </div>
       <form className="mt-5" action="/dashboard/productos">
-        <input className="h-11 w-full max-w-md rounded-md border border-slate-300 px-3 text-sm text-slate-950" name="q" defaultValue={q} placeholder="Search products" />
+        <input className="h-11 w-full max-w-md rounded-md border border-slate-300 px-3 text-sm text-slate-950" name="q" defaultValue={q} placeholder="Buscar productos" />
       </form>
       <div className="mt-5">
         <ProductTable products={products} />

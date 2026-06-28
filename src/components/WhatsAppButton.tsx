@@ -1,5 +1,6 @@
 import type { Product } from "@prisma/client";
 import { MessageCircle } from "lucide-react";
+import { LocalizedText } from "@/components/LocalizedText";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 export function WhatsAppButton({
@@ -17,7 +18,7 @@ export function WhatsAppButton({
       rel="noreferrer"
     >
       <MessageCircle size={16} aria-hidden />
-      Order by WhatsApp
+      <LocalizedText es="Pedir por WhatsApp" en="Order by WhatsApp" />
     </a>
   );
 }

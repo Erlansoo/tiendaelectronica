@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T00:33:38+00:00"
+    "updatedAt": "2026-06-28T00:51:22+00:00"
   },
   "layers": {
     "interaction": {
@@ -431,6 +431,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T00:31:24+00:00"
+        },
+        {
+          "id": "decisions:009",
+          "title": "Spanish-first storefront language toggle",
+          "summary": "Changed the storefront and key dashboard labels to Spanish by default, added a globe ES/EN toggle, and fixed delayed header docking so it remains visible when scrolling back up after activation.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T00:51:08+00:00"
         }
       ]
     }

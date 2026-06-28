@@ -3,14 +3,14 @@ import Image from "next/image";
 import { logout } from "@/app/actions/auth";
 
 const items = [
-  ["Summary", "/dashboard"],
-  ["Products", "/dashboard/productos"],
-  ["New product", "/dashboard/productos/nuevo"],
-  ["Sales", "/dashboard/ventas"],
-  ["New sale", "/dashboard/ventas/nueva"],
-  ["Inventory", "/dashboard/inventario"],
-  ["Stock movements", "/dashboard/stock-movements"],
-  ["Settings", "/dashboard/configuracion"],
+  ["Resumen", "/dashboard"],
+  ["Productos", "/dashboard/productos"],
+  ["Nuevo producto", "/dashboard/productos/nuevo"],
+  ["Ventas", "/dashboard/ventas"],
+  ["Nueva venta", "/dashboard/ventas/nueva"],
+  ["Inventario", "/dashboard/inventario"],
+  ["Movimientos de stock", "/dashboard/stock-movements"],
+  ["Configuración", "/dashboard/configuracion"],
 ];
 
 export function DashboardNav() {
@@ -25,7 +25,7 @@ export function DashboardNav() {
             Nubel <span className="text-[#f5a524]">Store</span>
           </span>
         </Link>
-        <p className="mt-1 text-sm text-slate-500">Nubel Systems dashboard</p>
+        <p className="mt-1 text-sm text-slate-500">Dashboard de Nubel Systems</p>
       </div>
       <nav className="flex gap-1 overflow-x-auto px-3 pb-4 lg:grid lg:overflow-visible">
         {items.map(([label, href]) => (
@@ -39,7 +39,7 @@ export function DashboardNav() {
         ))}
       </nav>
       <form action={logout} className="hidden px-5 pb-5 lg:block">
-        <button className="text-sm font-medium text-slate-500 transition hover:text-slate-950">Sign out</button>
+        <button className="text-sm font-medium text-slate-500 transition hover:text-slate-950">Cerrar sesión</button>
       </form>
     </aside>
   );

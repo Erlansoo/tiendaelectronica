@@ -2,7 +2,7 @@ import { Search } from "lucide-react";
 
 export function SearchInput({
   defaultValue,
-  placeholder = "Search products",
+  placeholder = "Buscar productos",
 }: {
   defaultValue?: string;
   placeholder?: string;

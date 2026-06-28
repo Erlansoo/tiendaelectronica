@@ -13,19 +13,19 @@ export default async function InventoryPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-slate-950">Inventory</h1>
+      <h1 className="text-3xl font-semibold text-slate-950">Inventario</h1>
       <div className="mt-5 overflow-x-auto rounded-md border border-slate-200 bg-white">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-4 py-3">Product</th>
+              <th className="px-4 py-3">Producto</th>
               <th className="px-4 py-3">SKU</th>
               <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Min</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Location</th>
-              <th className="px-4 py-3">Last movement</th>
-              <th className="px-4 py-3">Adjust</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3">Ubicación</th>
+              <th className="px-4 py-3">Último movimiento</th>
+              <th className="px-4 py-3">Ajustar</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -47,8 +47,8 @@ export default async function InventoryPage() {
                         <option key={reason} value={reason}>{reason}</option>
                       ))}
                     </select>
-                    <input className="h-9 rounded-md border border-slate-300 px-2" name="notes" placeholder="Reason note" required />
-                    <button className="rounded-md bg-slate-950 px-3 text-xs font-semibold text-white">Save</button>
+                    <input className="h-9 rounded-md border border-slate-300 px-2" name="notes" placeholder="Motivo" required />
+                    <button className="rounded-md bg-slate-950 px-3 text-xs font-semibold text-white">Guardar</button>
                   </form>
                 </td>
               </tr>

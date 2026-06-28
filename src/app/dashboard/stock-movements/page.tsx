@@ -10,20 +10,20 @@ export default async function StockMovementsPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-slate-950">Stock movements</h1>
+      <h1 className="text-3xl font-semibold text-slate-950">Movimientos de stock</h1>
       <div className="mt-5 overflow-x-auto rounded-md border border-slate-200 bg-white">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Quantity</th>
-              <th className="px-4 py-3">Previous</th>
-              <th className="px-4 py-3">New</th>
-              <th className="px-4 py-3">Reason</th>
-              <th className="px-4 py-3">Reference</th>
-              <th className="px-4 py-3">Note</th>
+              <th className="px-4 py-3">Fecha</th>
+              <th className="px-4 py-3">Producto</th>
+              <th className="px-4 py-3">Tipo</th>
+              <th className="px-4 py-3">Cantidad</th>
+              <th className="px-4 py-3">Anterior</th>
+              <th className="px-4 py-3">Nuevo</th>
+              <th className="px-4 py-3">Motivo</th>
+              <th className="px-4 py-3">Referencia</th>
+              <th className="px-4 py-3">Nota</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

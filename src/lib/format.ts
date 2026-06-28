@@ -21,9 +21,9 @@ export function getStockState(product: Pick<Product, "stock" | "minStock">) {
 }
 
 export function stockStateLabel(state: ReturnType<typeof getStockState>) {
-  if (state === "out") return "Out of stock";
-  if (state === "low") return "Low stock";
-  return "Available";
+  if (state === "out") return "Sin stock";
+  if (state === "low") return "Stock bajo";
+  return "Disponible";
 }
 
 export function slugify(value: string) {

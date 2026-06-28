@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { LocalizedText } from "@/components/LocalizedText";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 
@@ -24,30 +25,48 @@ export default async function AccountPage() {
               </div>
             )}
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-neutral-500">User dashboard</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+                <LocalizedText es="Panel de usuario" en="User dashboard" />
+              </p>
               <h1 className="mt-1 text-3xl font-semibold text-black">{customer.name}</h1>
               <p className="mt-1 text-sm text-neutral-600">{customer.email}</p>
             </div>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <div className="rounded-md border border-neutral-200 p-4">
-              <h2 className="font-semibold text-black">Orders</h2>
-              <p className="mt-2 text-sm text-neutral-600">Future customer order history will appear here.</p>
+              <h2 className="font-semibold text-black">
+                <LocalizedText es="Pedidos" en="Orders" />
+              </h2>
+              <p className="mt-2 text-sm text-neutral-600">
+                <LocalizedText es="El historial de pedidos del cliente aparecerá aquí más adelante." en="Future customer order history will appear here." />
+              </p>
             </div>
             <div className="rounded-md border border-neutral-200 p-4">
-              <h2 className="font-semibold text-black">Profile</h2>
-              <p className="mt-2 text-sm text-neutral-600">Account identity is active for storefront sessions.</p>
+              <h2 className="font-semibold text-black">
+                <LocalizedText es="Perfil" en="Profile" />
+              </h2>
+              <p className="mt-2 text-sm text-neutral-600">
+                <LocalizedText es="Tu identidad de cuenta está activa para navegar en la tienda." en="Account identity is active for storefront sessions." />
+              </p>
             </div>
             <div className="rounded-md border border-neutral-200 p-4">
-              <h2 className="font-semibold text-black">Support</h2>
-              <p className="mt-2 text-sm text-neutral-600">Use WhatsApp from any product page to request availability.</p>
+              <h2 className="font-semibold text-black">
+                <LocalizedText es="Soporte" en="Support" />
+              </h2>
+              <p className="mt-2 text-sm text-neutral-600">
+                <LocalizedText es="Usá WhatsApp desde cualquier producto para consultar disponibilidad." en="Use WhatsApp from any product page to request availability." />
+              </p>
             </div>
             {customer.isStoreAdmin ? (
               <div className="rounded-md border border-black bg-black p-4 text-white">
-                <h2 className="font-semibold">Store admin</h2>
-                <p className="mt-2 text-sm text-neutral-300">Manage electronics products, sales and inventory.</p>
+                <h2 className="font-semibold">
+                  <LocalizedText es="Administración de tienda" en="Store admin" />
+                </h2>
+                <p className="mt-2 text-sm text-neutral-300">
+                  <LocalizedText es="Gestioná productos electrónicos, ventas e inventario." en="Manage electronics products, sales and inventory." />
+                </p>
                 <Link className="mt-4 inline-flex rounded-full bg-[#f5a524] px-4 py-2 text-sm font-semibold text-black" href="/dashboard">
-                  Open dashboard
+                  <LocalizedText es="Abrir dashboard" en="Open dashboard" />
                 </Link>
               </div>
             ) : null}
