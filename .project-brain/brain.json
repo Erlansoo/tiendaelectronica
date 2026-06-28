@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-27T23:50:18+00:00"
+    "updatedAt": "2026-06-28T00:06:02+00:00"
   },
   "layers": {
     "interaction": {
@@ -383,6 +383,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-27T23:50:17+00:00"
+        },
+        {
+          "id": "decisions:003",
+          "title": "Official SVG logo source",
+          "summary": "Adopted public/nubel_store_logo_black_yellow.svg as the official Nubel Store logo source and regenerated web logo, navigation mark, and favicon assets from it.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T00:05:52+00:00"
         }
       ]
     }

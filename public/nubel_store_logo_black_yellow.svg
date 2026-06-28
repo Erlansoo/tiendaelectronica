@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Nubel Store logo</title>
+  <desc id="desc">Logo vectorial negro y amarillo para Nubel Store, con monograma N, trazos de circuito y microchip.</desc>
+  <defs>
+    <linearGradient id="yellowGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFE45C"/>
+      <stop offset="55%" stop-color="#FFC400"/>
+      <stop offset="100%" stop-color="#F2A900"/>
+    </linearGradient>
+    <linearGradient id="blackGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#202020"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1000" fill="#FFFFFF"/>
+
+  <g transform="translate(0,10)" filter="url(#softShadow)">
+    <!-- Main N mark -->
+    <g transform="translate(500,130)">
+      <!-- Left vertical block -->
+      <path d="M70 85 Q70 55 100 55 L220 55 Q250 55 271 76 L565 370 L565 500 Q565 535 530 535 L430 535 Q400 535 379 514 L70 205 Z" fill="url(#blackGrad)"/>
+      <!-- Right vertical block -->
+      <path d="M475 140 L610 55 L610 500 Q610 535 575 535 L455 535 Q425 535 425 505 L425 395 L475 445 Z" fill="url(#blackGrad)"/>
+      <!-- Yellow diagonal ribbon -->
+      <path d="M118 55 L230 55 Q260 55 281 76 L595 390 Q610 405 610 427 L610 490 Q610 520 580 520 L485 520 Q455 520 434 499 L118 183 Z" fill="url(#yellowGrad)"/>
+      <!-- Negative cut to sharpen N interior -->
+      <path d="M96 122 L140 166 L140 355 L96 399 Z" fill="#FFFFFF"/>
+      <path d="M560 196 L610 148 L610 260 L560 310 Z" fill="#FFFFFF"/>
+
+      <!-- Left circuit traces -->
+      <g fill="none" stroke="#000000" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M90 205 L90 325 L35 380 L35 475"/>
+        <path d="M130 250 L130 352 L78 404 L78 520"/>
+        <path d="M175 295 L175 385 L126 434 L126 495"/>
+      </g>
+      <g fill="#FFFFFF" stroke="#000000" stroke-width="16">
+        <circle cx="35" cy="505" r="23"/>
+        <circle cx="78" cy="550" r="23"/>
+        <circle cx="126" cy="525" r="23"/>
+      </g>
+
+      <!-- Right circuit traces -->
+      <g fill="none" stroke="#FFC400" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M450 255 L450 125"/>
+        <path d="M505 305 L505 190 L540 155 L540 85"/>
+        <path d="M555 345 L555 235 L595 195 L595 125"/>
+      </g>
+      <g fill="#FFFFFF" stroke="#FFC400" stroke-width="16">
+        <circle cx="450" cy="95" r="23"/>
+        <circle cx="540" cy="55" r="23"/>
+        <circle cx="595" cy="95" r="23"/>
+      </g>
+
+      <!-- Microchip icon -->
+      <g transform="translate(458,405)">
+        <rect x="0" y="0" width="90" height="90" rx="18" fill="none" stroke="#FFC400" stroke-width="14"/>
+        <g stroke="#FFC400" stroke-width="10" stroke-linecap="round">
+          <path d="M18 -18 L18 0"/><path d="M45 -18 L45 0"/><path d="M72 -18 L72 0"/>
+          <path d="M18 90 L18 108"/><path d="M45 90 L45 108"/><path d="M72 90 L72 108"/>
+          <path d="M-18 18 L0 18"/><path d="M-18 45 L0 45"/><path d="M-18 72 L0 72"/>
+          <path d="M90 18 L108 18"/><path d="M90 45 L108 45"/><path d="M90 72 L108 72"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(0,0)">
+    <text x="800" y="800" text-anchor="middle" font-family="Montserrat, Poppins, Arial, sans-serif" font-size="126" font-weight="800" letter-spacing="-4">
+      <tspan fill="#000000">Nubel </tspan><tspan fill="#FFC400">Store</tspan>
+    </text>
+    <text x="800" y="856" text-anchor="middle" font-family="Montserrat, Poppins, Arial, sans-serif" font-size="28" font-weight="600" letter-spacing="7" fill="#222222">ELECTRONIC COMPONENTS · TOOLS · MAKER SUPPLIES</text>
+  </g>
+</svg>
