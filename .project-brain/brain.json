@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T00:24:01+00:00"
+    "updatedAt": "2026-06-28T00:29:20+00:00"
   },
   "layers": {
     "interaction": {
@@ -415,6 +415,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T00:23:42+00:00"
+        },
+        {
+          "id": "decisions:007",
+          "title": "Delayed docked public header",
+          "summary": "Changed the public header from always-sticky to a delayed docked header that becomes fixed only near the featured inventory section.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T00:27:56+00:00"
         }
       ]
     }

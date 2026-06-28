@@ -17,6 +17,24 @@ body {
   color: var(--foreground);
 }
 
+.public-header {
+  position: relative;
+  z-index: 40;
+  transition:
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+html[data-public-header-docked] .public-header {
+  animation: public-header-dock 260ms ease-out;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 50;
+}
+
 .brand-lockup {
   overflow: hidden;
   position: relative;
@@ -102,6 +120,17 @@ body {
   background-image: url("/masgrande.png");
 }
 
+@keyframes public-header-dock {
+  0% {
+    opacity: 0.92;
+    transform: translateY(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes brand-scan {
   0% {
     transform: translateX(-55%) skewX(-18deg);
@@ -133,6 +162,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html[data-public-header-docked] .public-header {
+    animation: none;
+  }
+
   .brand-lockup,
   .brand-lockup::before,
   .brand-lockup-mark,

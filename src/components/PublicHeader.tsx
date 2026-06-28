@@ -3,12 +3,14 @@ import Image from "next/image";
 import { UserCircle } from "lucide-react";
 import { logoutCustomer } from "@/app/actions/customer-auth";
 import { getCurrentCustomer } from "@/lib/customer-auth";
+import { PublicHeaderScrollState } from "@/components/PublicHeaderScrollState";
 
 export async function PublicHeader() {
   const customer = await getCurrentCustomer();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#111111]/95 text-white shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur">
+    <header className="public-header border-b border-white/10 bg-[#111111]/95 text-white backdrop-blur">
+      <PublicHeaderScrollState />
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-8">
         <Link href="/" className="brand-lockup group flex items-center gap-2 rounded-full px-1.5 py-1 text-white">
           <span className="brand-lockup-mark flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5">
