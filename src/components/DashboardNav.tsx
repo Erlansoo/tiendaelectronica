@@ -17,11 +17,13 @@ export function DashboardNav() {
   return (
     <aside className="border-b border-slate-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
       <div className="px-5 py-5">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-slate-950">
+        <Link href="/" className="flex items-center gap-2 text-slate-950">
           <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5 shadow-sm ring-1 ring-slate-200">
             <Image src="/nubel-store-mark.png" alt="" width={30} height={30} />
           </span>
-          <span>Nubel Store</span>
+          <span className="font-mono text-[15px] font-black uppercase leading-none tracking-[0.08em]">
+            Nubel <span className="text-[#f5a524]">Store</span>
+          </span>
         </Link>
         <p className="mt-1 text-sm text-slate-500">Nubel Systems dashboard</p>
       </div>

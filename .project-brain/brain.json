@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T00:06:02+00:00"
+    "updatedAt": "2026-06-28T00:10:35+00:00"
   },
   "layers": {
     "interaction": {
@@ -391,6 +391,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T00:05:52+00:00"
+        },
+        {
+          "id": "decisions:004",
+          "title": "Compact technology wordmark",
+          "summary": "Updated the header and dashboard Nubel Store wordmark to use compact uppercase monospace styling with yellow Store emphasis beside the official icon.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T00:10:20+00:00"
         }
       ]
     }
