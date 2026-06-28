@@ -7,6 +7,54 @@ import { getFeaturedProducts, getPublicCategories } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
+const recommendedCategoryNavigation = [
+  {
+    label: "Starter boards",
+    query: "Arduino",
+    description: "Arduino, STM32 and first dev boards",
+  },
+  {
+    label: "Wireless and IoT",
+    query: "ESP32",
+    description: "ESP32, ESP8266 and radio modules",
+  },
+  {
+    label: "Power modules",
+    query: "LM2596 XL4015 MT3608",
+    description: "Step-down, step-up and battery power",
+  },
+  {
+    label: "Passive components",
+    query: "resistor capacitor",
+    description: "Resistors, capacitors and potentiometers",
+  },
+  {
+    label: "Semiconductors",
+    query: "MOSFET diode transistor regulator",
+    description: "Diodes, transistors, MOSFETs and regulators",
+  },
+  {
+    label: "Sensors",
+    query: "sensor",
+    description: "Distance, temperature, motion and RFID",
+  },
+  {
+    label: "Displays",
+    query: "OLED LCD display",
+    description: "OLED, LCD and interface screens",
+  },
+  {
+    label: "Robotics and drivers",
+    query: "motor driver servo",
+    description: "Motors, drivers and robotics modules",
+  },
+  {
+    label: "Prototyping and cables",
+    query: "jumper protoboard cable",
+    description: "Breadboards, jumpers and connectors",
+  },
+];
+
 export default async function Home() {
   const [featuredProducts, categories] = await Promise.all([
     getFeaturedProducts(),
@@ -92,20 +140,56 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="featured" className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-        <div className="mb-6 flex items-end justify-between gap-4">
+      <section id="featured" className="scroll-mt-24 mx-auto max-w-7xl px-6 py-12 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+          <aside className="lg:sticky lg:top-28 lg:self-start">
+            <div className="border-l-4 border-[#f5a524] bg-white pl-5">
+              <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#b16a00]">
+                Browse structure
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Inventory categories</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Organized from the recommended purchasing list for electronics, prototyping and embedded systems.
+              </p>
+            </div>
+
+            <nav className="mt-5 grid gap-2" aria-label="Recommended inventory categories">
+              {recommendedCategoryNavigation.map((category) => (
+                <Link
+                  key={category.label}
+                  className="group rounded-md border border-slate-200 bg-white px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#f5a524] hover:shadow-sm"
+                  href={`/productos?q=${encodeURIComponent(category.query)}`}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-slate-950">{category.label}</span>
+                    <ArrowRight
+                      size={16}
+                      className="text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#f5a524]"
+                      aria-hidden
+                    />
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">{category.description}</span>
+                </Link>
+              ))}
+            </nav>
+          </aside>
+
           <div>
-            <h2 className="text-2xl font-semibold text-slate-950">Featured inventory</h2>
-            <p className="mt-1 text-sm text-slate-600">Products ready for technical projects.</p>
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-950">Featured inventory</h2>
+                <p className="mt-1 text-sm text-slate-600">Products ready for technical projects.</p>
+              </div>
+              <Link className="rounded-full border border-transparent px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524]" href="/productos">
+                View all
+              </Link>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
-          <Link className="rounded-full border border-transparent px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524]" href="/productos">
-            View all
-          </Link>
-        </div>
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
         </div>
       </section>
 

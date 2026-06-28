@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T00:29:20+00:00"
+    "updatedAt": "2026-06-28T00:33:38+00:00"
   },
   "layers": {
     "interaction": {
@@ -423,6 +423,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T00:27:56+00:00"
+        },
+        {
+          "id": "decisions:008",
+          "title": "Recommended inventory sidebar navigation",
+          "summary": "Added a left-side category navigation beside Featured inventory using the structure from docs/recommended-electronics-inventory.md, linking each category into catalog search.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T00:31:24+00:00"
         }
       ]
     }
