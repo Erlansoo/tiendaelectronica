@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T01:03:32+00:00"
+    "updatedAt": "2026-06-28T01:44:07+00:00"
   },
   "layers": {
     "interaction": {
@@ -447,6 +447,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T01:00:28+00:00"
+        },
+        {
+          "id": "decisions:011",
+          "title": "Constrained featured product card sizing",
+          "summary": "Adjusted the featured inventory grid so product cards keep a controlled 300-340px width instead of stretching too large on wide browser windows.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T01:44:05+00:00"
         }
       ]
     }

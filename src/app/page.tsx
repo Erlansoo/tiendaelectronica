@@ -210,7 +210,7 @@ export default async function Home() {
                 </p>
               </div>
             </div>
-            <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))] 2xl:gap-6">
+            <div className="grid justify-start gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),340px))] 2xl:gap-6">
               {featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
