@@ -19,7 +19,7 @@ const recommendedCategoryNavigation = [
   {
     label: "IoT e inalámbricos",
     labelEn: "Wireless and IoT",
-    query: "ESP32",
+    query: "IoT e inalámbricos",
     description: "ESP32, ESP8266 y módulos de radio",
     descriptionEn: "ESP32, ESP8266 and radio modules",
   },
@@ -40,7 +40,7 @@ const recommendedCategoryNavigation = [
   {
     label: "Semiconductores",
     labelEn: "Semiconductors",
-    query: "MOSFET diode transistor regulator",
+    query: "Semiconductores",
     description: "Diodos, transistores, MOSFETs y reguladores",
     descriptionEn: "Diodes, transistors, MOSFETs and regulators",
   },
