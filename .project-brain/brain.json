@@ -6,7 +6,7 @@
     "displayName": "electronics-store",
     "root": "C:\\Users\\Erlan\\tiendaelectronica",
     "createdAt": "2026-06-27T19:33:41+00:00",
-    "updatedAt": "2026-06-28T02:35:19+00:00"
+    "updatedAt": "2026-06-28T02:45:23+00:00"
   },
   "layers": {
     "interaction": {
@@ -487,6 +487,14 @@
           "status": "active",
           "confidence": "observed",
           "createdAt": "2026-06-28T02:35:18+00:00"
+        },
+        {
+          "id": "decisions:016",
+          "title": "Exact lateral category queries",
+          "summary": "Changed lateral category links to search by exact Spanish category labels instead of broad keywords, preventing HC-12 from appearing under Placas de inicio due to Arduino tags.",
+          "status": "active",
+          "confidence": "observed",
+          "createdAt": "2026-06-28T02:44:58+00:00"
         }
       ]
     }
