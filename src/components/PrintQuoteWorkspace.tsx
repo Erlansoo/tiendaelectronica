@@ -8,6 +8,7 @@ import { translate, type TranslationKey } from "@/lib/i18n";
 import { useLocale } from "@/components/useLocale";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
+const MODEL_BED_CLEARANCE = 0.025;
 const allowedExtensions = [".stl", ".obj", ".step", ".stp", ".3mf"];
 const scalePresets = [1, 0.1, 0.01, 0.001];
 const printerBeds = [
@@ -68,18 +69,25 @@ export function PrintQuoteWorkspace() {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    const viewport = container;
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
     camera.position.set(4, 3, 5);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
+    const isMobilePointer = window.matchMedia("(pointer: coarse)").matches;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobilePointer ? 1.35 : 2));
+    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
+    renderer.domElement.style.display = "block";
+    renderer.domElement.style.touchAction = "none";
+    viewport.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -87,12 +95,12 @@ export function PrintQuoteWorkspace() {
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    scene.background = new THREE.Color("#071012");
-    scene.add(new THREE.HemisphereLight("#d9f7f5", "#10191b", 1.9));
-    const key = new THREE.DirectionalLight("#ffffff", 3.2);
+    scene.background = new THREE.Color("#e3e8e7");
+    scene.add(new THREE.HemisphereLight("#ffffff", "#9ba5a3", 2.15));
+    const key = new THREE.DirectionalLight("#fffdf8", 3);
     key.position.set(5, 8, 4);
     scene.add(key);
-    const fill = new THREE.DirectionalLight("#55c7bd", 1.1);
+    const fill = new THREE.DirectionalLight("#b9d8d3", 0.85);
     fill.position.set(-5, 3, -4);
     scene.add(fill);
 
@@ -121,33 +129,51 @@ export function PrintQuoteWorkspace() {
     scene.add(transform);
 
     let frameId = 0;
+    let isInViewport = true;
+    let isPageVisible = document.visibilityState === "visible";
     function animate() {
-      controls.update();
-      renderer.render(scene, camera);
+      if (isInViewport && isPageVisible) {
+        controls.update();
+        renderer.render(scene, camera);
+      }
       frameId = requestAnimationFrame(animate);
     }
     animate();
 
     function resize() {
-      if (!container) return;
-      camera.aspect = container.clientWidth / container.clientHeight;
+      const width = Math.max(1, Math.round(viewport.clientWidth));
+      const height = Math.max(1, Math.round(viewport.clientHeight));
+      if (camera.aspect === width / height && renderer.domElement.clientWidth === width && renderer.domElement.clientHeight === height) return;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setSize(width, height);
+      if (modelRef.current) frameModel(modelRef.current);
     }
 
-    window.addEventListener("resize", resize);
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(viewport);
+    const intersectionObserver = new IntersectionObserver(([entry]) => {
+      isInViewport = entry?.isIntersecting ?? true;
+    }, { rootMargin: "160px" });
+    intersectionObserver.observe(viewport);
+    const handleVisibilityChange = () => {
+      isPageVisible = document.visibilityState === "visible";
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelAnimationFrame(frameId);
-      window.removeEventListener("resize", resize);
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       controls.dispose();
       transform.detach();
       transform.dispose();
       if (modelRef.current) disposeObject(modelRef.current);
       if (buildPlateRef.current) disposeObject(buildPlateRef.current);
       renderer.dispose();
-      if (renderer.domElement.parentElement === container) {
-        container.removeChild(renderer.domElement);
+      if (renderer.domElement.parentElement === viewport) {
+        viewport.removeChild(renderer.domElement);
       }
     };
   }, []);
@@ -184,21 +210,34 @@ export function PrintQuoteWorkspace() {
     if (!camera || !controls) return;
 
     const box = new THREE.Box3().setFromObject(object);
-    const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const maxSize = Math.max(size.x, size.y, size.z) || 1;
-    const distance = maxSize * 2.25;
 
     // Keep the model's lowest point on the build plate instead of centering it through the grid.
     object.position.x -= center.x;
     object.position.z -= center.z;
     object.position.y -= box.min.y;
-    const elevatedTarget = Math.max(size.y * 0.3, maxSize * 0.08);
-    camera.position.set(distance * 1.05, distance * 0.82 + elevatedTarget, distance * 1.05);
-    camera.near = distance / 100;
-    camera.far = distance * 100;
+    object.position.y += MODEL_BED_CLEARANCE;
+
+    const bed = selectedBedRef.current;
+    const objectBox = new THREE.Box3().setFromObject(object);
+    const sceneBox = new THREE.Box3(
+      new THREE.Vector3(-bed.x / 2, 0, -bed.z / 2),
+      new THREE.Vector3(bed.x / 2, Math.max(1, objectBox.max.y), bed.z / 2),
+    );
+    sceneBox.union(objectBox);
+    const sceneCenter = sceneBox.getCenter(new THREE.Vector3());
+    const sceneSphere = sceneBox.getBoundingSphere(new THREE.Sphere());
+    const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+    const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
+    const limitingFov = Math.min(verticalFov, horizontalFov);
+    const cameraDistance = (sceneSphere.radius / Math.sin(limitingFov / 2)) * 1.12;
+    const cameraDirection = new THREE.Vector3(1.05, 0.82, 1.05).normalize();
+
+    camera.position.copy(sceneCenter).add(cameraDirection.multiplyScalar(cameraDistance));
+    camera.near = Math.max(0.1, cameraDistance / 100);
+    camera.far = cameraDistance + sceneSphere.radius * 5;
     camera.updateProjectionMatrix();
-    controls.target.set(0, elevatedTarget, 0);
+    controls.target.copy(sceneCenter);
     controls.update();
   }
 
@@ -286,9 +325,9 @@ export function PrintQuoteWorkspace() {
     setScaleFactor(recommendedScale);
 
     const material = new THREE.MeshStandardMaterial({
-      color: "#f5a524",
-      metalness: 0.08,
-      roughness: 0.48,
+      color: "#35ad7d",
+      metalness: 0.06,
+      roughness: 0.5,
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2;
@@ -541,33 +580,33 @@ export function PrintQuoteWorkspace() {
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[#284447] bg-[#071012] text-white shadow-2xl shadow-black/25">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#244044] bg-[#0b1719] px-5 py-4">
+      <div className="overflow-hidden rounded-xl border border-[#c7cecd] bg-[#e3e8e7] text-slate-900 shadow-xl shadow-slate-900/10">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d3d9d8] bg-[#f6f8f8] px-5 py-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#1d4546] text-[#8ce1da]"><Box size={17} aria-hidden /></span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#dcecea] text-[#17645e]"><Box size={17} aria-hidden /></span>
               <h2 className="font-semibold">{translate("quoteViewer", locale)}</h2>
             </div>
-            <p className="mt-2 text-xs text-white/60">{translate("quoteViewerHelp", locale)}</p>
+            <p className="mt-2 text-xs text-slate-500">{translate("quoteViewerHelp", locale)}</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full border border-[#346063] bg-[#10282a] px-3 py-1 text-xs font-semibold text-[#8ce1da]">{translate("quoteStlBadge", locale)}</span>
-            <button className="inline-flex items-center gap-2 rounded-md border border-[#34595c] px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:border-[#8ce1da] hover:text-[#8ce1da]" type="button" onClick={resetView}>
+            <span className="rounded-full border border-[#b6d3cf] bg-[#e8f3f1] px-3 py-1 text-xs font-semibold text-[#17645e]">{translate("quoteStlBadge", locale)}</span>
+            <button className="inline-flex items-center gap-2 rounded-md border border-[#b8c2c1] bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#4b8b85] hover:text-[#17645e]" type="button" onClick={resetView}>
               <Crosshair size={14} aria-hidden />
               {translate("quoteResetView", locale)}
             </button>
           </div>
         </div>
         <div className="relative">
-          <div className="pointer-events-none absolute left-4 top-4 z-10 rounded-md border border-[#315456] bg-[#0d1f21]/90 px-3 py-2 text-xs text-[#b7d9d7] backdrop-blur">
-            <span className="font-semibold text-white">{translate("quoteBuildPlate", locale)}</span>
-            <span className="ml-2 text-[#78cfc8]">{selectedBed.label}</span>
+          <div className="pointer-events-none absolute left-4 top-4 z-10 rounded-md border border-white/70 bg-white/85 px-3 py-2 text-xs text-slate-600 shadow-sm backdrop-blur">
+            <span className="font-semibold text-slate-900">{translate("quoteBuildPlate", locale)}</span>
+            <span className="ml-2 text-[#17645e]">{selectedBed.label}</span>
           </div>
           <div ref={containerRef} className="h-[560px] w-full sm:h-[640px]" aria-label="Interactive 3D file viewer" />
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#244044] bg-[#0b1719] px-5 py-3">
-          <p className="text-sm text-white/65">{translate(previewNote, locale)}</p>
-          <div className="flex items-center gap-3 text-xs text-[#a7cfcc]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#d3d9d8] bg-[#f6f8f8] px-5 py-3">
+          <p className="text-sm text-slate-500">{translate(previewNote, locale)}</p>
+          <div className="flex items-center gap-3 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1.5"><Rotate3D size={14} aria-hidden /> {translate("quoteOrbitControl", locale)}</span>
             <span className="inline-flex items-center gap-1.5"><MousePointer2 size={14} aria-hidden /> {translate("quotePanControl", locale)}</span>
             <span className="inline-flex items-center gap-1.5"><ZoomIn size={14} aria-hidden /> {translate("quoteZoomControl", locale)}</span>
@@ -626,6 +665,7 @@ function constrainToBuildPlate(model: THREE.Group, bed: Dimensions) {
 
   const seatedBox = new THREE.Box3().setFromObject(model);
   model.position.y -= seatedBox.min.y;
+  model.position.y += MODEL_BED_CLEARANCE;
 }
 
 function arrangeCopies(model: THREE.Group, count: number, bed: Dimensions) {
@@ -659,15 +699,16 @@ function arrangeCopies(model: THREE.Group, count: number, bed: Dimensions) {
 function createPlaceholderModel() {
   const group = new THREE.Group();
   const material = new THREE.MeshStandardMaterial({
-    color: "#f5a524",
-    metalness: 0.18,
-    roughness: 0.42,
+    color: "#35ad7d",
+    metalness: 0.08,
+    roughness: 0.48,
   });
-  const base = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.28, 1.55), material);
-  const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.58, 1.35, 48), material);
-  tower.position.set(-0.55, 0.82, 0);
-  const cap = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.09, 16, 64), material);
-  cap.position.set(0.55, 0.5, 0);
+  // The sample occupies exactly 50 mm on X, so its scale is meaningful against every bed.
+  const base = new THREE.Mesh(new THREE.BoxGeometry(50, 4, 34), material);
+  const tower = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 10, 28, 48), material);
+  tower.position.set(-10, 16, 0);
+  const cap = new THREE.Mesh(new THREE.TorusGeometry(11, 2, 16, 64), material);
+  cap.position.set(12, 12, 0);
   cap.rotation.x = Math.PI / 2;
   group.add(base, tower, cap);
   return group;
@@ -675,28 +716,68 @@ function createPlaceholderModel() {
 
 function createBuildPlate(width: number, depth: number) {
   const group = new THREE.Group();
-  const displayWidth = Math.max(8, Math.min(width, 300));
-  const displayDepth = Math.max(8, Math.min(depth, 300));
-  const plateShape = roundedRectangleShape(displayWidth, displayDepth, Math.min(displayWidth, displayDepth) * 0.035);
-  const plate = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(plateShape, { depth: 0.16, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.04, bevelSegments: 3 }),
-    new THREE.MeshStandardMaterial({ color: "#1c2426", roughness: 0.72, metalness: 0.38 }),
+  const displayWidth = Math.max(8, width);
+  const displayDepth = Math.max(8, depth);
+  const cornerRadius = Math.min(displayWidth, displayDepth) * 0.035;
+  const bodyShape = roundedRectangleShape(displayWidth + 10, displayDepth + 10, cornerRadius + 4);
+  const body = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(bodyShape, { depth: 0.9, bevelEnabled: true, bevelSize: 0.7, bevelThickness: 0.25, bevelSegments: 3 }),
+    new THREE.MeshStandardMaterial({ color: "#252b2d", roughness: 0.62, metalness: 0.32 }),
   );
+  body.rotation.x = -Math.PI / 2;
+  body.position.y = -1.02;
+  group.add(body);
+
+  const plateShape = roundedRectangleShape(displayWidth, displayDepth, cornerRadius);
+  const plate = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(plateShape, { depth: 0.18, bevelEnabled: true, bevelSize: 0.12, bevelThickness: 0.05, bevelSegments: 3 }),
+    new THREE.MeshStandardMaterial({ color: "#414849", roughness: 0.8, metalness: 0.16 }),
+  );
+  plate.renderOrder = 0;
   plate.rotation.x = -Math.PI / 2;
-  plate.position.y = -0.16;
+  plate.position.y = -0.18;
   group.add(plate);
 
-  const grid = new THREE.GridHelper(Math.max(displayWidth, displayDepth), 32, "#73d7cf", "#25484b");
+  const gridDivisions = Math.max(10, Math.round(Math.max(displayWidth, displayDepth) / 10));
+  const grid = new THREE.GridHelper(Math.max(displayWidth, displayDepth), gridDivisions, "#e4a72d", "#697374");
   grid.scale.set(displayWidth / Math.max(displayWidth, displayDepth), 1, displayDepth / Math.max(displayWidth, displayDepth));
-  grid.position.y = 0.012;
+  grid.position.y = 0.008;
+  grid.renderOrder = 1;
+  const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
+  gridMaterials.forEach((material) => {
+    material.depthWrite = false;
+    material.transparent = true;
+    material.opacity = 0.76;
+  });
   group.add(grid);
+
+  const printableArea = roundedRectangleShape(displayWidth - 8, displayDepth - 8, Math.max(2, cornerRadius - 3));
+  const printableBoundary = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints(
+      printableArea.getSpacedPoints(128).map((point) => new THREE.Vector3(point.x, 0, point.y)),
+    ),
+    new THREE.LineBasicMaterial({ color: "#cbd2d1", transparent: true, opacity: 0.72, depthWrite: false }),
+  );
+  printableBoundary.position.y = 0.014;
+  printableBoundary.renderOrder = 2;
+  group.add(printableBoundary);
+
+  const origin = new THREE.Mesh(
+    new THREE.RingGeometry(1.6, 2.35, 32),
+    new THREE.MeshBasicMaterial({ color: "#efb43c", side: THREE.DoubleSide, depthWrite: false }),
+  );
+  origin.rotation.x = -Math.PI / 2;
+  origin.position.y = 0.018;
+  origin.renderOrder = 3;
+  group.add(origin);
 
   const edge = new THREE.LineSegments(
     new THREE.EdgesGeometry(plate.geometry),
-    new THREE.LineBasicMaterial({ color: "#78d8d0" }),
+    new THREE.LineBasicMaterial({ color: "#202628" }),
   );
   edge.rotation.x = -Math.PI / 2;
-  edge.position.y = -0.16;
+  edge.position.y = -0.18;
+  edge.renderOrder = 2;
   group.add(edge);
   return group;
 }
@@ -719,7 +800,7 @@ function roundedRectangleShape(width: number, depth: number, radius: number) {
 
 function disposeObject(object: THREE.Object3D) {
   object.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
+    if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
       child.geometry.dispose();
       if (Array.isArray(child.material)) {
         child.material.forEach((material) => material.dispose());
