@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Globe2 } from "lucide-react";
+import { translate } from "@/lib/i18n";
 
 type Language = "es" | "en";
 
@@ -40,6 +41,7 @@ export function LanguageToggle() {
     if (consent === "accepted") window.localStorage.setItem("nubel-language", nextLanguage);
     document.documentElement.lang = nextLanguage;
     document.documentElement.dataset.lang = nextLanguage;
+    window.dispatchEvent(new CustomEvent("nubel-language-change"));
   };
 
   return (
@@ -47,7 +49,7 @@ export function LanguageToggle() {
       className="inline-flex h-10 items-center gap-2 rounded-full border border-white/30 px-3 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black"
       type="button"
       onClick={toggleLanguage}
-      aria-label="Cambiar idioma"
+      aria-label={translate("languageToggle", language)}
       suppressHydrationWarning
     >
       <Globe2 size={16} aria-hidden />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LockKeyhole } from "lucide-react";
 import { signInWithGoogle } from "@/app/actions/customer-auth";
+import { LocalizedText } from "@/components/LocalizedText";
 
 export default async function DashboardLoginPage({
   searchParams,
@@ -24,7 +25,7 @@ export default async function DashboardLoginPage({
         ) : null}
         {reason === "inactive" ? (
           <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-800">
-            Tu sesión se cerró después de 15 minutos sin actividad.
+            <LocalizedText id="sessionInactive" />
           </p>
         ) : null}
         <form action={signInWithGoogle} className="mt-5">

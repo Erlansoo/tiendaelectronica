@@ -31,7 +31,7 @@ export default async function LoginPage({
           ) : null}
           {reason === "inactive" ? (
             <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-800">
-              Tu sesión se cerró después de 15 minutos sin actividad.
+              <LocalizedText id="sessionInactive" />
             </p>
           ) : null}
           <form action={signInWithGoogle} className="mt-6">

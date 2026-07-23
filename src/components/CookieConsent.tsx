@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
+import { translate } from "@/lib/i18n";
+import { useLocale } from "@/components/useLocale";
 
 const CONSENT_COOKIE = "nubel-cookie-consent";
 const CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
@@ -32,6 +34,7 @@ function getServerConsent() {
 }
 
 export function CookieConsent() {
+  const locale = useLocale();
   const consent = useSyncExternalStore(subscribeToConsent, getConsent, getServerConsent);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -48,28 +51,28 @@ export function CookieConsent() {
         type="button"
         onClick={() => setIsOpen(true)}
       >
-        Preferencias de cookies
+        {translate("cookiePreferences", locale)}
       </button>
     );
   }
 
   return (
-    <section className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl rounded-lg border border-slate-200 bg-white p-5 shadow-2xl" aria-label="Preferencias de cookies" role="dialog" aria-modal="true">
-      <h2 className="text-lg font-semibold text-slate-950">Tu privacidad</h2>
+    <section className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl rounded-lg border border-slate-200 bg-white p-5 shadow-2xl" aria-label={translate("cookieDialogLabel", locale)} role="dialog" aria-modal="true">
+      <h2 className="text-lg font-semibold text-slate-950">{translate("cookiePrivacyTitle", locale)}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Usamos cookies necesarias para iniciar sesión y proteger tu cuenta. Si aceptás, también guardamos de forma local tu preferencia de idioma. No usamos cookies de publicidad ni analítica.
+        {translate("cookiePrivacyBody", locale)}
       </p>
       <p className="mt-2 text-sm text-slate-600">
         <Link className="font-semibold text-slate-950 underline" href="/politica-de-cookies">
-          Ver política de cookies y caché
+          {translate("cookiePolicyLink", locale)}
         </Link>
       </p>
       <div className="mt-4 flex flex-wrap justify-end gap-3">
         <button className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100" type="button" onClick={() => choose("rejected")}>
-          Solo necesarias
+          {translate("cookieNecessaryOnly", locale)}
         </button>
         <button className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" type="button" onClick={() => choose("accepted")}>
-          Aceptar preferencias
+          {translate("cookieAcceptPreferences", locale)}
         </button>
       </div>
     </section>
