@@ -6,9 +6,9 @@ import { PublicHeader } from "@/components/PublicHeader";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reason?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, reason } = await searchParams;
 
   return (
     <>
@@ -27,6 +27,11 @@ export default async function LoginPage({
           {error ? (
             <p className="mt-4 rounded-md bg-red-50 p-3 text-sm font-medium text-red-700">
               <LocalizedText es="No se pudo completar el ingreso con Google." en="Google login could not be completed." />
+            </p>
+          ) : null}
+          {reason === "inactive" ? (
+            <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-800">
+              Tu sesión se cerró después de 15 minutos sin actividad.
             </p>
           ) : null}
           <form action={signInWithGoogle} className="mt-6">

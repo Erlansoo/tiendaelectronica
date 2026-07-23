@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { isStoreAdminEmail } from "@/lib/store-admin";
+import { prisma } from "@/lib/prisma";
+import { isSessionWithinIdleLimit } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function isStoreAdminSession() {
@@ -8,7 +10,14 @@ export async function isStoreAdminSession() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return isStoreAdminEmail(user?.email);
+  if (!user?.email || !isStoreAdminEmail(user.email)) return false;
+
+  const account = await prisma.customerAccount.findUnique({
+    where: { id: user.id },
+    select: { lastActivityAt: true },
+  });
+
+  return isSessionWithinIdleLimit(account?.lastActivityAt);
 }
 
 export async function requireStoreAdmin() {

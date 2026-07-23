@@ -6,12 +6,14 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { PublicHeaderScrollState } from "@/components/PublicHeaderScrollState";
+import { SessionInactivityGuard } from "@/components/SessionInactivityGuard";
 
 export async function PublicHeader() {
   const customer = await getCurrentCustomer();
 
   return (
     <header className="public-header border-b border-white/10 bg-[#111111]/95 text-white backdrop-blur">
+      {customer ? <SessionInactivityGuard logoutPath="/login?reason=inactive" /> : null}
       <PublicHeaderScrollState />
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-8">
         <Link href="/" className="brand-lockup group flex items-center gap-2 rounded-full px-1.5 py-1 text-white">

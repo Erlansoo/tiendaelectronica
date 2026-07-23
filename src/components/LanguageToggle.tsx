@@ -6,10 +6,26 @@ import { Globe2 } from "lucide-react";
 type Language = "es" | "en";
 
 export function LanguageToggle() {
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") return "es";
-    return window.localStorage.getItem("nubel-language") === "en" ? "en" : "es";
-  });
+  const [language, setLanguage] = useState<Language>("es");
+
+  useEffect(() => {
+    const loadPreference = () => {
+      const consent = document.cookie.split("; ").find((cookie) => cookie.startsWith("nubel-cookie-consent="))?.split("=")[1];
+      const accepted = consent === "accepted";
+
+      if (!accepted) {
+        window.localStorage.removeItem("nubel-language");
+        setLanguage("es");
+        return;
+      }
+
+      setLanguage(window.localStorage.getItem("nubel-language") === "en" ? "en" : "es");
+    };
+
+    loadPreference();
+    window.addEventListener("nubel-consent-change", loadPreference);
+    return () => window.removeEventListener("nubel-consent-change", loadPreference);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -20,7 +36,8 @@ export function LanguageToggle() {
     const nextLanguage = language === "es" ? "en" : "es";
 
     setLanguage(nextLanguage);
-    window.localStorage.setItem("nubel-language", nextLanguage);
+    const consent = document.cookie.split("; ").find((cookie) => cookie.startsWith("nubel-cookie-consent="))?.split("=")[1];
+    if (consent === "accepted") window.localStorage.setItem("nubel-language", nextLanguage);
     document.documentElement.lang = nextLanguage;
     document.documentElement.dataset.lang = nextLanguage;
   };

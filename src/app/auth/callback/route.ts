@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
             email: user.email,
             imageUrl: user.user_metadata?.avatar_url,
             provider: "google",
+            lastActivityAt: new Date(),
           },
           create: {
             id: user.id,
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
             email: user.email,
             imageUrl: user.user_metadata?.avatar_url,
             provider: "google",
+            lastActivityAt: new Date(),
           },
         });
       } catch (error) {

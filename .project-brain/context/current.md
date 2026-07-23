@@ -19,6 +19,9 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 - `src/app/dashboard/login/page.tsx`
 - `src/components/PublicHeader.tsx`
 - `src/app/cuenta/page.tsx`
+- `src/lib/session.ts`
+- `src/components/SessionInactivityGuard.tsx`
+- `src/components/CookieConsent.tsx`
 
 ## Decisions
 
@@ -27,6 +30,8 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 - `erlan514@gmail.com` is the first electronics store admin.
 - Admin access is for the electronics store dashboard only, not for future 3D printing manufacturer accounts.
 - Real secrets stay in `.env` and must never be committed.
+- Authenticated sessions expire after 15 minutes without browser activity; the server also validates the last recorded activity before serving protected customer or dashboard data.
+- Optional browser storage (language preference) requires cookie consent; authentication cookies remain necessary.
 
 ## Risks / Do Not Touch Blindly
 

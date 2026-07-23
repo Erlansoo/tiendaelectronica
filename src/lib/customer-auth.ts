@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { isStoreAdminEmail } from "@/lib/store-admin";
+import { isSessionWithinIdleLimit } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export function safeNextPath(value: string | null | undefined, fallback = "/cuenta") {
@@ -18,12 +19,14 @@ export async function getCurrentCustomer() {
   const profile = await prisma.customerAccount
     .findUnique({
       where: { id: user.id },
-      select: { id: true, name: true, email: true, imageUrl: true },
+      select: { id: true, name: true, email: true, imageUrl: true, lastActivityAt: true },
     })
     .catch((error) => {
       console.error("Customer profile lookup failed", error);
       return null;
-    });
+  });
+
+  if (!isSessionWithinIdleLimit(profile?.lastActivityAt)) return null;
 
   return {
     id: user.id,

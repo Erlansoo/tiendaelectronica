@@ -29,9 +29,6 @@ export async function proxy(request: NextRequest) {
   const isGoogleStoreAdmin = isStoreAdminEmail(user?.email);
 
   if (isLogin) {
-    if (isGoogleStoreAdmin) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
     return response;
   }
 

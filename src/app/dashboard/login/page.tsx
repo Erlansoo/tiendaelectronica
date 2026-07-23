@@ -5,9 +5,9 @@ import { signInWithGoogle } from "@/app/actions/customer-auth";
 export default async function DashboardLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reason?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, reason } = await searchParams;
 
   return (
     <main className="grid min-h-screen place-items-center bg-slate-950 px-6">
@@ -20,6 +20,11 @@ export default async function DashboardLoginPage({
         {error === "forbidden" ? (
           <p className="mt-4 rounded-md bg-rose-50 p-3 text-sm font-medium text-rose-700">
             Esta cuenta no tiene acceso al dashboard.
+          </p>
+        ) : null}
+        {reason === "inactive" ? (
+          <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-800">
+            Tu sesión se cerró después de 15 minutos sin actividad.
           </p>
         ) : null}
         <form action={signInWithGoogle} className="mt-5">

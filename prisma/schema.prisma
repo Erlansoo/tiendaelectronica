@@ -126,6 +126,7 @@ model CustomerAccount {
   email        String   @unique
   imageUrl     String?
   provider     String   @default("google")
+  lastActivityAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
