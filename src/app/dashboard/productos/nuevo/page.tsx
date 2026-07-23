@@ -1,6 +1,9 @@
 import { ProductForm } from "@/components/ProductForm";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  await requireStoreAdmin();
+
   return (
     <div>
       <h1 className="text-3xl font-semibold text-slate-950">Nuevo producto</h1>

@@ -1,10 +1,12 @@
 import { DashboardCard } from "@/components/DashboardCard";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 import { formatMoney } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  await requireStoreAdmin();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

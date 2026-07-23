@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 import { formatMoney } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesPage() {
+  await requireStoreAdmin();
   const sales = await prisma.sale.findMany({
     include: { items: { include: { product: true } } },
     orderBy: { createdAt: "desc" },

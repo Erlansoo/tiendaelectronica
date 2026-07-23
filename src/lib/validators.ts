@@ -1,19 +1,14 @@
 import { PaymentMethod, SaleStatus, StockMovementReason } from "@prisma/client";
 import { z } from "zod";
+import { isAllowedProductUrl } from "@/lib/external-url";
 
 const optionalText = z.string().trim().optional().transform((value) => value || undefined);
 const optionalUrl = optionalText.refine(
   (value) => {
     if (!value) return true;
-    if (value.startsWith("/")) return !value.startsWith("//");
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" || url.protocol === "http:";
-    } catch {
-      return false;
-    }
+    return isAllowedProductUrl(value);
   },
-  { message: "Use a relative URL or an http(s) URL" },
+  { message: "Use a local path or an HTTPS URL from an allowed host" },
 );
 const optionalNumber = z.preprocess(
   (value) => (value === "" || value === null ? undefined : value),

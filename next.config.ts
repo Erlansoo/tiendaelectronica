@@ -1,4 +1,22 @@
 import type { NextConfig } from "next";
+import { getExternalUrlCspSources } from "./src/lib/external-url";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : undefined;
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: ${getExternalUrlCspSources().join(" ")}`,
+  "font-src 'self' data:",
+  `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
+  "media-src 'self'",
+  "frame-src 'none'",
+].join("; ");
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -25,7 +43,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+            value: contentSecurityPolicy,
           },
         ],
       },

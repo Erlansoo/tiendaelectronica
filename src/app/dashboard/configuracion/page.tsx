@@ -1,4 +1,8 @@
-export default function SettingsPage() {
+import { requireStoreAdmin } from "@/lib/admin-auth";
+
+export default async function SettingsPage() {
+  await requireStoreAdmin();
+
   return (
     <div>
       <h1 className="text-3xl font-semibold text-slate-950">Configuración</h1>

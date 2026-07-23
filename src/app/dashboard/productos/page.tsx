@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProductTable } from "@/components/ProductTable";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { productSearchWhere } from "@/lib/products";
 
@@ -10,6 +11,7 @@ export default async function DashboardProductsPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  await requireStoreAdmin();
   const { q } = await searchParams;
   const products = await prisma.product.findMany({
     where: productSearchWhere(q, true),

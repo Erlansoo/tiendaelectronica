@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStoreAdmin } from "@/lib/admin-auth";
-import { prisma } from "@/lib/prisma";
+import { runSerializableTransaction } from "@/lib/transactions";
 import { saleSchema } from "@/lib/validators";
 
 function makeSaleNumber() {
@@ -25,15 +25,20 @@ export async function createSale(formData: FormData) {
     paymentMethod: formData.get("paymentMethod"),
     saleStatus: formData.get("saleStatus"),
   });
+  const quantitiesByProductId = new Map<string, number>();
+  for (const item of parsed.items) {
+    quantitiesByProductId.set(item.productId, (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity);
+  }
+  const items = Array.from(quantitiesByProductId, ([productId, quantity]) => ({ productId, quantity }));
 
-  await prisma.$transaction(async (tx) => {
+  await runSerializableTransaction(async (tx) => {
     const products = await tx.product.findMany({
-      where: { id: { in: parsed.items.map((item) => item.productId) } },
+      where: { id: { in: items.map((item) => item.productId) } },
     });
 
     const productById = new Map(products.map((product) => [product.id, product]));
 
-    const saleItems = parsed.items.map((item) => {
+    const saleItems = items.map((item) => {
       const product = productById.get(item.productId);
       if (!product) throw new Error("Product not found.");
       if (parsed.saleStatus === SaleStatus.COMPLETED && product.stock < item.quantity) {

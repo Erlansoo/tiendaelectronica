@@ -35,12 +35,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_WHATSAPP_NUMBER=
 NEXT_PUBLIC_SITE_URL=
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
-AUTH_SECRET=
+ALLOWED_EXTERNAL_URL_HOSTS=
+STORE_ADMIN_EMAILS=
 ```
 
 Never commit a real `.env` file. `.env.example` is safe to commit.
+
+`ALLOWED_EXTERNAL_URL_HOSTS` is a comma-separated allowlist for remote product images and documents, for example `cdn.example.com,docs.example.com`. Relative URLs under `public/` remain allowed.
 
 ## Commands
 
@@ -99,7 +100,7 @@ npm run prisma:seed
 
 ## Security Notes
 
-- Dashboard access is protected by a simple `ADMIN_PASSWORD` cookie flow for the MVP.
+- Dashboard access requires a valid Google session through Supabase Auth and an email allowlisted in `STORE_ADMIN_EMAILS`.
 - Customer accounts use Supabase Auth with Google OAuth only.
 - Server actions validate critical inputs with Zod.
 - Product totals, sale totals and stock updates are calculated on the server.

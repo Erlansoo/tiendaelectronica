@@ -1,9 +1,11 @@
 import { SaleForm } from "@/components/SaleForm";
+import { requireStoreAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewSalePage() {
+  await requireStoreAdmin();
   const products = await prisma.product.findMany({
     where: { isActive: true },
     orderBy: { name: "asc" },

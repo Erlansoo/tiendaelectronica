@@ -2,8 +2,15 @@ import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
+export const PUBLIC_PRODUCTS_PAGE_SIZE = 24;
+const MAX_PRODUCT_SEARCH_LENGTH = 100;
+
+export function normalizeProductSearchQuery(query?: string) {
+  return query?.trim().slice(0, MAX_PRODUCT_SEARCH_LENGTH) ?? "";
+}
+
 export function productSearchWhere(query?: string, includeInactive = false): Prisma.ProductWhereInput {
-  const trimmed = query?.trim();
+  const trimmed = normalizeProductSearchQuery(query);
   const search = trimmed
     ? {
         OR: [
@@ -22,11 +29,20 @@ export function productSearchWhere(query?: string, includeInactive = false): Pri
   return includeInactive ? search : { AND: [{ isActive: true }, search] };
 }
 
-export async function getPublicProducts(query?: string) {
-  return prisma.product.findMany({
-    where: productSearchWhere(query),
+export async function getPublicProducts(query?: string, requestedPage?: number) {
+  const normalizedQuery = normalizeProductSearchQuery(query);
+  const where = productSearchWhere(normalizedQuery);
+  const total = await prisma.product.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / PUBLIC_PRODUCTS_PAGE_SIZE));
+  const page = Math.min(Math.max(requestedPage ?? 1, 1), totalPages);
+  const products = await prisma.product.findMany({
+    where,
     orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+    skip: (page - 1) * PUBLIC_PRODUCTS_PAGE_SIZE,
+    take: PUBLIC_PRODUCTS_PAGE_SIZE,
   });
+
+  return { products, page, totalPages, query: normalizedQuery };
 }
 
 export const getFeaturedProducts = unstable_cache(

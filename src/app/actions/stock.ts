@@ -4,7 +4,7 @@ import { StockMovementReason, StockMovementType } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStoreAdmin } from "@/lib/admin-auth";
-import { prisma } from "@/lib/prisma";
+import { runSerializableTransaction } from "@/lib/transactions";
 import { stockAdjustmentSchema } from "@/lib/validators";
 
 function movementType(previousStock: number, newStock: number) {
@@ -22,7 +22,7 @@ export async function adjustStock(formData: FormData) {
     notes: formData.get("notes"),
   });
 
-  await prisma.$transaction(async (tx) => {
+  await runSerializableTransaction(async (tx) => {
     const product = await tx.product.findUniqueOrThrow({
       where: { id: parsed.productId },
     });

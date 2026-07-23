@@ -10,10 +10,14 @@ export const dynamic = "force-dynamic";
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { q } = await searchParams;
-  const products = await getPublicProducts(q);
+  const { q, page: pageParam } = await searchParams;
+  const requestedPage = Number.parseInt(pageParam ?? "1", 10);
+  const { products, page, totalPages, query } = await getPublicProducts(
+    q,
+    Number.isFinite(requestedPage) ? requestedPage : 1,
+  );
 
   return (
     <>
@@ -31,7 +35,7 @@ export default async function ProductsPage({
               <LocalizedText es="Buscá por nombre, SKU, categoría, marca, etiqueta o descripción técnica." en="Search by name, SKU, category, brand, tag or technical description." />
             </p>
           </div>
-          <SearchInput defaultValue={q} placeholder="Buscar productos" />
+          <SearchInput defaultValue={query} placeholder="Buscar productos" />
         </div>
 
         {products.length === 0 ? (
@@ -43,6 +47,29 @@ export default async function ProductsPage({
             ))}
           </div>
         )}
+        {totalPages > 1 ? (
+          <nav className="mt-8 flex items-center justify-center gap-3" aria-label="Paginación de productos">
+            {page > 1 ? (
+              <a
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100"
+                href={`/productos?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(page - 1) })}`}
+              >
+                Anterior
+              </a>
+            ) : null}
+            <span className="text-sm text-slate-600">
+              Página {page} de {totalPages}
+            </span>
+            {page < totalPages ? (
+              <a
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100"
+                href={`/productos?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(page + 1) })}`}
+              >
+                Siguiente
+              </a>
+            ) : null}
+          </nav>
+        ) : null}
       </main>
     </>
   );

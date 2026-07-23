@@ -10,7 +10,7 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 
 ## Relevant Files
 
-- `middleware.ts`
+- `proxy.ts`
 - `src/lib/store-admin.ts`
 - `src/lib/customer-auth.ts`
 - `src/lib/supabase-server.ts`
@@ -37,4 +37,4 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 
 ## Next Step
 
-Set `STORE_ADMIN_EMAILS=erlan514@gmail.com` in Vercel and verify that the Google account can open `/dashboard`.
+Set `STORE_ADMIN_EMAILS=erlan514@gmail.com` in Vercel, deploy the current branch, and verify that the Google account can open `/dashboard`.
