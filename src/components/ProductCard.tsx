@@ -14,6 +14,8 @@ export type ProductCardProduct = Pick<
   priceSale: string | number | { toString(): string };
 };
 
+export const productCardGridClass = "grid gap-4 sm:justify-start sm:[grid-template-columns:repeat(auto-fill,minmax(208px,238px))]";
+
 export function ProductCard({
   product,
   accentColor,

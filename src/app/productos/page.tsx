@@ -1,6 +1,6 @@
 import { EmptyState } from "@/components/EmptyState";
 import { LocalizedText } from "@/components/LocalizedText";
-import { ProductCard } from "@/components/ProductCard";
+import { ProductCard, productCardGridClass } from "@/components/ProductCard";
 import { PublicHeader } from "@/components/PublicHeader";
 import { SearchInput } from "@/components/SearchInput";
 import { getPublicProducts } from "@/lib/products";
@@ -41,7 +41,7 @@ export default async function ProductsPage({
         {products.length === 0 ? (
           <EmptyState title="No se encontraron productos" message="Probá con otro término de búsqueda." />
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className={productCardGridClass}>
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

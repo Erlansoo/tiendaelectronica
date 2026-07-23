@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { LocalizedText } from "@/components/LocalizedText";
-import { ProductCard, type ProductCardProduct } from "@/components/ProductCard";
+import { ProductCard, productCardGridClass, type ProductCardProduct } from "@/components/ProductCard";
 
 export type FeaturedCategory = {
   label: string;
@@ -115,7 +115,7 @@ export function FeaturedInventoryFilter({
         </div>
 
         {activeProducts.length > 0 ? (
-          <div className="grid justify-start gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,225px),255px))] 2xl:gap-6">
+          <div className={productCardGridClass}>
             {activeProducts.map((product) => (
               <ProductCard
                 key={product.id}
