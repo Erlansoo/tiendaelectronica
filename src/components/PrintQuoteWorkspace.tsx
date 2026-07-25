@@ -13,11 +13,14 @@ const MODEL_BED_CLEARANCE = 0.025;
 const allowedExtensions = [".stl", ".obj", ".step", ".stp", ".3mf"];
 const scalePresets = [1, 0.1, 0.01, 0.001];
 const modelColors = ["#35ad7d", "#4f8edc", "#d88a35", "#9b6bd6", "#d65f78"];
-const printerBeds = [
+const fdmPrinterBeds = [
   { label: "200 x 200 x 200 mm", x: 200, y: 200, z: 200 },
   { label: "250 x 250 x 250 mm", x: 250, y: 250, z: 250 },
   { label: "300 x 300 x 300 mm", x: 300, y: 300, z: 300 },
   { label: "400 x 400 x 400 mm", x: 400, y: 400, z: 400 },
+];
+const resinPrinterBeds = [
+  { label: "Anycubic Photon Mono X 4K · 192 x 120 x 245 mm", x: 192, y: 245, z: 120 },
 ];
 
 type Dimensions = {
@@ -53,7 +56,7 @@ export function PrintQuoteWorkspace() {
   const selectionBoxRef = useRef<THREE.BoxHelper | null>(null);
   const buildPlateRef = useRef<THREE.Group | null>(null);
   const transformRef = useRef<TransformControls | null>(null);
-  const selectedBedRef = useRef(printerBeds[1]);
+  const selectedBedRef = useRef(fdmPrinterBeds[1]);
   const selectedModelIdRef = useRef<string | null>(null);
   const placementModeRef = useRef<"automatic" | "manual">("automatic");
   const faceSelectionModeRef = useRef(false);
@@ -64,13 +67,34 @@ export function PrintQuoteWorkspace() {
   const [previewNote, setPreviewNote] = useState<TranslationKey>("quotePreviewPrompt");
   const [bedIndex, setBedIndex] = useState(1);
   const [printTechnology, setPrintTechnology] = useState<"fdm" | "resin">("fdm");
+  const [material, setMaterial] = useState("pla");
   const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("automatic");
   const [qualityPreset, setQualityPreset] = useState<"draft" | "standard" | "detail">("standard");
   const [isSelectingSupportFace, setIsSelectingSupportFace] = useState(false);
   const [manualPosition, setManualPosition] = useState({ x: 0, y: 0 });
   const [isLoadingModels, setIsLoadingModels] = useState(false);
 
-  const selectedBed = printerBeds[bedIndex];
+  const availablePrinterBeds = printTechnology === "resin" ? resinPrinterBeds : fdmPrinterBeds;
+  const selectedBed = availablePrinterBeds[bedIndex] ?? availablePrinterBeds[0];
+  const materialOptions = printTechnology === "resin"
+    ? [
+        { value: "pla-like-resin", label: translate("quotePlaLikeResin", locale) },
+        { value: "standard-resin", label: translate("quoteStandardResin", locale) },
+        { value: "abs-like-resin", label: translate("quoteAbsLikeResin", locale) },
+        { value: "tough-resin", label: translate("quoteToughResin", locale) },
+        { value: "water-wash-resin", label: translate("quoteWaterWashResin", locale) },
+        { value: "high-temp-resin", label: translate("quoteHighTempResin", locale) },
+        { value: "castable-resin", label: translate("quoteCastableResin", locale) },
+      ]
+    : [
+        { value: "pla", label: "PLA" },
+        { value: "petg", label: "PETG" },
+        { value: "abs", label: "ABS" },
+        { value: "asa", label: "ASA" },
+        { value: "tpu", label: "TPU" },
+        { value: "nylon", label: "Nylon / PA" },
+        { value: "pc", label: "PC" },
+      ];
   const basicLayerHeights = printTechnology === "resin"
     ? { draft: "0.10 mm", standard: "0.05 mm", detail: "0.03 mm" }
     : { draft: "0.28 mm", standard: "0.20 mm", detail: "0.12 mm" };
@@ -667,6 +691,12 @@ export function PrintQuoteWorkspace() {
     setPlacementMode(mode);
   }
 
+  function changePrintTechnology(technology: "fdm" | "resin") {
+    setPrintTechnology(technology);
+    setBedIndex(technology === "resin" ? 0 : 1);
+    setMaterial(technology === "resin" ? "standard-resin" : "pla");
+  }
+
   function setCopies(nextCount: number) {
     const model = modelRef.current;
     if (!model || !selectedModelId) return;
@@ -903,13 +933,24 @@ export function PrintQuoteWorkspace() {
           <div className="max-h-[680px] overflow-y-auto overscroll-contain p-4 [scrollbar-gutter:stable]">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold text-black">
+            {translate("quotePrintTechnology", locale)}
+            <select
+              className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
+              value={printTechnology}
+              onChange={(event) => changePrintTechnology(event.target.value as "fdm" | "resin")}
+            >
+              <option value="fdm">{translate("quoteFdmTechnology", locale)}</option>
+              <option value="resin">{translate("quoteResinTechnology", locale)}</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm font-semibold text-black">
             {translate("quotePrinterBed", locale)}
             <select
               className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
               value={bedIndex}
               onChange={(event) => setBedIndex(Number(event.target.value))}
             >
-              {printerBeds.map((bed, index) => (
+              {availablePrinterBeds.map((bed, index) => (
                 <option key={bed.label} value={index}>
                   {bed.label}
                 </option>
@@ -917,25 +958,15 @@ export function PrintQuoteWorkspace() {
             </select>
           </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
-            {translate("quotePrintTechnology", locale)}
+            {translate("quoteMaterial", locale)}
             <select
               className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
-              value={printTechnology}
-              onChange={(event) => setPrintTechnology(event.target.value as "fdm" | "resin")}
+              value={material}
+              onChange={(event) => setMaterial(event.target.value)}
             >
-              <option value="fdm">FDM / FFF filament</option>
-              <option value="resin">MSLA resin</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-semibold text-black">
-            {translate("quoteMaterial", locale)}
-            <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-              <option>PLA</option>
-              <option>PETG</option>
-              <option>ABS</option>
-              <option>TPU</option>
-              <option>{translate("quoteStandardResin", locale)}</option>
-              <option>{translate("quoteToughResin", locale)}</option>
+              {materialOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
@@ -959,7 +990,7 @@ export function PrintQuoteWorkspace() {
                 <option value="detail">{translate("quoteQualityDetail", locale)} · {basicLayerHeights.detail}</option>
               </select>
             </label>
-          ) : (
+          ) : printTechnology === "fdm" ? (
             <>
               <label className="grid gap-1 text-sm font-semibold text-black">
                 {translate("quoteInfill", locale)}
@@ -968,7 +999,6 @@ export function PrintQuoteWorkspace() {
                   <option>40%</option>
                   <option>60%</option>
                   <option>100%</option>
-                  <option>{translate("quoteInfillNotApplicable", locale)}</option>
                 </select>
               </label>
               <label className="grid gap-1 text-sm font-semibold text-black">
@@ -977,7 +1007,34 @@ export function PrintQuoteWorkspace() {
                   <option>{translate("quoteLayerStandard", locale)}</option>
                   <option>{translate("quoteLayerFine", locale)}</option>
                   <option>{translate("quoteLayerDraft", locale)}</option>
-                  <option>{translate("quoteLayerResin", locale)}</option>
+                </select>
+              </label>
+            </>
+          ) : (
+            <>
+              <label className="grid gap-1 text-sm font-semibold text-black">
+                {translate("quoteLayerHeight", locale)}
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
+                  <option>{translate("quoteResinLayerStandard", locale)}</option>
+                  <option>{translate("quoteResinLayerFine", locale)}</option>
+                  <option>{translate("quoteResinLayerDraft", locale)}</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm font-semibold text-black">
+                {translate("quoteResinSupports", locale)}
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
+                  <option>{translate("quoteSupportsAutomatic", locale)}</option>
+                  <option>{translate("quoteSupportsLight", locale)}</option>
+                  <option>{translate("quoteSupportsMedium", locale)}</option>
+                  <option>{translate("quoteSupportsHeavy", locale)}</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm font-semibold text-black">
+                {translate("quoteResinHollowing", locale)}
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
+                  <option>{translate("quoteResinSolid", locale)}</option>
+                  <option>{translate("quoteResinHollow2", locale)}</option>
+                  <option>{translate("quoteResinHollow3", locale)}</option>
                 </select>
               </label>
             </>
@@ -989,7 +1046,14 @@ export function PrintQuoteWorkspace() {
             <div>
               <h3 className="font-semibold text-slate-950">{translate("quotePlacement", locale)}</h3>
               <p className="mt-1 text-sm text-slate-600">
-                {translate(placementMode === "automatic" ? "quoteAutomaticHelp" : "quoteManualHelp", locale)}
+                {translate(
+                  placementMode === "automatic"
+                    ? "quoteAutomaticHelp"
+                    : printTechnology === "resin"
+                      ? "quoteResinManualHelp"
+                      : "quoteManualHelp",
+                  locale,
+                )}
               </p>
             </div>
             <div className="flex rounded-md border border-[#a8ccc8] bg-white p-1">
@@ -1029,14 +1093,29 @@ export function PrintQuoteWorkspace() {
               </div>
               <div className="mt-4 border-t border-[#d7e8e6] pt-4">
                 <p className="text-sm font-semibold text-slate-900">{translate("quoteOrientation", locale)}</p>
-                <p className="mt-1 text-xs text-slate-600">{translate("quoteOrientationHelp", locale)}</p>
+                <p className="mt-1 text-xs text-slate-600">
+                  {translate(printTechnology === "resin" ? "quoteResinOrientationHelp" : "quoteOrientationHelp", locale)}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("x", Math.PI / 2)}>
-                    {translate("quoteLayOnSide", locale)}
-                  </button>
-                  <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("z", Math.PI / 2)}>
-                    {translate("quoteLayOnFront", locale)}
-                  </button>
+                  {printTechnology === "resin" ? (
+                    <>
+                      <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("x", Math.PI / 6)}>
+                        {translate("quoteTilt30", locale)}
+                      </button>
+                      <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("z", Math.PI / 4)}>
+                        {translate("quoteTilt45", locale)}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("x", Math.PI / 2)}>
+                        {translate("quoteLayOnSide", locale)}
+                      </button>
+                      <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("z", Math.PI / 2)}>
+                        {translate("quoteLayOnFront", locale)}
+                      </button>
+                    </>
+                  )}
                   <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("x", Math.PI)}>
                     {translate("quoteFlipModel", locale)}
                   </button>
