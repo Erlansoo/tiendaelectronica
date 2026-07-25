@@ -55,6 +55,8 @@ export function PrintQuoteWorkspace() {
   const transformRef = useRef<TransformControls | null>(null);
   const selectedBedRef = useRef(printerBeds[1]);
   const selectedModelIdRef = useRef<string | null>(null);
+  const placementModeRef = useRef<"automatic" | "manual">("automatic");
+  const directDraggingRef = useRef(false);
   const [models, setModels] = useState<ModelEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [error, setError] = useState<TranslationKey | null>(null);
@@ -68,6 +70,7 @@ export function PrintQuoteWorkspace() {
   const selectedBed = printerBeds[bedIndex];
   selectedBedRef.current = selectedBed;
   selectedModelIdRef.current = selectedModelId;
+  placementModeRef.current = placementMode;
   const selectedModel = models.find((model) => model.id === selectedModelId) ?? null;
   const dimensions = selectedModel?.dimensions ?? null;
   const scaleFactor = selectedModel?.scaleFactor ?? 1;
@@ -192,18 +195,210 @@ export function PrintQuoteWorkspace() {
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const intersectionPoint = new THREE.Vector3();
+    const bedPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const dragOffset = new THREE.Vector3();
+    const hoverMaterials = new Map<THREE.MeshStandardMaterial, { emissive: number; intensity: number }>();
+    let hoveredModel: THREE.Group | null = null;
+    let draggingModel: THREE.Group | null = null;
+    let draggingPointerId: number | null = null;
+    let pointerStart = { x: 0, y: 0, button: -1 };
+
+    function updateRay(clientX: number, clientY: number) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return false;
+      pointer.set(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      raycaster.setFromCamera(pointer, camera);
+      return true;
+    }
+
+    function pickModel(clientX: number, clientY: number) {
+      if (!updateRay(clientX, clientY)) return null;
+      let closestModel: THREE.Group | null = null;
+      let closestDistance = Number.POSITIVE_INFINITY;
+      for (const model of modelInstances.values()) {
+        const box = new THREE.Box3().setFromObject(model);
+        const hit = raycaster.ray.intersectBox(box, intersectionPoint);
+        if (!hit) continue;
+        const distance = raycaster.ray.origin.distanceTo(hit);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestModel = model;
+        }
+      }
+      return closestModel;
+    }
+
+    function clearHover() {
+      hoverMaterials.forEach((original, material) => {
+        material.emissive.setHex(original.emissive);
+        material.emissiveIntensity = original.intensity;
+      });
+      hoverMaterials.clear();
+      hoveredModel = null;
+    }
+
+    function highlightModel(model: THREE.Group | null) {
+      if (model === hoveredModel) return;
+      clearHover();
+      hoveredModel = model;
+      if (!model) {
+        renderer.domElement.style.cursor = "default";
+        return;
+      }
+      model.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((material) => {
+          if (!(material instanceof THREE.MeshStandardMaterial) || hoverMaterials.has(material)) return;
+          hoverMaterials.set(material, {
+            emissive: material.emissive.getHex(),
+            intensity: material.emissiveIntensity,
+          });
+          material.emissive.set("#f0a72f");
+          material.emissiveIntensity = 0.48;
+        });
+      });
+      renderer.domElement.style.cursor = "grab";
+    }
+
+    function activateModel(model: THREE.Group, showTransform: boolean) {
+      const id = model.userData.modelId;
+      if (typeof id !== "string") return;
+      selectedModelIdRef.current = id;
+      setSelectedModelId(id);
+      modelRef.current = model;
+      transform.detach();
+      transform.attach(model);
+      transform.visible = showTransform && placementModeRef.current === "manual";
+      replaceSelectionBox(scene, selectionBoxRef, model);
+      setManualPosition({
+        x: Number(model.position.x.toFixed(1)),
+        y: Number(model.position.z.toFixed(1)),
+      });
+    }
+
+    function finishRightDrag(event?: PointerEvent) {
+      const model = draggingModel;
+      const id = typeof model?.userData.modelId === "string" ? model.userData.modelId : null;
+      draggingModel = null;
+      directDraggingRef.current = false;
+      controls.enabled = true;
+      if (model) {
+        constrainToBuildPlate(model, selectedBedRef.current);
+        transform.detach();
+        transform.attach(model);
+        transform.visible = true;
+        selectionBoxRef.current?.update();
+        setManualPosition({
+          x: Number(model.position.x.toFixed(1)),
+          y: Number(model.position.z.toFixed(1)),
+        });
+      }
+      if (id) {
+        setModels((current) => refreshModelMetrics(current, modelInstances, selectedBedRef.current, id));
+      }
+      if (event && renderer.domElement.hasPointerCapture(event.pointerId)) {
+        renderer.domElement.releasePointerCapture(event.pointerId);
+      }
+      draggingPointerId = null;
+      renderer.domElement.style.cursor = hoveredModel ? "grab" : "default";
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      pointerStart = { x: event.clientX, y: event.clientY, button: event.button };
+      if (event.button !== 2) return;
+      const model = pickModel(event.clientX, event.clientY);
+      if (!model || !updateRay(event.clientX, event.clientY) || !raycaster.ray.intersectPlane(bedPlane, intersectionPoint)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      placementModeRef.current = "manual";
+      directDraggingRef.current = true;
+      setPlacementMode("manual");
+      activateModel(model, false);
+      draggingModel = model;
+      draggingPointerId = event.pointerId;
+      dragOffset.set(model.position.x - intersectionPoint.x, 0, model.position.z - intersectionPoint.z);
+      controls.enabled = false;
+      transform.visible = false;
+      renderer.domElement.setPointerCapture(event.pointerId);
+      renderer.domElement.style.cursor = "grabbing";
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (draggingModel && draggingPointerId === event.pointerId) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (updateRay(event.clientX, event.clientY) && raycaster.ray.intersectPlane(bedPlane, intersectionPoint)) {
+          draggingModel.position.x = intersectionPoint.x + dragOffset.x;
+          draggingModel.position.z = intersectionPoint.z + dragOffset.z;
+          constrainToBuildPlate(draggingModel, selectedBedRef.current);
+          selectionBoxRef.current?.update();
+          setManualPosition({
+            x: Number(draggingModel.position.x.toFixed(1)),
+            y: Number(draggingModel.position.z.toFixed(1)),
+          });
+        }
+        return;
+      }
+      highlightModel(pickModel(event.clientX, event.clientY));
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (draggingModel && draggingPointerId === event.pointerId) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        finishRightDrag(event);
+        highlightModel(pickModel(event.clientX, event.clientY));
+        return;
+      }
+      if (
+        event.button === 0 &&
+        pointerStart.button === 0 &&
+        Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) <= 6
+      ) {
+        const model = pickModel(event.clientX, event.clientY);
+        if (model) activateModel(model, true);
+      }
+    };
+
+    const handlePointerCancel = (event: PointerEvent) => {
+      if (draggingPointerId === event.pointerId) finishRightDrag(event);
+    };
+    const handlePointerLeave = () => {
+      if (!draggingModel) clearHover();
+    };
+    const handleContextMenu = (event: MouseEvent) => event.preventDefault();
+
+    renderer.domElement.addEventListener("pointerdown", handlePointerDown, true);
+    renderer.domElement.addEventListener("pointermove", handlePointerMove, true);
+    renderer.domElement.addEventListener("pointerup", handlePointerUp, true);
+    renderer.domElement.addEventListener("pointercancel", handlePointerCancel, true);
+    renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
+    renderer.domElement.addEventListener("contextmenu", handleContextMenu);
+
     return () => {
       cancelAnimationFrame(frameId);
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      renderer.domElement.removeEventListener("pointerdown", handlePointerDown, true);
+      renderer.domElement.removeEventListener("pointermove", handlePointerMove, true);
+      renderer.domElement.removeEventListener("pointerup", handlePointerUp, true);
+      renderer.domElement.removeEventListener("pointercancel", handlePointerCancel, true);
+      renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
+      renderer.domElement.removeEventListener("contextmenu", handleContextMenu);
+      clearHover();
+      controls.enabled = true;
       controls.dispose();
       transform.detach();
       transform.dispose();
-      if (selectionBoxRef.current) {
-        scene.remove(selectionBoxRef.current);
-        disposeObject(selectionBoxRef.current);
-      }
+      replaceSelectionBox(scene, selectionBoxRef, null);
       modelInstances.forEach((model) => disposeObject(model));
       modelInstances.clear();
       if (placeholderRef.current) disposeObject(placeholderRef.current);
@@ -228,19 +423,19 @@ export function PrintQuoteWorkspace() {
     buildPlateRef.current = plate;
     scene.add(plate);
     if (modelsRef.current.size > 0) {
-      if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      if (placementModeRef.current === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
       else modelsRef.current.forEach((model) => constrainToBuildPlate(model, selectedBed));
       setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBed));
     } else if (placeholderRef.current) {
       autoPlaceModel(placeholderRef.current, selectedBed);
     }
     frameModel(modelRef.current ?? undefined);
-  }, [selectedBed, placementMode]);
+  }, [selectedBed]);
 
   useEffect(() => {
     const transform = transformRef.current;
     if (!transform) return;
-    transform.visible = placementMode === "manual" && Boolean(selectedModelId) && Boolean(modelRef.current);
+    transform.visible = placementMode === "manual" && Boolean(selectedModelId) && Boolean(modelRef.current) && !directDraggingRef.current;
     if (placementMode === "automatic") {
       arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
       setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBed));
@@ -282,19 +477,7 @@ export function PrintQuoteWorkspace() {
   function updateSelectionBox(model: THREE.Group | null) {
     const scene = sceneRef.current;
     if (!scene) return;
-    if (selectionBoxRef.current) {
-      scene.remove(selectionBoxRef.current);
-      disposeObject(selectionBoxRef.current);
-      selectionBoxRef.current = null;
-    }
-    if (!model) return;
-    const helper = new THREE.BoxHelper(model, "#f0a72f");
-    helper.material.depthTest = false;
-    helper.material.transparent = true;
-    helper.material.opacity = 0.9;
-    helper.renderOrder = 20;
-    selectionBoxRef.current = helper;
-    scene.add(helper);
+    replaceSelectionBox(scene, selectionBoxRef, model);
   }
 
   function selectModel(id: string) {
@@ -855,6 +1038,7 @@ export function PrintQuoteWorkspace() {
           <div className="flex items-center gap-3 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1.5"><Rotate3D size={14} aria-hidden /> {translate("quoteOrbitControl", locale)}</span>
             <span className="inline-flex items-center gap-1.5"><MousePointer2 size={14} aria-hidden /> {translate("quotePanControl", locale)}</span>
+            <span className="inline-flex items-center gap-1.5"><BoxSelect size={14} aria-hidden /> {translate("quoteMoveModelControl", locale)}</span>
             <span className="inline-flex items-center gap-1.5"><ZoomIn size={14} aria-hidden /> {translate("quoteZoomControl", locale)}</span>
           </div>
         </div>
@@ -1137,6 +1321,26 @@ function roundedRectangleShape(width: number, depth: number, radius: number) {
   shape.lineTo(x, y + radius);
   shape.quadraticCurveTo(x, y, x + radius, y);
   return shape;
+}
+
+function replaceSelectionBox(
+  scene: THREE.Scene,
+  selectionBox: { current: THREE.BoxHelper | null },
+  model: THREE.Group | null,
+) {
+  if (selectionBox.current) {
+    scene.remove(selectionBox.current);
+    disposeObject(selectionBox.current);
+    selectionBox.current = null;
+  }
+  if (!model) return;
+  const helper = new THREE.BoxHelper(model, "#f0a72f");
+  helper.material.depthTest = false;
+  helper.material.transparent = true;
+  helper.material.opacity = 0.9;
+  helper.renderOrder = 20;
+  selectionBox.current = helper;
+  scene.add(helper);
 }
 
 function disposeObject(object: THREE.Object3D) {
