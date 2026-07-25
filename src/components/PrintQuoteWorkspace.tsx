@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Crosshair, MousePointer2, Rotate3D, ZoomIn } from "lucide-react";
+import { Box, BoxSelect, Crosshair, MousePointer2, Rotate3D, Trash2, ZoomIn } from "lucide-react";
 import * as THREE from "three";
 import { OrbitControls, STLLoader, TransformControls } from "three-stdlib";
 import { translate, type TranslationKey } from "@/lib/i18n";
 import { useLocale } from "@/components/useLocale";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
+const MAX_MODELS = 5;
 const MODEL_BED_CLEARANCE = 0.025;
 const allowedExtensions = [".stl", ".obj", ".step", ".stp", ".3mf"];
 const scalePresets = [1, 0.1, 0.01, 0.001];
+const modelColors = ["#35ad7d", "#4f8edc", "#d88a35", "#9b6bd6", "#d65f78"];
 const printerBeds = [
   { label: "200 x 200 x 200 mm", x: 200, y: 200, z: 200 },
   { label: "250 x 250 x 250 mm", x: 250, y: 250, z: 250 },
@@ -24,6 +26,21 @@ type Dimensions = {
   z: number;
 };
 
+type ModelEntry = {
+  id: string;
+  file: File;
+  name: string;
+  color: string;
+  previewable: boolean;
+  dimensions: Dimensions | null;
+  scaleFactor: number;
+  copyCount: number;
+  baseSolidVolumeMm3: number | null;
+  solidVolumeMm3: number | null;
+  occupiedVolumeMm3: number | null;
+  fitsBed: boolean;
+};
+
 export function PrintQuoteWorkspace() {
   const locale = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,25 +48,35 @@ export function PrintQuoteWorkspace() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const modelRef = useRef<THREE.Group | null>(null);
+  const modelsRef = useRef<Map<string, THREE.Group>>(new Map());
+  const placeholderRef = useRef<THREE.Group | null>(null);
+  const selectionBoxRef = useRef<THREE.BoxHelper | null>(null);
   const buildPlateRef = useRef<THREE.Group | null>(null);
   const transformRef = useRef<TransformControls | null>(null);
   const selectedBedRef = useRef(printerBeds[1]);
-  const [file, setFile] = useState<File | null>(null);
+  const selectedModelIdRef = useRef<string | null>(null);
+  const [models, setModels] = useState<ModelEntry[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [error, setError] = useState<TranslationKey | null>(null);
   const [previewNote, setPreviewNote] = useState<TranslationKey>("quotePreviewPrompt");
-  const [dimensions, setDimensions] = useState<Dimensions | null>(null);
-  const [scaleFactor, setScaleFactor] = useState(1);
   const [bedIndex, setBedIndex] = useState(1);
+  const [printTechnology, setPrintTechnology] = useState<"fdm" | "resin">("fdm");
   const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("automatic");
-  const [copyCount, setCopyCount] = useState(1);
   const [manualPosition, setManualPosition] = useState({ x: 0, y: 0 });
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   const selectedBed = printerBeds[bedIndex];
   selectedBedRef.current = selectedBed;
+  selectedModelIdRef.current = selectedModelId;
+  const selectedModel = models.find((model) => model.id === selectedModelId) ?? null;
+  const dimensions = selectedModel?.dimensions ?? null;
+  const scaleFactor = selectedModel?.scaleFactor ?? 1;
+  const copyCount = selectedModel?.copyCount ?? 1;
   const fileSummary = useMemo(() => {
-    if (!file) return translate("quoteNoFile", locale);
-    return `${file.name} - ${(file.size / 1024 / 1024).toFixed(2)} MB`;
-  }, [file, locale]);
+    if (models.length === 0) return translate("quoteNoFile", locale);
+    const totalSize = models.reduce((total, model) => total + model.file.size, 0);
+    return `${models.length}/${MAX_MODELS} · ${(totalSize / 1024 / 1024).toFixed(2)} MB`;
+  }, [models, locale]);
   const scaledDimensions = dimensions
     ? {
         x: dimensions.x * scaleFactor,
@@ -58,9 +85,7 @@ export function PrintQuoteWorkspace() {
       }
     : null;
   const suggestedScale = dimensions ? suggestScale(dimensions, selectedBed) : 1;
-  const fitsSelectedBed = scaledDimensions
-    ? scaledDimensions.x <= selectedBed.x && scaledDimensions.y <= selectedBed.y && scaledDimensions.z <= selectedBed.z
-    : true;
+  const fitsSelectedBed = models.every((model) => model.fitsBed);
   const modelLooksTiny = scaledDimensions
     ? Math.max(scaledDimensions.x, scaledDimensions.y, scaledDimensions.z) > 0 &&
       Math.max(scaledDimensions.x, scaledDimensions.y, scaledDimensions.z) < 5
@@ -70,6 +95,7 @@ export function PrintQuoteWorkspace() {
     const container = containerRef.current;
     if (!container) return;
     const viewport = container;
+    const modelInstances = modelsRef.current;
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
@@ -105,8 +131,10 @@ export function PrintQuoteWorkspace() {
     scene.add(fill);
 
     const placeholder = wrapModel(createPlaceholderModel());
+    placeholderRef.current = placeholder;
     modelRef.current = placeholder;
     scene.add(placeholder);
+    autoPlaceModel(placeholder, selectedBedRef.current);
     frameModel(placeholder);
 
     const transform = new TransformControls(camera, renderer.domElement);
@@ -124,6 +152,8 @@ export function PrintQuoteWorkspace() {
       if (!modelRef.current) return;
       constrainToBuildPlate(modelRef.current, selectedBedRef.current);
       setManualPosition({ x: Number(modelRef.current.position.x.toFixed(1)), y: Number(modelRef.current.position.z.toFixed(1)) });
+      const selectedId = selectedModelIdRef.current;
+      if (selectedId) syncModelMetrics(selectedId);
     });
     transformRef.current = transform;
     scene.add(transform);
@@ -134,6 +164,7 @@ export function PrintQuoteWorkspace() {
     function animate() {
       if (isInViewport && isPageVisible) {
         controls.update();
+        selectionBoxRef.current?.update();
         renderer.render(scene, camera);
       }
       frameId = requestAnimationFrame(animate);
@@ -169,7 +200,13 @@ export function PrintQuoteWorkspace() {
       controls.dispose();
       transform.detach();
       transform.dispose();
-      if (modelRef.current) disposeObject(modelRef.current);
+      if (selectionBoxRef.current) {
+        scene.remove(selectionBoxRef.current);
+        disposeObject(selectionBoxRef.current);
+      }
+      modelInstances.forEach((model) => disposeObject(model));
+      modelInstances.clear();
+      if (placeholderRef.current) disposeObject(placeholderRef.current);
       if (buildPlateRef.current) disposeObject(buildPlateRef.current);
       renderer.dispose();
       if (renderer.domElement.parentElement === viewport) {
@@ -190,41 +227,42 @@ export function PrintQuoteWorkspace() {
     const plate = createBuildPlate(selectedBed.x, selectedBed.z);
     buildPlateRef.current = plate;
     scene.add(plate);
-    if (modelRef.current) {
-      constrainToBuildPlate(modelRef.current, selectedBed);
+    if (modelsRef.current.size > 0) {
+      if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      else modelsRef.current.forEach((model) => constrainToBuildPlate(model, selectedBed));
+      setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBed));
+    } else if (placeholderRef.current) {
+      autoPlaceModel(placeholderRef.current, selectedBed);
     }
-  }, [selectedBed]);
+    frameModel(modelRef.current ?? undefined);
+  }, [selectedBed, placementMode]);
 
   useEffect(() => {
     const transform = transformRef.current;
-    if (!transform || !modelRef.current) return;
-    transform.visible = placementMode === "manual";
+    if (!transform) return;
+    transform.visible = placementMode === "manual" && Boolean(selectedModelId) && Boolean(modelRef.current);
     if (placementMode === "automatic") {
-      autoPlaceModel(modelRef.current, selectedBed);
+      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBed));
+      frameModel(modelRef.current ?? undefined);
     }
-  }, [placementMode, selectedBed]);
+  }, [placementMode, selectedBed, selectedModelId]);
 
-  function frameModel(object: THREE.Object3D) {
+  function frameModel(fallbackObject?: THREE.Object3D) {
     const camera = cameraRef.current;
     const controls = controlsRef.current;
     if (!camera || !controls) return;
 
-    const box = new THREE.Box3().setFromObject(object);
-    const center = box.getCenter(new THREE.Vector3());
-
-    // Keep the model's lowest point on the build plate instead of centering it through the grid.
-    object.position.x -= center.x;
-    object.position.z -= center.z;
-    object.position.y -= box.min.y;
-    object.position.y += MODEL_BED_CLEARANCE;
-
     const bed = selectedBedRef.current;
-    const objectBox = new THREE.Box3().setFromObject(object);
     const sceneBox = new THREE.Box3(
       new THREE.Vector3(-bed.x / 2, 0, -bed.z / 2),
-      new THREE.Vector3(bed.x / 2, Math.max(1, objectBox.max.y), bed.z / 2),
+      new THREE.Vector3(bed.x / 2, 1, bed.z / 2),
     );
-    sceneBox.union(objectBox);
+    if (modelsRef.current.size > 0) {
+      modelsRef.current.forEach((model) => sceneBox.union(new THREE.Box3().setFromObject(model)));
+    } else if (fallbackObject) {
+      sceneBox.union(new THREE.Box3().setFromObject(fallbackObject));
+    }
     const sceneCenter = sceneBox.getCenter(new THREE.Vector3());
     const sceneSphere = sceneBox.getBoundingSphere(new THREE.Sphere());
     const verticalFov = THREE.MathUtils.degToRad(camera.fov);
@@ -241,43 +279,99 @@ export function PrintQuoteWorkspace() {
     controls.update();
   }
 
-  function replaceModel(object: THREE.Object3D) {
+  function updateSelectionBox(model: THREE.Group | null) {
     const scene = sceneRef.current;
     if (!scene) return;
-    if (modelRef.current) {
-      scene.remove(modelRef.current);
-      disposeObject(modelRef.current);
+    if (selectionBoxRef.current) {
+      scene.remove(selectionBoxRef.current);
+      disposeObject(selectionBoxRef.current);
+      selectionBoxRef.current = null;
     }
-    const model = wrapModel(object);
+    if (!model) return;
+    const helper = new THREE.BoxHelper(model, "#f0a72f");
+    helper.material.depthTest = false;
+    helper.material.transparent = true;
+    helper.material.opacity = 0.9;
+    helper.renderOrder = 20;
+    selectionBoxRef.current = helper;
+    scene.add(helper);
+  }
+
+  function selectModel(id: string) {
+    const model = modelsRef.current.get(id) ?? null;
+    setSelectedModelId(id);
     modelRef.current = model;
-    scene.add(model);
-    transformRef.current?.attach(model);
-    autoPlaceModel(model, selectedBed);
-    setCopyCount(1);
-    setManualPosition({ x: 0, y: 0 });
-    frameModel(model);
+    const transform = transformRef.current;
+    if (transform) {
+      transform.detach();
+      if (model) transform.attach(model);
+      transform.visible = Boolean(model) && placementMode === "manual";
+    }
+    updateSelectionBox(model);
+    setManualPosition({
+      x: Number((model?.position.x ?? 0).toFixed(1)),
+      y: Number((model?.position.z ?? 0).toFixed(1)),
+    });
+  }
+
+  function removePlaceholder() {
+    const placeholder = placeholderRef.current;
+    const scene = sceneRef.current;
+    if (!placeholder || !scene) return;
+    scene.remove(placeholder);
+    disposeObject(placeholder);
+    placeholderRef.current = null;
+    if (modelRef.current === placeholder) modelRef.current = null;
+  }
+
+  function restorePlaceholder() {
+    const scene = sceneRef.current;
+    if (!scene || placeholderRef.current) return;
+    const placeholder = wrapModel(createPlaceholderModel());
+    placeholderRef.current = placeholder;
+    modelRef.current = placeholder;
+    autoPlaceModel(placeholder, selectedBedRef.current);
+    scene.add(placeholder);
+    transformRef.current?.detach();
+    if (transformRef.current) transformRef.current.visible = false;
+    updateSelectionBox(null);
+    frameModel(placeholder);
+  }
+
+  function syncModelMetrics(id: string) {
+    setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBedRef.current, id));
+  }
+
+  function syncAllModelMetrics() {
+    setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBedRef.current));
   }
 
   function applyModelScale(nextScale: number) {
+    if (!selectedModelId) return;
     const safeScale = Number.isFinite(nextScale) && nextScale > 0 ? nextScale : 1;
-    setScaleFactor(safeScale);
-    if (modelRef.current) {
-      modelRef.current.scale.setScalar(safeScale);
-      constrainToBuildPlate(modelRef.current, selectedBed);
-      frameModel(modelRef.current);
-    }
+    const model = modelsRef.current.get(selectedModelId);
+    if (!model) return;
+    setModels((current) => current.map((entry) => entry.id === selectedModelId ? { ...entry, scaleFactor: safeScale } : entry));
+    model.scale.setScalar(safeScale);
+    if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+    else constrainToBuildPlate(model, selectedBed);
+    syncAllModelMetrics();
+    frameModel(model);
   }
 
   function resetView() {
-    if (modelRef.current) frameModel(modelRef.current);
+    frameModel(modelRef.current ?? placeholderRef.current ?? undefined);
   }
 
   function applyAutomaticPlacement() {
-    const model = modelRef.current;
-    if (!model) return;
-    autoPlaceModel(model, selectedBed);
-    setManualPosition({ x: 0, y: 0 });
-    frameModel(model);
+    arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+    syncAllModelMetrics();
+    const model = selectedModelId ? modelsRef.current.get(selectedModelId) : null;
+    setManualPosition({
+      x: Number((model?.position.x ?? 0).toFixed(1)),
+      y: Number((model?.position.z ?? 0).toFixed(1)),
+    });
+    frameModel(model ?? undefined);
   }
 
   function setPlacementPosition(axis: "x" | "y", value: number) {
@@ -287,85 +381,175 @@ export function PrintQuoteWorkspace() {
     else model.position.z = value;
     constrainToBuildPlate(model, selectedBed);
     setManualPosition({ x: Number(model.position.x.toFixed(1)), y: Number(model.position.z.toFixed(1)) });
+    if (selectedModelId) syncModelMetrics(selectedModelId);
   }
 
   function rotateModel() {
     const model = modelRef.current;
     if (!model) return;
     model.rotation.y += Math.PI / 2;
-    constrainToBuildPlate(model, selectedBed);
+    if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+    else constrainToBuildPlate(model, selectedBed);
+    syncAllModelMetrics();
     frameModel(model);
   }
 
   function setCopies(nextCount: number) {
     const model = modelRef.current;
-    if (!model) return;
+    if (!model || !selectedModelId) return;
     const safeCount = Math.max(1, Math.min(12, Math.round(nextCount) || 1));
     arrangeCopies(model, safeCount, selectedBed);
-    setCopyCount(safeCount);
-    constrainToBuildPlate(model, selectedBed);
+    setModels((current) => current.map((entry) => entry.id === selectedModelId ? { ...entry, copyCount: safeCount } : entry));
+    if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+    else constrainToBuildPlate(model, selectedBed);
+    syncAllModelMetrics();
     frameModel(model);
   }
 
-  async function loadStlPreview(selected: File) {
+  async function createStlEntry(selected: File, id: string, color: string) {
     const buffer = await selected.arrayBuffer();
     const geometry = new STLLoader().parse(buffer);
     geometry.computeVertexNormals();
     geometry.computeBoundingBox();
-
-    const size = geometry.boundingBox?.getSize(new THREE.Vector3()) ?? new THREE.Vector3();
+    const solidVolumeMm3 = calculateGeometryVolume(geometry);
+    const material = new THREE.MeshStandardMaterial({
+      color,
+      metalness: 0.06,
+      roughness: 0.5,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.updateMatrixWorld(true);
+    const size = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
     const detectedDimensions = {
       x: Math.abs(size.x),
       y: Math.abs(size.y),
       z: Math.abs(size.z),
     };
     const recommendedScale = suggestScale(detectedDimensions, selectedBed);
+    const model = wrapModel(mesh);
+    model.userData.modelId = id;
+    model.scale.setScalar(recommendedScale);
 
-    setDimensions(detectedDimensions);
-    setScaleFactor(recommendedScale);
-
-    const material = new THREE.MeshStandardMaterial({
-      color: "#35ad7d",
-      metalness: 0.06,
-      roughness: 0.5,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.scale.setScalar(recommendedScale);
-    replaceModel(mesh);
-    setPreviewNote("quotePreviewLoaded");
+    const entry: ModelEntry = {
+      id,
+      file: selected,
+      name: selected.name,
+      color,
+      previewable: true,
+      dimensions: detectedDimensions,
+      scaleFactor: recommendedScale,
+      copyCount: 1,
+      baseSolidVolumeMm3: solidVolumeMm3,
+      solidVolumeMm3: solidVolumeMm3 * Math.pow(recommendedScale, 3),
+      occupiedVolumeMm3: null,
+      fitsBed: true,
+    };
+    return { entry, model };
   }
 
   async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const selected = event.target.files?.[0] ?? null;
+    const incomingFiles = Array.from(event.target.files ?? []);
+    event.target.value = "";
     setError(null);
-    setFile(null);
-    setDimensions(null);
-    applyModelScale(1);
-
-    if (!selected) return;
-    const lowerName = selected.name.toLowerCase();
-    const validExtension = allowedExtensions.some((extension) => lowerName.endsWith(extension));
-
-    if (!validExtension) {
-      setError("quoteInvalidFile");
-      event.target.value = "";
+    if (incomingFiles.length === 0) return;
+    const availableSlots = MAX_MODELS - models.length;
+    if (availableSlots <= 0) {
+      setError("quoteMaxModels");
       return;
     }
 
-    if (selected.size > MAX_FILE_SIZE) {
-      setError("quoteFileTooLarge");
-      event.target.value = "";
-      return;
+    setIsLoadingModels(true);
+    const acceptedEntries: ModelEntry[] = [];
+    const loadedModels: Array<{ id: string; model: THREE.Group }> = [];
+    let rejection: TranslationKey | null = incomingFiles.length > availableSlots ? "quoteMaxModels" : null;
+
+    for (const selected of incomingFiles.slice(0, availableSlots)) {
+      const lowerName = selected.name.toLowerCase();
+      const validExtension = allowedExtensions.some((extension) => lowerName.endsWith(extension));
+      if (!validExtension) {
+        rejection ??= "quoteInvalidFile";
+        continue;
+      }
+      if (selected.size > MAX_FILE_SIZE) {
+        rejection ??= "quoteFileTooLarge";
+        continue;
+      }
+
+      const id = crypto.randomUUID();
+      const color = modelColors[(models.length + acceptedEntries.length) % modelColors.length];
+      if (lowerName.endsWith(".stl")) {
+        try {
+          const loaded = await createStlEntry(selected, id, color);
+          acceptedEntries.push(loaded.entry);
+          loadedModels.push({ id, model: loaded.model });
+        } catch {
+          rejection ??= "quoteStlReadError";
+        }
+      } else {
+        acceptedEntries.push({
+          id,
+          file: selected,
+          name: selected.name,
+          color,
+          previewable: false,
+          dimensions: null,
+          scaleFactor: 1,
+          copyCount: 1,
+          baseSolidVolumeMm3: null,
+          solidVolumeMm3: null,
+          occupiedVolumeMm3: null,
+          fitsBed: true,
+        });
+      }
     }
 
-    setFile(selected);
+    if (acceptedEntries.length > 0) {
+      removePlaceholder();
+      const scene = sceneRef.current;
+      loadedModels.forEach(({ id, model }) => {
+        modelsRef.current.set(id, model);
+        scene?.add(model);
+      });
+      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      setModels((current) => [...current, ...acceptedEntries]);
+      syncAllModelMetrics();
+      const firstSelectable = acceptedEntries.find((entry) => entry.previewable) ?? acceptedEntries[0];
+      selectModel(firstSelectable.id);
+      setPreviewNote(loadedModels.length > 0 ? "quotePreviewLoaded" : "quotePreviewUnavailable");
+      frameModel(modelsRef.current.get(firstSelectable.id));
+    }
+    setError(rejection);
+    setIsLoadingModels(false);
+  }
 
-    if (lowerName.endsWith(".stl")) {
-      await loadStlPreview(selected);
-    } else {
-      replaceModel(createPlaceholderModel());
-      setPreviewNote("quotePreviewUnavailable");
+  function removeModel(id: string) {
+    setError(null);
+    const scene = sceneRef.current;
+    const model = modelsRef.current.get(id);
+    if (model) {
+      scene?.remove(model);
+      modelsRef.current.delete(id);
+      disposeObject(model);
+    }
+    const remaining = models.filter((entry) => entry.id !== id);
+    setModels(remaining);
+    if (selectedModelId === id) {
+      const next = remaining[0] ?? null;
+      if (next) selectModel(next.id);
+      else {
+        setSelectedModelId(null);
+        selectedModelIdRef.current = null;
+        transformRef.current?.detach();
+        updateSelectionBox(null);
+        restorePlaceholder();
+        setPreviewNote("quotePreviewPrompt");
+      }
+    }
+    if (remaining.length > 0 && placementMode === "automatic") {
+      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      syncAllModelMetrics();
+      frameModel(modelRef.current ?? undefined);
     }
   }
 
@@ -382,12 +566,46 @@ export function PrintQuoteWorkspace() {
           <input
             accept=".stl,.obj,.step,.stp,.3mf"
             className="rounded-md border border-neutral-300 bg-neutral-50 p-3 text-sm text-neutral-700 file:mr-4 file:rounded-full file:border-0 file:bg-black file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#f5a524] hover:file:text-black"
+            disabled={isLoadingModels || models.length >= MAX_MODELS}
+            multiple
             type="file"
             onChange={onFileChange}
           />
         </label>
         <p className="mt-2 text-sm text-neutral-500">{fileSummary}</p>
+        {isLoadingModels ? <p className="mt-2 text-sm font-semibold text-[#17645e]">{translate("quoteLoadingModels", locale)}</p> : null}
         {error ? <p className="mt-2 rounded-md bg-red-50 p-3 text-sm font-semibold text-red-700">{translate(error, locale)}</p> : null}
+
+        {models.length > 0 ? (
+          <div className="mt-4 grid gap-2" aria-label={translate("quoteModelList", locale)}>
+            {models.map((entry) => (
+              <div
+                className={`flex items-center gap-3 rounded-lg border p-3 transition ${
+                  entry.id === selectedModelId ? "border-[#2b7a72] bg-[#edf8f6] ring-1 ring-[#2b7a72]/20" : "border-neutral-200 bg-white"
+                }`}
+                key={entry.id}
+              >
+                <button className="flex min-w-0 flex-1 items-center gap-3 text-left" type="button" onClick={() => selectModel(entry.id)}>
+                  <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} aria-hidden />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-slate-900">{entry.name}</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      {(entry.file.size / 1024 / 1024).toFixed(2)} MB · {entry.previewable ? translate("quoteReadyToArrange", locale) : translate("quoteManualReviewBadge", locale)}
+                    </span>
+                  </span>
+                </button>
+                <button
+                  aria-label={`${translate("quoteRemoveModel", locale)} ${entry.name}`}
+                  className="rounded-md p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                  type="button"
+                  onClick={() => removeModel(entry.id)}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold text-black">
@@ -406,9 +624,13 @@ export function PrintQuoteWorkspace() {
           </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
             {translate("quotePrintTechnology", locale)}
-            <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-              <option>FDM / FFF filament</option>
-              <option>MSLA resin</option>
+            <select
+              className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
+              value={printTechnology}
+              onChange={(event) => setPrintTechnology(event.target.value as "fdm" | "resin")}
+            >
+              <option value="fdm">FDM / FFF filament</option>
+              <option value="resin">MSLA resin</option>
             </select>
           </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
@@ -462,6 +684,7 @@ export function PrintQuoteWorkspace() {
             <div className="flex rounded-md border border-[#a8ccc8] bg-white p-1">
               <button
                 className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "automatic" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
+                disabled={modelsRef.current.size === 0}
                 type="button"
                 onClick={() => {
                   setPlacementMode("automatic");
@@ -472,6 +695,7 @@ export function PrintQuoteWorkspace() {
               </button>
               <button
                 className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "manual" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
+                disabled={!selectedModel?.previewable}
                 type="button"
                 onClick={() => setPlacementMode("manual")}
               >
@@ -496,13 +720,13 @@ export function PrintQuoteWorkspace() {
             </div>
           ) : null}
 
-          <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-[#c9e2df] pt-4">
+          {selectedModel?.previewable ? <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-[#c9e2df] pt-4">
             <label className="grid gap-1 text-sm font-semibold text-slate-800">
               {translate("quoteCopies", locale)}
               <input className="h-10 w-24 rounded-md border border-slate-300 bg-white px-3" min={1} max={12} type="number" value={copyCount} onChange={(event) => setCopies(Number(event.target.value))} />
             </label>
             <p className="max-w-sm pb-2 text-sm text-slate-600">{translate("quoteCopiesHelp", locale)}</p>
-          </div>
+          </div> : null}
         </section>
 
         {dimensions ? (
@@ -563,6 +787,28 @@ export function PrintQuoteWorkspace() {
                 {translate("quoteTinyModel", locale)}
               </p>
             ) : null}
+
+            <div className="mt-4 grid gap-3 border-t border-neutral-200 pt-4 sm:grid-cols-2">
+              <div className="rounded-lg border border-[#c9dedb] bg-white p-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <Box size={16} className="text-[#2b7a72]" aria-hidden />
+                  {translate("quoteSolidVolume", locale)}
+                </div>
+                <p className="mt-2 text-xl font-semibold text-slate-950">{formatVolume(selectedModel?.solidVolumeMm3)}</p>
+                <p className="mt-1 text-xs text-slate-500">{translate("quoteSolidVolumeHelp", locale)}</p>
+              </div>
+              <div className="rounded-lg border border-[#ead9b4] bg-white p-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <BoxSelect size={16} className="text-[#b27616]" aria-hidden />
+                  {translate("quoteOccupiedVolume", locale)}
+                </div>
+                <p className="mt-2 text-xl font-semibold text-slate-950">{formatVolume(selectedModel?.occupiedVolumeMm3)}</p>
+                <p className="mt-1 text-xs text-slate-500">{translate("quoteOccupiedVolumeHelp", locale)}</p>
+              </div>
+            </div>
+            <p className="mt-3 rounded-md bg-[#eef5f4] p-3 text-sm text-slate-700">
+              {translate(printTechnology === "resin" ? "quoteResinVolumeReference" : "quoteFdmVolumeReference", locale)}
+            </p>
           </div>
         ) : null}
 
@@ -573,7 +819,7 @@ export function PrintQuoteWorkspace() {
 
         <button
           className="mt-5 w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:text-black hover:shadow-xl hover:shadow-[#f5a524]/20 disabled:cursor-not-allowed disabled:bg-neutral-400"
-          disabled={!file || Boolean(error) || !fitsSelectedBed}
+          disabled={models.length === 0 || isLoadingModels || !fitsSelectedBed}
           type="button"
         >
           {translate("quoteSendRequest", locale)}
@@ -632,6 +878,35 @@ function formatMm(value: number) {
   return `${value.toFixed(value >= 10 ? 1 : 3)} mm`;
 }
 
+function formatVolume(value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (value < 1000) return `${value.toFixed(value >= 100 ? 1 : 2)} mm³`;
+  const cubicCentimeters = value / 1000;
+  return `${cubicCentimeters.toFixed(cubicCentimeters >= 100 ? 1 : 2)} cm³`;
+}
+
+function refreshModelMetrics(
+  entries: ModelEntry[],
+  modelInstances: Map<string, THREE.Group>,
+  bed: Dimensions,
+  onlyId?: string,
+) {
+  return entries.map((entry) => {
+    if (onlyId && entry.id !== onlyId) return entry;
+    const model = modelInstances.get(entry.id);
+    if (!model) return entry;
+    const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+    return {
+      ...entry,
+      solidVolumeMm3: entry.baseSolidVolumeMm3 === null
+        ? null
+        : entry.baseSolidVolumeMm3 * Math.pow(entry.scaleFactor, 3) * entry.copyCount,
+      occupiedVolumeMm3: Math.max(0, size.x * size.y * size.z),
+      fitsBed: size.x <= bed.x && size.y <= bed.y && size.z <= bed.z,
+    };
+  });
+}
+
 function wrapModel(object: THREE.Object3D) {
   const group = new THREE.Group();
   group.add(object);
@@ -641,6 +916,45 @@ function wrapModel(object: THREE.Object3D) {
 function autoPlaceModel(model: THREE.Group, bed: Dimensions) {
   model.position.set(0, 0, 0);
   constrainToBuildPlate(model, bed);
+}
+
+function arrangeModelsOnBuildPlate(models: Map<string, THREE.Group>, bed: Dimensions) {
+  const spacing = 6;
+  const margin = 6;
+  const availableWidth = Math.max(1, bed.x - margin * 2);
+  const rows: Array<{ items: Array<{ model: THREE.Group; size: THREE.Vector3; min: THREE.Vector3 }>; width: number; depth: number }> = [];
+
+  models.forEach((model) => {
+    model.position.set(0, 0, 0);
+    const seatedBox = new THREE.Box3().setFromObject(model);
+    model.position.y -= seatedBox.min.y;
+    model.position.y += MODEL_BED_CLEARANCE;
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const item = { model, size, min: box.min.clone() };
+    let row = rows[rows.length - 1];
+    const requiredWidth = row ? row.width + spacing + size.x : size.x;
+    if (!row || (row.items.length > 0 && requiredWidth > availableWidth)) {
+      row = { items: [], width: 0, depth: 0 };
+      rows.push(row);
+    }
+    row.width += (row.items.length > 0 ? spacing : 0) + size.x;
+    row.depth = Math.max(row.depth, size.z);
+    row.items.push(item);
+  });
+
+  const totalDepth = rows.reduce((total, row, index) => total + row.depth + (index > 0 ? spacing : 0), 0);
+  let zCursor = -totalDepth / 2;
+  rows.forEach((row) => {
+    let xCursor = -row.width / 2;
+    row.items.forEach(({ model, size, min }) => {
+      model.position.x += xCursor - min.x;
+      model.position.z += zCursor + (row.depth - size.z) / 2 - min.z;
+      constrainToBuildPlate(model, bed);
+      xCursor += size.x + spacing;
+    });
+    zCursor += row.depth + spacing;
+  });
 }
 
 function constrainToBuildPlate(model: THREE.Group, bed: Dimensions) {
@@ -678,10 +992,11 @@ function arrangeCopies(model: THREE.Group, count: number, bed: Dimensions) {
   const sourceBox = new THREE.Box3().setFromObject(source);
   const sourceSize = sourceBox.getSize(new THREE.Vector3());
   const spacing = Math.max(3, Math.max(sourceSize.x, sourceSize.z) * 0.08);
+  const worldScale = model.getWorldScale(new THREE.Vector3());
   const columns = Math.ceil(Math.sqrt(count));
   const rows = Math.ceil(count / columns);
-  const stepX = sourceSize.x + spacing;
-  const stepZ = sourceSize.z + spacing;
+  const stepX = (sourceSize.x + spacing) / Math.max(Math.abs(worldScale.x), 0.000001);
+  const stepZ = (sourceSize.z + spacing) / Math.max(Math.abs(worldScale.z), 0.000001);
 
   for (let index = 0; index < count; index += 1) {
     const item = index === 0 ? source : source.clone(true);
@@ -694,6 +1009,32 @@ function arrangeCopies(model: THREE.Group, count: number, bed: Dimensions) {
   }
 
   autoPlaceModel(model, bed);
+}
+
+function calculateGeometryVolume(geometry: THREE.BufferGeometry) {
+  const position = geometry.getAttribute("position");
+  if (!(position instanceof THREE.BufferAttribute) || position.count < 3) return 0;
+  const index = geometry.getIndex();
+  const triangleCount = Math.floor((index?.count ?? position.count) / 3);
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  const cross = new THREE.Vector3();
+  let signedVolume = 0;
+
+  for (let triangle = 0; triangle < triangleCount; triangle += 1) {
+    const offset = triangle * 3;
+    const aIndex = index ? index.getX(offset) : offset;
+    const bIndex = index ? index.getX(offset + 1) : offset + 1;
+    const cIndex = index ? index.getX(offset + 2) : offset + 2;
+    a.fromBufferAttribute(position, aIndex);
+    b.fromBufferAttribute(position, bIndex);
+    c.fromBufferAttribute(position, cIndex);
+    cross.crossVectors(b, c);
+    signedVolume += a.dot(cross) / 6;
+  }
+
+  return Math.abs(signedVolume);
 }
 
 function createPlaceholderModel() {
