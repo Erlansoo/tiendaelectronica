@@ -55,7 +55,8 @@ export function PrintQuoteWorkspace() {
   const transformRef = useRef<TransformControls | null>(null);
   const selectedBedRef = useRef(printerBeds[1]);
   const selectedModelIdRef = useRef<string | null>(null);
-  const placementModeRef = useRef<"automatic" | "manual">("manual");
+  const placementModeRef = useRef<"automatic" | "manual">("automatic");
+  const faceSelectionModeRef = useRef(false);
   const directDraggingRef = useRef(false);
   const [models, setModels] = useState<ModelEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
@@ -63,7 +64,9 @@ export function PrintQuoteWorkspace() {
   const [previewNote, setPreviewNote] = useState<TranslationKey>("quotePreviewPrompt");
   const [bedIndex, setBedIndex] = useState(1);
   const [printTechnology, setPrintTechnology] = useState<"fdm" | "resin">("fdm");
-  const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("manual");
+  const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("automatic");
+  const [qualityPreset, setQualityPreset] = useState<"draft" | "standard" | "detail">("standard");
+  const [isSelectingSupportFace, setIsSelectingSupportFace] = useState(false);
   const [manualPosition, setManualPosition] = useState({ x: 0, y: 0 });
   const [isLoadingModels, setIsLoadingModels] = useState(false);
 
@@ -71,6 +74,7 @@ export function PrintQuoteWorkspace() {
   selectedBedRef.current = selectedBed;
   selectedModelIdRef.current = selectedModelId;
   placementModeRef.current = placementMode;
+  faceSelectionModeRef.current = isSelectingSupportFace;
   const selectedModel = models.find((model) => model.id === selectedModelId) ?? null;
   const dimensions = selectedModel?.dimensions ?? null;
   const scaleFactor = selectedModel?.scaleFactor ?? 1;
@@ -317,6 +321,13 @@ export function PrintQuoteWorkspace() {
 
     const handlePointerDown = (event: PointerEvent) => {
       pointerStart = { x: event.clientX, y: event.clientY, button: event.button };
+      if (event.button === 0 && placementModeRef.current === "manual" && faceSelectionModeRef.current) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        controls.enabled = false;
+        renderer.domElement.style.cursor = "crosshair";
+        return;
+      }
       if (event.button !== 2) return;
       const model = pickModel(event.clientX, event.clientY);
       if (!model || placementModeRef.current !== "manual") return;
@@ -370,6 +381,46 @@ export function PrintQuoteWorkspace() {
         highlightModel(pickModel(event.clientX, event.clientY));
         return;
       }
+      if (event.button === 0 && pointerStart.button === 0 && placementModeRef.current === "manual" && faceSelectionModeRef.current) {
+        controls.enabled = true;
+        if (Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) {
+          renderer.domElement.style.cursor = "crosshair";
+          return;
+        }
+        const selectedId = selectedModelIdRef.current;
+        const selectedGroup = selectedId ? modelInstances.get(selectedId) : null;
+        if (selectedGroup && updateRay(event.clientX, event.clientY)) {
+          const faceHit = raycaster
+            .intersectObject(selectedGroup, true)
+            .find((hit) => hit.face && hit.object instanceof THREE.Mesh);
+          if (faceHit?.face) {
+            const normalMatrix = new THREE.Matrix3().getNormalMatrix(faceHit.object.matrixWorld);
+            const worldNormal = faceHit.face.normal.clone().applyNormalMatrix(normalMatrix).normalize();
+            const alignment = new THREE.Quaternion().setFromUnitVectors(
+              worldNormal,
+              new THREE.Vector3(0, -1, 0),
+            );
+            selectedGroup.quaternion.premultiply(alignment);
+            selectedGroup.updateMatrixWorld(true);
+            constrainToBuildPlate(selectedGroup, selectedBedRef.current);
+            selectionBoxRef.current?.update();
+            setManualPosition({
+              x: Number(selectedGroup.position.x.toFixed(1)),
+              y: Number(selectedGroup.position.z.toFixed(1)),
+            });
+            setModels((current) =>
+              refreshModelMetrics(current, modelInstances, selectedBedRef.current, selectedId ?? undefined),
+            );
+            faceSelectionModeRef.current = false;
+            setIsSelectingSupportFace(false);
+            transform.visible = true;
+            renderer.domElement.style.cursor = "grab";
+            return;
+          }
+        }
+        renderer.domElement.style.cursor = "crosshair";
+        return;
+      }
       if (
         event.button === 0 &&
         pointerStart.button === 0 &&
@@ -382,6 +433,7 @@ export function PrintQuoteWorkspace() {
 
     const handlePointerCancel = (event: PointerEvent) => {
       if (draggingPointerId === event.pointerId) finishRightDrag(event);
+      controls.enabled = true;
     };
     const handlePointerLeave = () => {
       if (!draggingModel) clearHover();
@@ -450,6 +502,7 @@ export function PrintQuoteWorkspace() {
     if (!transform) return;
     transform.visible = placementMode === "manual" && Boolean(selectedModelIdRef.current) && Boolean(modelRef.current) && !directDraggingRef.current;
     if (placementMode === "automatic") {
+      faceSelectionModeRef.current = false;
       arrangeModelsOnBuildPlate(modelsRef.current, selectedBedRef.current);
       setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBedRef.current));
       frameModel(modelRef.current ?? undefined);
@@ -583,6 +636,32 @@ export function PrintQuoteWorkspace() {
       constrainToBuildPlate(model, selectedBed);
     }
     syncAllModelMetrics();
+  }
+
+  function orientModel(axis: "x" | "y" | "z", angle: number) {
+    const model = modelRef.current;
+    if (!model || placementMode !== "manual") return;
+    if (axis === "x") model.rotateX(angle);
+    if (axis === "y") model.rotateY(angle);
+    if (axis === "z") model.rotateZ(angle);
+    model.updateMatrixWorld(true);
+    constrainToBuildPlate(model, selectedBed);
+    updateSelectionBox(model);
+    if (selectedModelId) syncModelMetrics(selectedModelId);
+  }
+
+  function toggleSupportFaceSelection() {
+    if (!selectedModel?.previewable || placementMode !== "manual") return;
+    const nextValue = !isSelectingSupportFace;
+    faceSelectionModeRef.current = nextValue;
+    setIsSelectingSupportFace(nextValue);
+    if (transformRef.current) transformRef.current.visible = !nextValue;
+  }
+
+  function changePlacementMode(mode: "automatic" | "manual") {
+    faceSelectionModeRef.current = false;
+    setIsSelectingSupportFace(false);
+    setPlacementMode(mode);
   }
 
   function setCopies(nextCount: number) {
@@ -854,25 +933,42 @@ export function PrintQuoteWorkspace() {
             {translate("quoteQuantity", locale)}
             <input className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" min={1} type="number" defaultValue={1} />
           </label>
-          <label className="grid gap-1 text-sm font-semibold text-black">
-            {translate("quoteInfill", locale)}
-            <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-              <option>20%</option>
-              <option>40%</option>
-              <option>60%</option>
-              <option>100%</option>
-              <option>{translate("quoteInfillNotApplicable", locale)}</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-semibold text-black">
-            {translate("quoteLayerHeight", locale)}
-            <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-              <option>{translate("quoteLayerStandard", locale)}</option>
-              <option>{translate("quoteLayerFine", locale)}</option>
-              <option>{translate("quoteLayerDraft", locale)}</option>
-              <option>{translate("quoteLayerResin", locale)}</option>
-            </select>
-          </label>
+          {placementMode === "automatic" ? (
+            <label className="grid gap-1 text-sm font-semibold text-black">
+              {translate("quoteQualityPreset", locale)}
+              <select
+                className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
+                value={qualityPreset}
+                onChange={(event) => setQualityPreset(event.target.value as "draft" | "standard" | "detail")}
+              >
+                <option value="draft">{translate("quoteQualityDraft", locale)}</option>
+                <option value="standard">{translate("quoteQualityStandard", locale)}</option>
+                <option value="detail">{translate("quoteQualityDetail", locale)}</option>
+              </select>
+            </label>
+          ) : (
+            <>
+              <label className="grid gap-1 text-sm font-semibold text-black">
+                {translate("quoteInfill", locale)}
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
+                  <option>20%</option>
+                  <option>40%</option>
+                  <option>60%</option>
+                  <option>100%</option>
+                  <option>{translate("quoteInfillNotApplicable", locale)}</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm font-semibold text-black">
+                {translate("quoteLayerHeight", locale)}
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
+                  <option>{translate("quoteLayerStandard", locale)}</option>
+                  <option>{translate("quoteLayerFine", locale)}</option>
+                  <option>{translate("quoteLayerDraft", locale)}</option>
+                  <option>{translate("quoteLayerResin", locale)}</option>
+                </select>
+              </label>
+            </>
+          )}
         </div>
 
         <section className="mt-5 rounded-lg border border-[#b7d8d5] bg-[#f2fbfa] p-4">
@@ -885,37 +981,71 @@ export function PrintQuoteWorkspace() {
             </div>
             <div className="flex rounded-md border border-[#a8ccc8] bg-white p-1">
               <button
-                className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "manual" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
-                disabled={!selectedModel?.previewable}
-                type="button"
-                onClick={() => setPlacementMode("manual")}
-              >
-                {translate("quoteManualMode", locale)}
-              </button>
-              <button
                 className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "automatic" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
                 disabled={modelsRef.current.size === 0}
                 type="button"
-                onClick={() => setPlacementMode("automatic")}
+                onClick={() => changePlacementMode("automatic")}
               >
                 {translate("quoteAutomaticMode", locale)}
+              </button>
+              <button
+                className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "manual" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
+                disabled={!selectedModel?.previewable}
+                type="button"
+                onClick={() => changePlacementMode("manual")}
+              >
+                {translate("quoteManualMode", locale)}
               </button>
             </div>
           </div>
 
           {placementMode === "manual" ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <label className="grid gap-1 text-sm font-semibold text-slate-800">
-                {translate("quotePositionX", locale)}
-                <input className="h-10 rounded-md border border-slate-300 bg-white px-3" step="1" type="number" value={manualPosition.x} onChange={(event) => setPlacementPosition("x", Number(event.target.value))} />
-              </label>
-              <label className="grid gap-1 text-sm font-semibold text-slate-800">
-                {translate("quotePositionY", locale)}
-                <input className="h-10 rounded-md border border-slate-300 bg-white px-3" step="1" type="number" value={manualPosition.y} onChange={(event) => setPlacementPosition("y", Number(event.target.value))} />
-              </label>
-              <button className="self-end rounded-md border border-[#558c87] bg-white px-3 py-2.5 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={rotateModel}>
-                {translate("quoteRotate", locale)}
-              </button>
+            <div className="mt-4 rounded-lg border border-[#c9e2df] bg-white/70 p-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="grid gap-1 text-sm font-semibold text-slate-800">
+                  {translate("quotePositionX", locale)}
+                  <input className="h-10 rounded-md border border-slate-300 bg-white px-3" step="1" type="number" value={manualPosition.x} onChange={(event) => setPlacementPosition("x", Number(event.target.value))} />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold text-slate-800">
+                  {translate("quotePositionY", locale)}
+                  <input className="h-10 rounded-md border border-slate-300 bg-white px-3" step="1" type="number" value={manualPosition.y} onChange={(event) => setPlacementPosition("y", Number(event.target.value))} />
+                </label>
+                <button className="self-end rounded-md border border-[#558c87] bg-white px-3 py-2.5 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={rotateModel}>
+                  {translate("quoteRotateOnBed", locale)}
+                </button>
+              </div>
+              <div className="mt-4 border-t border-[#d7e8e6] pt-4">
+                <p className="text-sm font-semibold text-slate-900">{translate("quoteOrientation", locale)}</p>
+                <p className="mt-1 text-xs text-slate-600">{translate("quoteOrientationHelp", locale)}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("x", Math.PI / 2)}>
+                    {translate("quoteLayOnSide", locale)}
+                  </button>
+                  <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("z", Math.PI / 2)}>
+                    {translate("quoteLayOnFront", locale)}
+                  </button>
+                  <button className="rounded-md border border-[#558c87] bg-white px-3 py-2 text-sm font-semibold text-[#174946] hover:bg-[#dff4f1]" type="button" onClick={() => orientModel("x", Math.PI)}>
+                    {translate("quoteFlipModel", locale)}
+                  </button>
+                  <button
+                    aria-pressed={isSelectingSupportFace}
+                    className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                      isSelectingSupportFace
+                        ? "border-[#f5a524] bg-[#f5a524] text-black"
+                        : "border-[#174946] bg-[#174946] text-white hover:bg-[#0f3533]"
+                    }`}
+                    type="button"
+                    onClick={toggleSupportFaceSelection}
+                  >
+                    {translate(isSelectingSupportFace ? "quoteCancelFaceSelection" : "quoteChooseSupportFace", locale)}
+                  </button>
+                </div>
+                {isSelectingSupportFace ? (
+                  <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                    {translate("quoteChooseFacePrompt", locale)}
+                  </p>
+                ) : null}
+              </div>
             </div>
           ) : null}
 
