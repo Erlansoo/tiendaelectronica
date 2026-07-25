@@ -71,6 +71,9 @@ export function PrintQuoteWorkspace() {
   const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   const selectedBed = printerBeds[bedIndex];
+  const basicLayerHeights = printTechnology === "resin"
+    ? { draft: "0.10 mm", standard: "0.05 mm", detail: "0.03 mm" }
+    : { draft: "0.28 mm", standard: "0.20 mm", detail: "0.12 mm" };
   selectedBedRef.current = selectedBed;
   selectedModelIdRef.current = selectedModelId;
   placementModeRef.current = placementMode;
@@ -685,6 +688,10 @@ export function PrintQuoteWorkspace() {
     geometry.computeVertexNormals();
     geometry.computeBoundingBox();
     const solidVolumeMm3 = calculateGeometryVolume(geometry);
+    // STL files often preserve an authoring origin far away from the mesh.
+    // Centering the geometry keeps the model pivot and transform axes inside its bounds.
+    geometry.center();
+    geometry.computeBoundingBox();
     const material = new THREE.MeshStandardMaterial({
       color,
       metalness: 0.06,
@@ -941,9 +948,9 @@ export function PrintQuoteWorkspace() {
                 value={qualityPreset}
                 onChange={(event) => setQualityPreset(event.target.value as "draft" | "standard" | "detail")}
               >
-                <option value="draft">{translate("quoteQualityDraft", locale)}</option>
-                <option value="standard">{translate("quoteQualityStandard", locale)}</option>
-                <option value="detail">{translate("quoteQualityDetail", locale)}</option>
+                <option value="draft">{translate("quoteQualityDraft", locale)} · {basicLayerHeights.draft}</option>
+                <option value="standard">{translate("quoteQualityStandard", locale)} · {basicLayerHeights.standard}</option>
+                <option value="detail">{translate("quoteQualityDetail", locale)} · {basicLayerHeights.detail}</option>
               </select>
             </label>
           ) : (
