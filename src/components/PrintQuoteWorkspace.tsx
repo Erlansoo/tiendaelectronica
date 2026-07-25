@@ -895,7 +895,13 @@ export function PrintQuoteWorkspace() {
           </div>
         ) : null}
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50/70 shadow-inner">
+          <div className="border-b border-neutral-200 bg-white px-4 py-3">
+            <h3 className="font-semibold text-slate-950">{translate("quoteConfigurationPanel", locale)}</h3>
+            <p className="mt-0.5 text-xs text-slate-500">{translate("quoteConfigurationScrollHelp", locale)}</p>
+          </div>
+          <div className="max-h-[680px] overflow-y-auto overscroll-contain p-4 [scrollbar-gutter:stable]">
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold text-black">
             {translate("quotePrinterBed", locale)}
             <select
@@ -1160,9 +1166,11 @@ export function PrintQuoteWorkspace() {
         >
           {translate("quoteSendRequest", locale)}
         </button>
+          </div>
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[#c7cecd] bg-[#e3e8e7] text-slate-900 shadow-xl shadow-slate-900/10">
+      <div className="overflow-hidden rounded-xl border border-[#c7cecd] bg-[#e3e8e7] text-slate-900 shadow-xl shadow-slate-900/10 lg:sticky lg:top-24 lg:self-start">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d3d9d8] bg-[#f6f8f8] px-5 py-4">
           <div>
             <div className="flex items-center gap-2">

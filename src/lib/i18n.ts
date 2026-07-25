@@ -89,6 +89,8 @@ export const translations = {
   quoteMoveModelControl: { es: "Avanzado: clic derecho", en: "Advanced: right-drag" },
   quoteAutoArrangeControl: { es: "Modo Básico activo", en: "Basic Mode active" },
   quoteZoomControl: { es: "Zoom", en: "Zoom" },
+  quoteConfigurationPanel: { es: "Configuración de impresión", en: "Print configuration" },
+  quoteConfigurationScrollHelp: { es: "Desplazá este panel para configurar el pedido sin perder de vista el modelo.", en: "Scroll this panel to configure the request while keeping the model in view." },
   quotePlacement: { es: "Posicionamiento", en: "Placement" },
   quoteAutomaticMode: { es: "Modo Básico", en: "Basic Mode" },
   quoteManualMode: { es: "Modo Avanzado", en: "Advanced Mode" },
