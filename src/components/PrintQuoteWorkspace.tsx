@@ -55,7 +55,7 @@ export function PrintQuoteWorkspace() {
   const transformRef = useRef<TransformControls | null>(null);
   const selectedBedRef = useRef(printerBeds[1]);
   const selectedModelIdRef = useRef<string | null>(null);
-  const placementModeRef = useRef<"automatic" | "manual">("automatic");
+  const placementModeRef = useRef<"automatic" | "manual">("manual");
   const directDraggingRef = useRef(false);
   const [models, setModels] = useState<ModelEntry[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function PrintQuoteWorkspace() {
   const [previewNote, setPreviewNote] = useState<TranslationKey>("quotePreviewPrompt");
   const [bedIndex, setBedIndex] = useState(1);
   const [printTechnology, setPrintTechnology] = useState<"fdm" | "resin">("fdm");
-  const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("automatic");
+  const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("manual");
   const [manualPosition, setManualPosition] = useState({ x: 0, y: 0 });
   const [isLoadingModels, setIsLoadingModels] = useState(false);
 
@@ -142,7 +142,12 @@ export function PrintQuoteWorkspace() {
 
     const transform = new TransformControls(camera, renderer.domElement);
     transform.setMode("translate");
+    transform.setSpace("world");
     transform.setTranslationSnap(1);
+    const transformAxes = transform as unknown as { showX: boolean; showY: boolean; showZ: boolean };
+    transformAxes.showX = true;
+    transformAxes.showY = false;
+    transformAxes.showZ = true;
     transform.visible = false;
     transform.attach(placeholder);
     const transformEvents = transform as unknown as {
@@ -314,12 +319,20 @@ export function PrintQuoteWorkspace() {
       pointerStart = { x: event.clientX, y: event.clientY, button: event.button };
       if (event.button !== 2) return;
       const model = pickModel(event.clientX, event.clientY);
-      if (!model || !updateRay(event.clientX, event.clientY) || !raycaster.ray.intersectPlane(bedPlane, intersectionPoint)) return;
+      if (!model || placementModeRef.current !== "manual") return;
+      const modelId = typeof model.userData.modelId === "string" ? model.userData.modelId : null;
+      if (!modelId) return;
+      if (selectedModelIdRef.current !== modelId) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        activateModel(model, true);
+        highlightModel(model);
+        return;
+      }
+      if (!updateRay(event.clientX, event.clientY) || !raycaster.ray.intersectPlane(bedPlane, intersectionPoint)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      placementModeRef.current = "manual";
       directDraggingRef.current = true;
-      setPlacementMode("manual");
       activateModel(model, false);
       draggingModel = model;
       draggingPointerId = event.pointerId;
@@ -435,13 +448,13 @@ export function PrintQuoteWorkspace() {
   useEffect(() => {
     const transform = transformRef.current;
     if (!transform) return;
-    transform.visible = placementMode === "manual" && Boolean(selectedModelId) && Boolean(modelRef.current) && !directDraggingRef.current;
+    transform.visible = placementMode === "manual" && Boolean(selectedModelIdRef.current) && Boolean(modelRef.current) && !directDraggingRef.current;
     if (placementMode === "automatic") {
-      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
-      setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBed));
+      arrangeModelsOnBuildPlate(modelsRef.current, selectedBedRef.current);
+      setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBedRef.current));
       frameModel(modelRef.current ?? undefined);
     }
-  }, [placementMode, selectedBed, selectedModelId]);
+  }, [placementMode]);
 
   function frameModel(fallbackObject?: THREE.Object3D) {
     const camera = cameraRef.current;
@@ -536,25 +549,17 @@ export function PrintQuoteWorkspace() {
     if (!model) return;
     setModels((current) => current.map((entry) => entry.id === selectedModelId ? { ...entry, scaleFactor: safeScale } : entry));
     model.scale.setScalar(safeScale);
-    if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
-    else constrainToBuildPlate(model, selectedBed);
+    if (placementMode === "automatic") {
+      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      frameModel(model);
+    } else {
+      constrainToBuildPlate(model, selectedBed);
+    }
     syncAllModelMetrics();
-    frameModel(model);
   }
 
   function resetView() {
     frameModel(modelRef.current ?? placeholderRef.current ?? undefined);
-  }
-
-  function applyAutomaticPlacement() {
-    arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
-    syncAllModelMetrics();
-    const model = selectedModelId ? modelsRef.current.get(selectedModelId) : null;
-    setManualPosition({
-      x: Number((model?.position.x ?? 0).toFixed(1)),
-      y: Number((model?.position.z ?? 0).toFixed(1)),
-    });
-    frameModel(model ?? undefined);
   }
 
   function setPlacementPosition(axis: "x" | "y", value: number) {
@@ -571,10 +576,13 @@ export function PrintQuoteWorkspace() {
     const model = modelRef.current;
     if (!model) return;
     model.rotation.y += Math.PI / 2;
-    if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
-    else constrainToBuildPlate(model, selectedBed);
+    if (placementMode === "automatic") {
+      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      frameModel(model);
+    } else {
+      constrainToBuildPlate(model, selectedBed);
+    }
     syncAllModelMetrics();
-    frameModel(model);
   }
 
   function setCopies(nextCount: number) {
@@ -583,10 +591,13 @@ export function PrintQuoteWorkspace() {
     const safeCount = Math.max(1, Math.min(12, Math.round(nextCount) || 1));
     arrangeCopies(model, safeCount, selectedBed);
     setModels((current) => current.map((entry) => entry.id === selectedModelId ? { ...entry, copyCount: safeCount } : entry));
-    if (placementMode === "automatic") arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
-    else constrainToBuildPlate(model, selectedBed);
+    if (placementMode === "automatic") {
+      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      frameModel(model);
+    } else {
+      constrainToBuildPlate(model, selectedBed);
+    }
     syncAllModelMetrics();
-    frameModel(model);
   }
 
   async function createStlEntry(selected: File, id: string, color: string) {
@@ -694,7 +705,15 @@ export function PrintQuoteWorkspace() {
         modelsRef.current.set(id, model);
         scene?.add(model);
       });
-      arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      if (placementModeRef.current === "automatic") {
+        arrangeModelsOnBuildPlate(modelsRef.current, selectedBed);
+      } else {
+        placeNewModelsWithoutMovingExisting(
+          loadedModels.map(({ model }) => model),
+          modelsRef.current,
+          selectedBed,
+        );
+      }
       setModels((current) => [...current, ...acceptedEntries]);
       syncAllModelMetrics();
       const firstSelectable = acceptedEntries.find((entry) => entry.previewable) ?? acceptedEntries[0];
@@ -866,23 +885,20 @@ export function PrintQuoteWorkspace() {
             </div>
             <div className="flex rounded-md border border-[#a8ccc8] bg-white p-1">
               <button
-                className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "automatic" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
-                disabled={modelsRef.current.size === 0}
-                type="button"
-                onClick={() => {
-                  setPlacementMode("automatic");
-                  applyAutomaticPlacement();
-                }}
-              >
-                {translate("quoteAutomaticMode", locale)}
-              </button>
-              <button
                 className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "manual" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
                 disabled={!selectedModel?.previewable}
                 type="button"
                 onClick={() => setPlacementMode("manual")}
               >
                 {translate("quoteManualMode", locale)}
+              </button>
+              <button
+                className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "automatic" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
+                disabled={modelsRef.current.size === 0}
+                type="button"
+                onClick={() => setPlacementMode("automatic")}
+              >
+                {translate("quoteAutomaticMode", locale)}
               </button>
             </div>
           </div>
@@ -1031,6 +1047,30 @@ export function PrintQuoteWorkspace() {
             <span className="font-semibold text-slate-900">{translate("quoteBuildPlate", locale)}</span>
             <span className="ml-2 text-[#17645e]">{selectedBed.label}</span>
           </div>
+          {selectedModel?.previewable ? (
+            <aside
+              aria-live="polite"
+              className="pointer-events-none absolute right-3 top-16 z-10 w-[min(215px,calc(100%-1.5rem))] rounded-xl border border-white/80 bg-white/90 p-3 shadow-lg shadow-slate-900/10 backdrop-blur sm:right-4 sm:top-4"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#2b7a72]">
+                {translate("quoteSelectedModel", locale)}
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selectedModel.color }} aria-hidden />
+                <p className="truncate text-xs font-semibold text-slate-900">{selectedModel.name}</p>
+              </div>
+              <div className="mt-3 grid gap-2">
+                <div className="rounded-lg bg-[#edf7f4] px-3 py-2">
+                  <p className="text-[10px] font-semibold text-slate-500">{translate("quoteModelVolumeShort", locale)}</p>
+                  <p className="mt-0.5 text-sm font-bold text-slate-950">{formatVolume(selectedModel.solidVolumeMm3)}</p>
+                </div>
+                <div className="rounded-lg bg-[#fff5df] px-3 py-2">
+                  <p className="text-[10px] font-semibold text-slate-500">{translate("quoteBoundingVolumeShort", locale)}</p>
+                  <p className="mt-0.5 text-sm font-bold text-slate-950">{formatVolume(selectedModel.occupiedVolumeMm3)}</p>
+                </div>
+              </div>
+            </aside>
+          ) : null}
           <div ref={containerRef} className="h-[560px] w-full sm:h-[640px]" aria-label="Interactive 3D file viewer" />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#d3d9d8] bg-[#f6f8f8] px-5 py-3">
@@ -1038,7 +1078,10 @@ export function PrintQuoteWorkspace() {
           <div className="flex items-center gap-3 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1.5"><Rotate3D size={14} aria-hidden /> {translate("quoteOrbitControl", locale)}</span>
             <span className="inline-flex items-center gap-1.5"><MousePointer2 size={14} aria-hidden /> {translate("quotePanControl", locale)}</span>
-            <span className="inline-flex items-center gap-1.5"><BoxSelect size={14} aria-hidden /> {translate("quoteMoveModelControl", locale)}</span>
+            <span className="inline-flex items-center gap-1.5">
+              <BoxSelect size={14} aria-hidden />
+              {translate(placementMode === "manual" ? "quoteMoveModelControl" : "quoteAutoArrangeControl", locale)}
+            </span>
             <span className="inline-flex items-center gap-1.5"><ZoomIn size={14} aria-hidden /> {translate("quoteZoomControl", locale)}</span>
           </div>
         </div>
@@ -1138,6 +1181,67 @@ function arrangeModelsOnBuildPlate(models: Map<string, THREE.Group>, bed: Dimens
       xCursor += size.x + spacing;
     });
     zCursor += row.depth + spacing;
+  });
+}
+
+function placeNewModelsWithoutMovingExisting(
+  newModels: THREE.Group[],
+  allModels: Map<string, THREE.Group>,
+  bed: Dimensions,
+) {
+  const newModelSet = new Set(newModels);
+  const occupiedBoxes: THREE.Box3[] = [];
+  allModels.forEach((model) => {
+    if (!newModelSet.has(model)) occupiedBoxes.push(new THREE.Box3().setFromObject(model));
+  });
+
+  const gap = 5;
+  const step = 10;
+  const overlapsOccupiedSpace = (candidate: THREE.Box3) =>
+    occupiedBoxes.some((occupied) =>
+      candidate.min.x < occupied.max.x + gap &&
+      candidate.max.x > occupied.min.x - gap &&
+      candidate.min.z < occupied.max.z + gap &&
+      candidate.max.z > occupied.min.z - gap,
+    );
+
+  newModels.forEach((model) => {
+    autoPlaceModel(model, bed);
+    const centeredBox = new THREE.Box3().setFromObject(model);
+    const size = centeredBox.getSize(new THREE.Vector3());
+    if (size.x > bed.x || size.z > bed.z) {
+      occupiedBoxes.push(centeredBox);
+      return;
+    }
+
+    const halfWidth = bed.x / 2;
+    const halfDepth = bed.z / 2;
+    const minCenterX = -halfWidth + size.x / 2;
+    const maxCenterX = halfWidth - size.x / 2;
+    const minCenterZ = -halfDepth + size.z / 2;
+    const maxCenterZ = halfDepth - size.z / 2;
+    const candidates: Array<{ x: number; z: number }> = [{ x: 0, z: 0 }];
+    for (let z = minCenterZ; z <= maxCenterZ + 0.001; z += step) {
+      for (let x = minCenterX; x <= maxCenterX + 0.001; x += step) {
+        candidates.push({ x, z });
+      }
+    }
+    candidates.sort((a, b) => a.x * a.x + a.z * a.z - (b.x * b.x + b.z * b.z));
+
+    const currentCenter = centeredBox.getCenter(new THREE.Vector3());
+    let placed = false;
+    for (const candidate of candidates) {
+      const delta = new THREE.Vector3(candidate.x - currentCenter.x, 0, candidate.z - currentCenter.z);
+      const candidateBox = centeredBox.clone().translate(delta);
+      if (overlapsOccupiedSpace(candidateBox)) continue;
+      model.position.add(delta);
+      constrainToBuildPlate(model, bed);
+      placed = true;
+      break;
+    }
+
+    if (!placed) autoPlaceModel(model, bed);
+    occupiedBoxes.push(new THREE.Box3().setFromObject(model));
   });
 }
 
