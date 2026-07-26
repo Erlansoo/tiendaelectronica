@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
-import { Factory, KeyRound, Send, X } from "lucide-react";
+import { BadgeCheck, Clock3, Factory, KeyRound, RotateCcw, Send, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -11,10 +11,12 @@ import {
   startManufacturerApplication,
 } from "@/app/actions/manufacturing";
 
+type ApplicationStatus = "DRAFT" | "PENDING" | "NEEDS_INFO" | "APPROVED" | "REJECTED";
+
 type Props = {
   capabilityStatus: "ONBOARDING" | "ACTIVE" | "SUSPENDED" | null;
   application: {
-    status: "DRAFT" | "PENDING" | "NEEDS_INFO" | "APPROVED" | "REJECTED";
+    status: ApplicationStatus;
     adminNotes: string | null;
   } | null;
 };
@@ -24,32 +26,23 @@ const inputClass = "h-11 rounded-md border border-neutral-300 bg-white px-3 text
 export function ManufacturerAccessCard({ capabilityStatus, application }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"request" | "code">("request");
+  const [tab, setTab] = useState<"request" | "code">(application?.status === "APPROVED" ? "code" : "request");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  if (capabilityStatus) {
-    return (
-      <div className={`rounded-md border p-4 ${capabilityStatus === "SUSPENDED" ? "border-red-200 bg-red-50" : "border-[#17645e]/25 bg-[#edf8f6]"}`}>
-        <div className="flex items-center gap-2">
-          <Factory size={20} />
-          <h2 className="font-semibold text-black">Usuario manufacturero</h2>
-        </div>
-        <p className="mt-2 text-sm text-neutral-600">
-          {capabilityStatus === "ACTIVE"
-            ? "Tu perfil está activo en el marketplace de impresión 3D."
-            : capabilityStatus === "ONBOARDING"
-              ? "Completa máquinas, materiales, inventario y costos para publicar tu perfil."
-              : "Tu capacidad está suspendida. Contacta a Nubel para revisar el caso."}
-        </p>
-        {capabilityStatus !== "SUSPENDED" ? (
-          <Link className="mt-4 inline-flex rounded-full bg-[#0f3d3d] px-4 py-2 text-sm font-semibold text-white" href="/cuenta/manufactura">
-            Abrir panel manufacturero
-          </Link>
-        ) : null}
-      </div>
-    );
+  const applicationStatus = application?.status ?? null;
+  const canSubmitApplication = applicationStatus === null
+    || applicationStatus === "DRAFT"
+    || applicationStatus === "NEEDS_INFO"
+    || applicationStatus === "REJECTED";
+  const showRequestAndCodeTabs = applicationStatus === null;
+
+  function openAccess(nextTab: "request" | "code") {
+    setTab(nextTab);
+    setError(null);
+    setMessage(null);
+    setOpen(true);
   }
 
   async function submitApplication(event: React.FormEvent<HTMLFormElement>) {
@@ -115,6 +108,7 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
         setMessage(finalized.message ?? "Solicitud enviada.");
         form.reset();
         router.refresh();
+        setTimeout(() => setOpen(false), 900);
       } catch (uploadError) {
         console.error(uploadError);
         setError("Una evidencia no pudo cargarse. Intenta enviar la solicitud nuevamente.");
@@ -139,39 +133,21 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
     });
   }
 
-  return (
-    <>
-      <div className="rounded-md border border-[#f5a524]/40 bg-[#fff9eb] p-4">
-        <div className="flex items-center gap-2">
-          <Factory size={20} />
-          <h2 className="font-semibold text-black">Solicitar o ingresar acceso manufacturero</h2>
-        </div>
-        <p className="mt-2 text-sm text-neutral-600">
-          Ofrece impresión FDM o resina después de la verificación personal de Nubel.
-        </p>
-        {application ? (
-          <div className="mt-3 rounded-md border border-black/10 bg-white p-3 text-sm">
-            <strong>Solicitud: {statusLabel(application.status)}</strong>
-            {application.adminNotes ? <p className="mt-1 text-neutral-600">{application.adminNotes}</p> : null}
-          </div>
-        ) : null}
-        <button className="mt-4 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white" type="button" onClick={() => setOpen(true)}>
-          Solicitar o ingresar
-        </button>
-      </div>
-
-      {open ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="manufacturer-access-title">
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
-              <div>
-                <h2 className="text-xl font-semibold text-black" id="manufacturer-access-title">Acceso manufacturero</h2>
-                <p className="mt-1 text-sm text-neutral-500">La aprobación no concede acceso al dashboard administrativo de Nubel.</p>
-              </div>
-              <button className="rounded-full p-2 hover:bg-neutral-100" type="button" onClick={() => setOpen(false)} aria-label="Cerrar">
-                <X size={20} />
-              </button>
+  function renderAccessModal() {
+    return (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-labelledby="manufacturer-access-title">
+        <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
+            <div>
+              <h2 className="text-xl font-semibold text-black" id="manufacturer-access-title">Acceso manufacturero</h2>
+              <p className="mt-1 text-sm text-neutral-500">La aprobación no concede acceso al dashboard administrativo de Nubel.</p>
             </div>
+            <button className="rounded-full p-2 hover:bg-neutral-100" type="button" onClick={() => setOpen(false)} aria-label="Cerrar">
+              <X size={20} />
+            </button>
+          </div>
+
+          {showRequestAndCodeTabs ? (
             <div className="flex border-b border-neutral-200 px-5 pt-3">
               <button className={`border-b-2 px-4 py-3 text-sm font-semibold ${tab === "request" ? "border-[#17645e] text-[#17645e]" : "border-transparent text-neutral-500"}`} type="button" onClick={() => setTab("request")}>
                 Solicitar acceso
@@ -180,64 +156,177 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
                 Ingresar código
               </button>
             </div>
+          ) : null}
 
-            <div className="max-h-[70vh] overflow-y-auto p-5">
-              {error ? <p className="mb-4 rounded-md bg-red-50 p-3 text-sm font-medium text-red-700">{error}</p> : null}
-              {message ? <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm font-medium text-emerald-800">{message}</p> : null}
-              {tab === "request" ? (
-                <form className="grid gap-4" onSubmit={submitApplication}>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Nombre comercial"><input className={inputClass} name="commercialName" required maxLength={120} /></Field>
-                    <Field label="Responsable"><input className={inputClass} name="responsibleName" required maxLength={120} /></Field>
-                    <Field label="Departamento"><input className={inputClass} name="department" required maxLength={80} /></Field>
-                    <Field label="Ciudad"><input className={inputClass} name="city" required maxLength={80} /></Field>
-                    <Field label="WhatsApp"><input className={inputClass} name="whatsapp" required maxLength={30} inputMode="tel" /></Field>
-                  </div>
-                  <Field label="Experiencia y capacidad actual">
-                    <textarea className="min-h-28 rounded-md border border-neutral-300 p-3 text-sm" name="experience" required minLength={30} maxLength={3000} />
-                  </Field>
-                  <Field label="Máquinas declaradas">
-                    <textarea className="min-h-20 rounded-md border border-neutral-300 p-3 text-sm" name="declaredMachines" required maxLength={2000} placeholder="Marca, modelo, cantidad y estado" />
-                  </Field>
-                  <ChoiceGroup title="Tecnologías">
-                    <Check name="technologyFdm" label="FDM / filamento" />
-                    <Check name="technologyResin" label="Resina / MSLA" />
-                  </ChoiceGroup>
-                  <ChoiceGroup title="Modalidades de entrega">
-                    <Check name="localPickup" label="Retiro local" />
-                    <Check name="nationalShipping" label="Envío nacional" />
-                  </ChoiceGroup>
-                  <Field label="Enlaces de trabajos (uno por línea)">
-                    <textarea className="min-h-20 rounded-md border border-neutral-300 p-3 text-sm" name="workLinks" placeholder="https://..." />
-                  </Field>
-                  <Field label="Notas adicionales">
-                    <textarea className="min-h-20 rounded-md border border-neutral-300 p-3 text-sm" name="applicantNotes" maxLength={2000} />
-                  </Field>
-                  <Field label="Fotografías privadas del equipo o taller (1–5, 10 MB cada una)">
-                    <input className={inputClass} name="evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple required />
-                  </Field>
-                  <p className="rounded-md bg-neutral-100 p-3 text-xs text-neutral-600">
-                    Las fotografías son privadas y se usan únicamente para verificación por Nubel. No aparecerán en tu perfil público.
-                  </p>
-                  <button className="flex items-center justify-center gap-2 rounded-md bg-[#0f3d3d] px-4 py-3 font-semibold text-white disabled:opacity-50" disabled={isPending} type="submit">
-                    <Send size={17} /> {isPending ? "Enviando de forma segura…" : "Enviar solicitud"}
-                  </button>
-                </form>
-              ) : (
-                <form className="mx-auto max-w-md py-8" onSubmit={submitCode}>
-                  <KeyRound className="mx-auto text-[#17645e]" size={34} />
-                  <h3 className="mt-3 text-center text-lg font-semibold">Código personal de activación</h3>
-                  <p className="mt-2 text-center text-sm text-neutral-600">Debe tener 20 caracteres, ser usado dentro de siete días y corresponder a esta misma cuenta Google.</p>
-                  <input className={`${inputClass} mt-5 w-full font-mono uppercase tracking-[0.22em]`} name="code" minLength={20} maxLength={20} pattern="[A-Za-z2-9]{20}" autoComplete="one-time-code" required />
-                  <button className="mt-4 w-full rounded-md bg-black px-4 py-3 font-semibold text-white disabled:opacity-50" disabled={isPending} type="submit">
-                    {isPending ? "Verificando…" : "Activar acceso"}
-                  </button>
-                </form>
-              )}
-            </div>
+          <div className="max-h-[70vh] overflow-y-auto p-5">
+            {error ? <p className="mb-4 rounded-md bg-red-50 p-3 text-sm font-medium text-red-700">{error}</p> : null}
+            {message ? <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm font-medium text-emerald-800">{message}</p> : null}
+            {tab === "request" && canSubmitApplication ? (
+              <form className="grid gap-4" onSubmit={submitApplication}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Nombre comercial"><input className={inputClass} name="commercialName" required maxLength={120} /></Field>
+                  <Field label="Responsable"><input className={inputClass} name="responsibleName" required maxLength={120} /></Field>
+                  <Field label="Departamento"><input className={inputClass} name="department" required maxLength={80} /></Field>
+                  <Field label="Ciudad"><input className={inputClass} name="city" required maxLength={80} /></Field>
+                  <Field label="WhatsApp"><input className={inputClass} name="whatsapp" required maxLength={30} inputMode="tel" /></Field>
+                </div>
+                <Field label="Experiencia y capacidad actual">
+                  <textarea className="min-h-28 rounded-md border border-neutral-300 p-3 text-sm" name="experience" required minLength={30} maxLength={3000} />
+                </Field>
+                <Field label="Máquinas declaradas">
+                  <textarea className="min-h-20 rounded-md border border-neutral-300 p-3 text-sm" name="declaredMachines" required maxLength={2000} placeholder="Marca, modelo, cantidad y estado" />
+                </Field>
+                <ChoiceGroup title="Tecnologías">
+                  <Check name="technologyFdm" label="FDM / filamento" />
+                  <Check name="technologyResin" label="Resina / MSLA" />
+                </ChoiceGroup>
+                <ChoiceGroup title="Modalidades de entrega">
+                  <Check name="localPickup" label="Retiro local" />
+                  <Check name="nationalShipping" label="Envío nacional" />
+                </ChoiceGroup>
+                <Field label="Enlaces de trabajos (uno por línea)">
+                  <textarea className="min-h-20 rounded-md border border-neutral-300 p-3 text-sm" name="workLinks" placeholder="https://..." />
+                </Field>
+                <Field label="Notas adicionales">
+                  <textarea className="min-h-20 rounded-md border border-neutral-300 p-3 text-sm" name="applicantNotes" maxLength={2000} />
+                </Field>
+                <Field label="Fotografías privadas del equipo o taller (1–5, 10 MB cada una)">
+                  <input className={inputClass} name="evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple required />
+                </Field>
+                <p className="rounded-md bg-neutral-100 p-3 text-xs text-neutral-600">
+                  Las fotografías son privadas y se usan únicamente para verificación por Nubel. No aparecerán en tu perfil público.
+                </p>
+                <button className="flex items-center justify-center gap-2 rounded-md bg-[#0f3d3d] px-4 py-3 font-semibold text-white disabled:opacity-50" disabled={isPending} type="submit">
+                  <Send size={17} /> {isPending ? "Enviando de forma segura…" : "Enviar solicitud"}
+                </button>
+              </form>
+            ) : (
+              <form className="mx-auto max-w-md py-8" onSubmit={submitCode}>
+                <KeyRound className="mx-auto text-[#17645e]" size={34} />
+                <h3 className="mt-3 text-center text-lg font-semibold">Código personal de activación</h3>
+                <p className="mt-2 text-center text-sm text-neutral-600">Debe tener 20 caracteres, ser usado dentro de siete días y corresponder a esta misma cuenta Google.</p>
+                <input className={`${inputClass} mt-5 w-full font-mono uppercase tracking-[0.22em]`} name="code" minLength={20} maxLength={20} pattern="[A-Za-z2-9]{20}" autoComplete="one-time-code" required />
+                <button className="mt-4 w-full rounded-md bg-black px-4 py-3 font-semibold text-white disabled:opacity-50" disabled={isPending} type="submit">
+                  {isPending ? "Verificando…" : "Activar acceso"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
-      ) : null}
+      </div>
+    );
+  }
+
+  if (capabilityStatus) {
+    const isSuspended = capabilityStatus === "SUSPENDED";
+    return (
+      <div className={`rounded-md border p-4 ${isSuspended ? "border-red-200 bg-red-50" : "border-[#17645e]/25 bg-[#edf8f6]"}`}>
+        <div className="flex items-center gap-2">
+          {isSuspended ? <Factory size={20} /> : <BadgeCheck className="text-[#17645e]" size={21} />}
+          <h2 className="font-semibold text-black">
+            {isSuspended ? "Acceso manufacturero suspendido" : "Manufacturero verificado"}
+          </h2>
+        </div>
+        <p className="mt-2 text-sm text-neutral-600">
+          {capabilityStatus === "ACTIVE"
+            ? "Tu perfil está activo en el marketplace de impresión 3D."
+            : capabilityStatus === "ONBOARDING"
+              ? "Tu acceso fue aprobado y activado. Completa máquinas, materiales, inventario y costos para publicar tu perfil."
+              : "Tu capacidad está suspendida. Contacta a Nubel para revisar el caso."}
+        </p>
+        {!isSuspended ? (
+          <Link className="mt-4 inline-flex rounded-full bg-[#0f3d3d] px-4 py-2 text-sm font-semibold text-white" href="/cuenta/manufactura">
+            Abrir panel manufacturero
+          </Link>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (applicationStatus === "PENDING") {
+    return (
+      <div className="rounded-md border border-amber-300 bg-amber-50 p-4">
+        <div className="flex items-center gap-2">
+          <Clock3 className="text-amber-700" size={21} />
+          <h2 className="font-semibold text-black">Solicitud pendiente de aprobación</h2>
+        </div>
+        <p className="mt-2 text-sm text-neutral-700">
+          Nubel está verificando personalmente la información enviada. La solicitud permanece cerrada y no puede modificarse durante la revisión.
+        </p>
+        {application?.adminNotes ? (
+          <p className="mt-3 rounded-md border border-amber-200 bg-white p-3 text-sm text-neutral-700">
+            <strong>Observación de Nubel:</strong> {application.adminNotes}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (applicationStatus === "APPROVED") {
+    return (
+      <>
+        <div className="rounded-md border border-emerald-300 bg-emerald-50 p-4">
+          <div className="flex items-center gap-2">
+            <BadgeCheck className="text-emerald-700" size={21} />
+            <h2 className="font-semibold text-black">Manufacturero aprobado</h2>
+          </div>
+          <p className="mt-2 text-sm text-neutral-700">
+            Nubel verificó y aprobó tu solicitud. Ingresa el código personal entregado por Nubel para activar tu panel manufacturero.
+          </p>
+          {application?.adminNotes ? (
+            <p className="mt-3 rounded-md border border-emerald-200 bg-white p-3 text-sm text-neutral-700">
+              <strong>Observación de Nubel:</strong> {application.adminNotes}
+            </p>
+          ) : null}
+          <button className="mt-4 rounded-full bg-[#0f3d3d] px-4 py-2 text-sm font-semibold text-white" type="button" onClick={() => openAccess("code")}>
+            Ingresar código de activación
+          </button>
+        </div>
+        {open ? renderAccessModal() : null}
+      </>
+    );
+  }
+
+  const isRejected = applicationStatus === "REJECTED";
+  const needsInfo = applicationStatus === "NEEDS_INFO";
+  const hasIncompleteDraft = applicationStatus === "DRAFT";
+
+  return (
+    <>
+      <div className={`rounded-md border p-4 ${isRejected ? "border-red-200 bg-red-50" : needsInfo ? "border-amber-300 bg-amber-50" : "border-[#f5a524]/40 bg-[#fff9eb]"}`}>
+        <div className="flex items-center gap-2">
+          {applicationStatus ? <RotateCcw size={20} /> : <Factory size={20} />}
+          <h2 className="font-semibold text-black">
+            {isRejected
+              ? "Solicitud manufacturera rechazada"
+              : needsInfo
+                ? "Nubel necesita información actualizada"
+                : hasIncompleteDraft
+                  ? "La solicitud no terminó de enviarse"
+                  : "Solicitar o ingresar acceso manufacturero"}
+          </h2>
+        </div>
+        <p className="mt-2 text-sm text-neutral-600">
+          {isRejected
+            ? "Puedes corregir la información indicada y enviar una solicitud nueva para otra revisión."
+            : needsInfo
+              ? "Revisa la observación de Nubel y presenta una solicitud nueva con la información completa."
+              : hasIncompleteDraft
+                ? "Vuelve a completar el formulario y envíalo nuevamente."
+                : "Ofrece impresión FDM o resina después de la verificación personal de Nubel."}
+        </p>
+        {application?.adminNotes ? (
+          <div className="mt-3 rounded-md border border-black/10 bg-white p-3 text-sm">
+            <strong>Observación de Nubel</strong>
+            <p className="mt-1 text-neutral-600">{application.adminNotes}</p>
+          </div>
+        ) : null}
+        <button className="mt-4 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white" type="button" onClick={() => openAccess("request")}>
+          {applicationStatus ? "Enviar nueva solicitud" : "Solicitar o ingresar"}
+        </button>
+      </div>
+
+      {open ? renderAccessModal() : null}
     </>
   );
 }
@@ -253,14 +342,3 @@ function ChoiceGroup({ title, children }: { title: string; children: React.React
 function Check({ name, label }: { name: string; label: string }) {
   return <label className="flex items-center gap-2 text-sm text-neutral-700"><input name={name} type="checkbox" />{label}</label>;
 }
-
-function statusLabel(status: Props["application"] extends infer T ? T extends { status: infer S } ? S : never : never) {
-  return {
-    DRAFT: "borrador",
-    PENDING: "en revisión",
-    NEEDS_INFO: "requiere información",
-    APPROVED: "aprobada; espera tu código",
-    REJECTED: "rechazada",
-  }[status];
-}
-
