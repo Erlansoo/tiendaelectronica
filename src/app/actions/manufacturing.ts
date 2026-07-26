@@ -211,6 +211,7 @@ export async function activateManufacturerCode(rawCode: string): Promise<ActionR
           department: invite.application.department,
           city: invite.application.city,
           whatsapp: invite.application.whatsapp,
+          contactEmail: customer.email,
           deliveryModes: invite.application.deliveryModes,
         },
       });
@@ -347,12 +348,21 @@ export async function saveManufacturerProfile(formData: FormData) {
   const department = z.string().trim().min(2).max(80).parse(formData.get("department"));
   const city = z.string().trim().min(2).max(80).parse(formData.get("city"));
   const whatsapp = z.string().trim().min(7).max(30).parse(formData.get("whatsapp"));
+  const contactEmail = z.string().trim().email().max(254).parse(formData.get("contactEmail"));
+  const localPickupAddress = z.string().trim().max(300).parse(formData.get("localPickupAddress") || "");
+  const localPickupMapUrlInput = z.string().trim().max(2048).parse(formData.get("localPickupMapUrl") || "");
+  const localPickupMapUrl = localPickupMapUrlInput
+    ? z.string().url().refine((value) => new URL(value).protocol === "https:", "Usa un enlace HTTPS.").parse(localPickupMapUrlInput)
+    : null;
   const usualLeadTimeDays = z.coerce.number().int().min(1).max(90).parse(formData.get("usualLeadTimeDays"));
   const deliveryModes = [
     formData.get("localPickup") === "on" ? DeliveryMode.LOCAL_PICKUP : null,
     formData.get("nationalShipping") === "on" ? DeliveryMode.NATIONAL_SHIPPING : null,
   ].filter((value): value is DeliveryMode => value !== null);
   if (deliveryModes.length === 0) throw new Error("Selecciona al menos una modalidad de entrega.");
+  if (deliveryModes.includes(DeliveryMode.LOCAL_PICKUP) && localPickupAddress.length < 8) {
+    throw new Error("Indica una dirección de retiro local clara para los clientes.");
+  }
 
   const acceptResponsibility = formData.get("acceptResponsibility") === "on";
   await prisma.manufacturerProfile.update({
@@ -363,6 +373,9 @@ export async function saveManufacturerProfile(formData: FormData) {
       department,
       city,
       whatsapp,
+      contactEmail,
+      localPickupAddress: localPickupAddress || null,
+      localPickupMapUrl,
       usualLeadTimeDays,
       deliveryModes,
       responsibilityAcceptedAt: acceptResponsibility
@@ -604,8 +617,11 @@ export async function publishManufacturerProfile(): Promise<ActionResult> {
       pricingProfiles: true,
     },
   });
-  if (!profile?.responsibilityAcceptedAt || !profile.description || profile.machines.length === 0 || profile.materialVariants.length === 0 || profile.pricingProfiles.length === 0) {
-    return { ok: false, error: "Completa perfil, declaración, máquina, material e información de costos antes de publicar." };
+  if (!profile?.responsibilityAcceptedAt || !profile.description || !profile.contactEmail || profile.machines.length === 0 || profile.materialVariants.length === 0 || profile.pricingProfiles.length === 0) {
+    return { ok: false, error: "Completa perfil, contacto, declaración, máquina, material e información de costos antes de publicar." };
+  }
+  if (profile.deliveryModes.includes(DeliveryMode.LOCAL_PICKUP) && !profile.localPickupAddress) {
+    return { ok: false, error: "Agrega la dirección de retiro local antes de publicar tu perfil." };
   }
   await prisma.$transaction([
     prisma.manufacturerProfile.update({ where: { id: profile.id }, data: { isPublic: true } }),

@@ -40,8 +40,18 @@ export default async function CustomerQuotePage({ params }: { params: Promise<{ 
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {quote.offers.map((offer) => {
               const machineName = offer.machine.catalog ? `${offer.machine.catalog.brand} ${offer.machine.catalog.model}` : `${offer.machine.customBrand} ${offer.machine.customModel}`;
+              const showPrivateContact = quote.selectedOfferId === offer.id;
               return <article className={`rounded-md border bg-white p-5 shadow-sm ${offer.status === "SELECTED" || offer.status === "CONFIRMED" || offer.status === "ACCEPTED" ? "border-emerald-500 ring-1 ring-emerald-500" : "border-slate-200"}`} key={offer.id}>
-                <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{offer.manufacturer.commercialName}</h2><p className="text-sm text-slate-500">{offer.manufacturer.city}, {offer.manufacturer.department}</p></div><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold">{offer.status}</span></div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {offer.manufacturer.logoUrl
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img className="h-12 w-12 shrink-0 rounded-md border bg-white object-contain" src={offer.manufacturer.logoUrl} alt={`Logo de ${offer.manufacturer.commercialName}`} />
+                      : <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-slate-900 text-lg font-bold text-white">{offer.manufacturer.commercialName.slice(0, 1).toUpperCase()}</div>}
+                    <div className="min-w-0"><h2 className="truncate text-lg font-semibold">{offer.manufacturer.commercialName}</h2><p className="text-sm text-slate-500">{offer.manufacturer.city}, {offer.manufacturer.department}</p></div>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-bold">{offer.status}</span>
+                </div>
                 <p className="mt-5 text-3xl font-black">Bs {offer.totalBob.toString()}</p>
                 <dl className="mt-4 grid gap-2 text-sm">
                   <Row label="Material" value={`${offer.materialVariant.material.name} · ${offer.materialVariant.colorName}`} />
@@ -50,6 +60,17 @@ export default async function CustomerQuotePage({ params }: { params: Promise<{ 
                   <Row label="Entrega" value={quote.deliveryMode === "LOCAL_PICKUP" ? "Retiro local" : "Envío nacional"} />
                   <Row label="Plazo" value={`${offer.leadTimeDays} días`} />
                 </dl>
+                {showPrivateContact ? (
+                  <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+                    <p className="font-semibold">Datos de contacto y retiro</p>
+                    <div className="mt-2 grid gap-1">
+                      <a className="font-medium underline" href={`https://wa.me/${offer.manufacturer.whatsapp.replace(/\D/g, "")}`} rel="noreferrer" target="_blank">WhatsApp: {offer.manufacturer.whatsapp}</a>
+                      {offer.manufacturer.contactEmail ? <a className="font-medium underline" href={`mailto:${offer.manufacturer.contactEmail}`}>Correo: {offer.manufacturer.contactEmail}</a> : null}
+                      {quote.deliveryMode === "LOCAL_PICKUP" && offer.manufacturer.localPickupAddress ? <p>Retiro: {offer.manufacturer.localPickupAddress}</p> : null}
+                      {quote.deliveryMode === "LOCAL_PICKUP" && offer.manufacturer.localPickupMapUrl ? <a className="font-medium underline" href={offer.manufacturer.localPickupMapUrl} rel="noreferrer" target="_blank">Abrir ubicación en el mapa</a> : null}
+                    </div>
+                  </div>
+                ) : null}
                 {quote.status === "OPEN" && offer.status === "ESTIMATED" ? <div className="mt-5"><SelectManufacturingOfferButton offerId={offer.id} /></div> : null}
                 {offer.status === "REVISED" ? <div className="mt-5"><AcceptRevisedOfferButton offerId={offer.id} /></div> : null}
                 {offer.revisionReason ? <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900"><strong>Cambio propuesto:</strong> {offer.revisionReason}</p> : null}

@@ -65,15 +65,19 @@ export default async function ManufacturerDashboardPage() {
           <Metric label="Cotizaciones" value={profile.offers.length} />
         </section>
 
-        <Panel id="perfil" title="Perfil público y responsabilidad" description="El correo y teléfono permanecen privados hasta que un cliente seleccione tu oferta.">
+        <Panel id="perfil" title="Perfil público, contacto y responsabilidad" description="El logo, nombre, ciudad y modalidad se muestran al cotizar. Correo, WhatsApp y dirección exacta solo se comparten después de que el cliente elija tu oferta.">
           <form action={saveManufacturerProfile} className="grid gap-4 md:grid-cols-2">
             <ManufacturerLogoUpload currentUrl={profile.logoUrl} name={profile.commercialName} />
             <Field label="Nombre comercial"><input className={input} name="commercialName" defaultValue={profile.commercialName} required /></Field>
             <Field label="Ciudad"><input className={input} name="city" defaultValue={profile.city} required /></Field>
             <Field label="Departamento"><input className={input} name="department" defaultValue={profile.department} required /></Field>
-            <Field label="WhatsApp privado"><input className={input} name="whatsapp" defaultValue={profile.whatsapp} required /></Field>
+            <Field label="WhatsApp de contacto"><input className={input} name="whatsapp" defaultValue={profile.whatsapp} required /></Field>
+            <Field label="Correo de contacto"><input className={input} name="contactEmail" type="email" defaultValue={profile.contactEmail ?? ""} required /></Field>
             <Field label="Plazo habitual (días)"><input className={input} name="usualLeadTimeDays" defaultValue={profile.usualLeadTimeDays} type="number" min={1} max={90} required /></Field>
             <fieldset className="rounded-md border p-3"><legend className="px-1 text-sm font-semibold">Entrega</legend><div className="flex gap-4 text-sm"><Check name="localPickup" label="Retiro local" defaultChecked={profile.deliveryModes.includes("LOCAL_PICKUP")} /><Check name="nationalShipping" label="Envío nacional" defaultChecked={profile.deliveryModes.includes("NATIONAL_SHIPPING")} /></div></fieldset>
+            <Field label="Dirección de retiro local" full><input className={input} name="localPickupAddress" defaultValue={profile.localPickupAddress ?? ""} placeholder="Zona, calle, número, referencia y horario de retiro" maxLength={300} /></Field>
+            <Field label="Ubicación en Google Maps (opcional)" full><input className={input} name="localPickupMapUrl" type="url" defaultValue={profile.localPickupMapUrl ?? ""} placeholder="https://maps.google.com/..." maxLength={2048} /></Field>
+            <p className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:col-span-2">Si ofreces retiro local, la dirección es obligatoria. La dirección, enlace del mapa, WhatsApp y correo solo se muestran al cliente que elija tu oferta.</p>
             <Field label="Descripción pública" full><textarea className="min-h-24 rounded-md border border-slate-300 p-3 text-sm" name="description" defaultValue={profile.description ?? ""} minLength={30} maxLength={1500} required /></Field>
             <label className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm md:col-span-2">
               <input className="mt-1" name="acceptResponsibility" type="checkbox" defaultChecked={Boolean(profile.responsibilityAcceptedAt)} required={!profile.responsibilityAcceptedAt} />

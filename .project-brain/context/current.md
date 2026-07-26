@@ -41,6 +41,7 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 - Manufacturer access is a separate `MANUFACTURER` account capability and never grants electronics `/dashboard` access.
 - Manufacturer approval codes are Google-email-bound and stored only as hashes. They expire after seven days before first activation; once activated, the same 20-character code unlocks the manufacturer panel in the current browser session. Five failed attempts lock access for 15 minutes.
 - Manufacturing evidence and quote models use private Supabase buckets and short signed URLs.
+- Quote cards show each compatible manufacturer's commercial name, logo, city and delivery mode. WhatsApp, contact email, pickup address and map remain private until that customer selects the offer.
 - Material availability and reservations are changed atomically and recorded through inventory movements.
 - Public manufacturing capacity is derived only from active, approved manufacturer machines.
 - BOB is the only marketplace currency in v1; payments, commissions, ratings and seller onboarding remain disabled.

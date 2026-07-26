@@ -321,6 +321,9 @@ model ManufacturerProfile {
   department               String
   city                     String
   whatsapp                 String
+  contactEmail             String?
+  localPickupAddress       String?
+  localPickupMapUrl        String?
   deliveryModes            DeliveryMode[]
   usualLeadTimeDays        Int                       @default(3)
   responsibilityAcceptedAt DateTime?
