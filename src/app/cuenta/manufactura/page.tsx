@@ -11,12 +11,13 @@ import { ManufacturerLogoUpload } from "@/components/ManufacturerLogoUpload";
 import { ManufacturerMaterialForm } from "@/components/ManufacturerMaterialForm";
 import { ProviderOfferActions } from "@/components/ProviderOfferActions";
 import { PublicHeader } from "@/components/PublicHeader";
+import { StrictIntegerInput } from "@/components/StrictIntegerInput";
 import { requireManufacturerCapability } from "@/lib/manufacturing";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const input = "h-10 rounded-md border border-slate-300 bg-white px-3 text-sm";
+const input = "h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm";
 
 export default async function ManufacturerDashboardPage() {
   const { capability } = await requireManufacturerCapability();
@@ -74,7 +75,7 @@ export default async function ManufacturerDashboardPage() {
             <Field label={<ManufacturerFieldHelp label="Departamento" help="Departamento de Bolivia donde opera tu taller. Se muestra junto a la ciudad en las cotizaciones." />}><input className={input} name="department" defaultValue={profile.department} required /></Field>
             <Field label={<ManufacturerFieldHelp label="WhatsApp de contacto" help="Número empresarial que se revela solo al cliente después de seleccionar tu oferta." />}><input className={input} name="whatsapp" defaultValue={profile.whatsapp} required /></Field>
             <Field label={<ManufacturerFieldHelp label="Correo de contacto" help="Correo empresarial para coordinar una orden ya seleccionada. No se publica antes de que el cliente elija tu oferta." />}><input className={input} name="contactEmail" type="email" defaultValue={profile.contactEmail ?? ""} required /></Field>
-            <Field label={<ManufacturerFieldHelp label="Plazo habitual (días)" help="Días calendario que normalmente necesitas para preparar y entregar un trabajo. Será la base de las ofertas automáticas." />}><input className={input} name="usualLeadTimeDays" defaultValue={profile.usualLeadTimeDays} type="number" min={1} max={90} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="Plazo habitual (días)" help="Días calendario que normalmente necesitas para preparar y entregar un trabajo. Será la base de las ofertas automáticas." />}><StrictIntegerInput className={input} name="usualLeadTimeDays" defaultValue={profile.usualLeadTimeDays} min={1} max={90} required /></Field>
             <fieldset className="rounded-md border p-3"><legend className="px-1 text-sm font-semibold">Entrega</legend><div className="flex gap-4 text-sm"><Check name="localPickup" label="Retiro local" defaultChecked={profile.deliveryModes.includes("LOCAL_PICKUP")} /><Check name="nationalShipping" label="Envío nacional" defaultChecked={profile.deliveryModes.includes("NATIONAL_SHIPPING")} /></div></fieldset>
             <Field label={<ManufacturerFieldHelp label="Dirección de retiro local" help="Dirección y horario donde el cliente puede recoger su pieza. Solo es obligatoria si ofreces retiro local y se comparte después de elegir tu oferta." />} full><input className={input} name="localPickupAddress" defaultValue={profile.localPickupAddress ?? ""} placeholder="Zona, calle, número, referencia y horario de retiro" maxLength={300} /></Field>
             <Field label={<ManufacturerFieldHelp label="Ubicación en Google Maps (opcional)" help="Enlace directo a la ubicación de retiro. Facilita que el cliente encuentre tu taller una vez seleccionada la oferta." />} full><input className={input} name="localPickupMapUrl" type="url" defaultValue={profile.localPickupMapUrl ?? ""} placeholder="https://maps.google.com/..." maxLength={2048} /></Field>
@@ -99,8 +100,8 @@ export default async function ManufacturerDashboardPage() {
             <form action={addManufacturerMachine} className="grid gap-3 rounded-md border p-4">
               <h3 className="font-semibold">Registrar máquina personalizada</h3>
               <Field label={<ManufacturerFieldHelp label="Tecnología" help="FDM usa filamento y una cama caliente; resina usa una cuba de resina y pantalla UV. Solo recibirás solicitudes compatibles con la tecnología elegida." />}><select className={input} name="technology"><option value="FDM">FDM</option><option value="RESIN">Resina</option></select></Field>
-              <div className="grid grid-cols-2 gap-3"><Field label={<ManufacturerFieldHelp label="Marca" help="Fabricante real de la impresora personalizada. Nubel podrá usarlo para verificar el equipo." />}><input className={input} name="customBrand" required /></Field><Field label={<ManufacturerFieldHelp label="Modelo" help="Modelo exacto de la impresora personalizada, tal como aparece en su ficha técnica." />}><input className={input} name="customModel" required /></Field></div>
-              <div className="grid grid-cols-3 gap-3"><Field label={<ManufacturerFieldHelp label="X mm" help="Ancho útil de impresión de la cama o cuba, en milímetros." />}><input className={input} name="buildWidthMm" type="number" step="0.001" required /></Field><Field label={<ManufacturerFieldHelp label="Y mm" help="Profundidad útil de impresión de la cama o cuba, en milímetros." />}><input className={input} name="buildDepthMm" type="number" step="0.001" required /></Field><Field label={<ManufacturerFieldHelp label="Z mm" help="Altura máxima útil de impresión, en milímetros." />}><input className={input} name="buildHeightMm" type="number" step="0.001" required /></Field></div>
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"><Field label={<ManufacturerFieldHelp label="Marca" help="Fabricante real de la impresora personalizada. Nubel podrá usarlo para verificar el equipo." />}><input className={input} name="customBrand" required /></Field><Field label={<ManufacturerFieldHelp label="Modelo" help="Modelo exacto de la impresora personalizada, tal como aparece en su ficha técnica." />}><input className={input} name="customModel" required /></Field></div>
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3"><Field label={<ManufacturerFieldHelp label="X mm" help="Ancho útil de impresión de la cama o cuba, en milímetros." />}><input className={input} name="buildWidthMm" type="number" step="0.001" required /></Field><Field label={<ManufacturerFieldHelp label="Y mm" help="Profundidad útil de impresión de la cama o cuba, en milímetros." />}><input className={input} name="buildDepthMm" type="number" step="0.001" required /></Field><Field label={<ManufacturerFieldHelp label="Z mm" help="Altura máxima útil de impresión, en milímetros." />}><input className={input} name="buildHeightMm" type="number" step="0.001" required /></Field></div>
               <MachineCosts />
               <button className="rounded-md border border-[#17645e] px-4 py-2 text-sm font-semibold text-[#17645e]" type="submit">Enviar a revisión</button>
             </form>
@@ -138,8 +139,8 @@ export default async function ManufacturerDashboardPage() {
                 <input name="technology" type="hidden" value={technology} />
                 <CostField label="Electricidad Bs/kWh" help="Tarifa que pagas por cada kilovatio-hora. Se multiplica por el consumo de la máquina y las horas estimadas." name="electricityBobKwh" value={current?.electricityBobKwh.toString() ?? "0.8"} />
                 <CostField label="Mano de obra Bs/h" help="Valor de tu trabajo por hora para preparación y postproceso. El tiempo de impresión automática no se cobra aquí." name="laborBobPerHour" value={current?.laborBobPerHour.toString() ?? "20"} />
-                <CostField label="Preparación (min)" help="Tiempo promedio para revisar archivos, preparar material, nivelar o configurar la máquina antes de imprimir." name="setupMinutes" value={current?.setupMinutes ?? 20} />
-                <CostField label="Postproceso (min)" help="Tiempo promedio para retirar la pieza, limpiar, curar resina, quitar soportes o realizar el acabado básico." name="postprocessMinutes" value={current?.postprocessMinutes ?? 20} />
+                <CostField label="Preparación (min)" help="Tiempo promedio para revisar archivos, preparar material, nivelar o configurar la máquina antes de imprimir." name="setupMinutes" value={current?.setupMinutes ?? 20} integer />
+                <CostField label="Postproceso (min)" help="Tiempo promedio para retirar la pieza, limpiar, curar resina, quitar soportes o realizar el acabado básico." name="postprocessMinutes" value={current?.postprocessMinutes ?? 20} integer />
                 <CostField label="Consumibles Bs" help="Costo fijo adicional por trabajo: adhesivos, boquillas, guantes, alcohol IPA, papel, empaques u otros insumos." name="consumablesBob" value={current?.consumablesBob.toString() ?? "2"} />
                 <CostField label="Riesgo de fallo %" help="Reserva porcentual para cubrir impresiones fallidas, repetición de trabajos y variaciones normales del proceso." name="failureRiskPercent" value={current?.failureRiskPercent.toString() ?? "8"} />
                 <CostField label="Margen %" help="Ganancia que se suma después de los costos, consumibles y riesgo. No es una comisión de Nubel." name="marginPercent" value={current?.marginPercent.toString() ?? "25"} />
@@ -162,11 +163,11 @@ function Panel({ id, title, description, children }: { id: string; title: string
   return <section className="mt-6 scroll-mt-6 rounded-md border border-slate-200 bg-white p-5 shadow-sm" id={id}><h2 className="text-xl font-semibold">{title}</h2><p className="mt-1 text-sm text-slate-600">{description}</p><div className="mt-5">{children}</div></section>;
 }
 function Metric({ label, value }: { label: string; value: string | number }) { return <div className="rounded-md border bg-white p-4"><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>; }
-function Field({ label, children, full = false }: { label: React.ReactNode; children: React.ReactNode; full?: boolean }) { return <label className={`grid gap-1 text-sm font-semibold ${full ? "md:col-span-2" : ""}`}>{label}{children}</label>; }
+function Field({ label, children, full = false }: { label: React.ReactNode; children: React.ReactNode; full?: boolean }) { return <label className={`grid min-w-0 gap-1 text-sm font-semibold ${full ? "md:col-span-2" : ""}`}>{label}{children}</label>; }
 function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) { return <label className="flex items-center gap-2"><input name={name} type="checkbox" defaultChecked={defaultChecked} /> {label}</label>; }
-function CostField({ label, name, value, help }: { label: string; name: string; value: string | number; help?: string }) { return <Field label={help ? <ManufacturerFieldHelp label={label} help={help} /> : label}><input className={input} name={name} defaultValue={value} min="0" step="0.01" type="number" required /></Field>; }
+function CostField({ label, name, value, help, integer = false }: { label: string; name: string; value: string | number; help?: string; integer?: boolean }) { return <Field label={help ? <ManufacturerFieldHelp label={label} help={help} /> : label}>{integer ? <StrictIntegerInput className={input} name={name} defaultValue={value} min="0" max="1440" required /> : <input className={input} name={name} defaultValue={value} min="0" step="0.01" type="number" required />}</Field>; }
 function MachineCosts() {
-  return <div className="grid grid-cols-2 gap-3">
+  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
     <MachineCostField label="Cantidad" help="Número de máquinas físicas idénticas que tienes disponibles. Debe ser un número entero: 1, 2, 3…; no se pueden registrar fracciones de una máquina." name="quantity" value="1" min="1" max="100" step="1" inputMode="numeric" />
     <MachineCostField label="Compra Bs" help="Precio real que pagaste por una unidad de esta máquina. Se usa para calcular su depreciación por cada hora de impresión." name="purchasePriceBob" value="0" min="0" step="0.01" />
     <MachineCostField label="Residual Bs" help="Valor estimado de reventa de una unidad al final de su vida útil. Debe ser menor o igual al precio de compra; reduce la depreciación calculada." name="residualValueBob" value="0" min="0" step="0.01" />
@@ -186,5 +187,5 @@ function MachineCostField({ label, help, name, value, min, max, step, inputMode 
   step: string;
   inputMode?: "numeric" | "decimal";
 }) {
-  return <Field label={<ManufacturerFieldHelp label={label} help={help} />}><input className={input} name={name} defaultValue={value} min={min} max={max} step={step} inputMode={inputMode} type="number" required /></Field>;
+  return <Field label={<ManufacturerFieldHelp label={label} help={help} />}>{inputMode === "numeric" ? <StrictIntegerInput className={input} name={name} defaultValue={value} min={min} max={max} required /> : <input className={input} name={name} defaultValue={value} min={min} max={max} step={step} inputMode={inputMode} type="number" required />}</Field>;
 }

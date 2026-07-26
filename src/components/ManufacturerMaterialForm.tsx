@@ -11,7 +11,7 @@ type MaterialOption = {
   defaultDensityGcm3: string | null;
 };
 
-const input = "h-10 rounded-md border border-slate-300 bg-white px-3 text-sm";
+const input = "h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm";
 
 export function ManufacturerMaterialForm({ materials }: { materials: MaterialOption[] }) {
   const [materialId, setMaterialId] = useState(materials[0]?.id ?? "");
@@ -38,5 +38,5 @@ export function ManufacturerMaterialForm({ materials }: { materials: MaterialOpt
 }
 
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
-  return <label className="grid gap-1 text-sm font-semibold">{label}{children}</label>;
+  return <label className="grid min-w-0 gap-1 text-sm font-semibold">{label}{children}</label>;
 }
