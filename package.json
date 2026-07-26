@@ -11,6 +11,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
+    "manufacturing:storage": "tsx scripts/setup-manufacturing-storage.ts",
+    "test:manufacturing": "tsx --test tests/*.test.ts",
     "brain:init": "python scripts/project-brain/brain.py init .",
     "brain:scan": "python scripts/project-brain/brain.py scan .",
     "brain:sync": "python scripts/project-brain/brain.py sync .",

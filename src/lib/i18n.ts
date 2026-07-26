@@ -55,6 +55,7 @@ export const translations = {
   quotePreviewLoaded: { es: "Vista STL cargada. Rotá, acercá y desplazá con el mouse.", en: "STL preview loaded. Rotate, zoom and pan with your mouse." },
   quotePreviewUnavailable: { es: "Archivo aceptado para cotizar. La vista previa está disponible actualmente para archivos STL.", en: "File accepted for quote. Preview is currently available for STL files." },
   quotePrinterBed: { es: "Impresora / área de trabajo", en: "Printer / build area" },
+  quoteNoCompatibleBed: { es: "Sin áreas activas de manufactureros aprobados", en: "No active build areas from approved manufacturers" },
   quotePrintTechnology: { es: "Tecnología de impresión", en: "Print technology" },
   quoteFdmTechnology: { es: "FDM / FFF · Filamento", en: "FDM / FFF · Filament" },
   quoteResinTechnology: { es: "MSLA · Resina UV", en: "MSLA · UV resin" },

@@ -3,8 +3,12 @@ import { ArrowLeft } from "lucide-react";
 import { PrintQuoteWorkspace } from "@/components/PrintQuoteWorkspace";
 import { LocalizedText } from "@/components/LocalizedText";
 import { PublicHeader } from "@/components/PublicHeader";
+import { getPublicManufacturingCapacity } from "@/lib/manufacturing-capacity";
 
-export default function PrintQuotePage() {
+export const dynamic = "force-dynamic";
+
+export default async function PrintQuotePage() {
+  const manufacturingBeds = await getPublicManufacturingCapacity();
   return (
     <>
       <PublicHeader />
@@ -33,7 +37,7 @@ export default function PrintQuotePage() {
           </div>
         </section>
 
-        <PrintQuoteWorkspace />
+        <PrintQuoteWorkspace manufacturingBeds={manufacturingBeds} />
 
         <section className="mx-auto max-w-7xl px-6 pb-10 lg:px-8">
           <aside className="rounded-md border border-black/10 bg-white p-6 shadow-sm">

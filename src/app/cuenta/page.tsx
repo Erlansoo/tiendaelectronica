@@ -1,14 +1,27 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LocalizedText } from "@/components/LocalizedText";
+import { ManufacturerAccessCard } from "@/components/ManufacturerAccessCard";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getCurrentCustomer } from "@/lib/customer-auth";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
   const customer = await getCurrentCustomer();
   if (!customer) redirect("/login");
+  const [capability, application] = await Promise.all([
+    prisma.accountCapability.findUnique({
+      where: { accountId_type: { accountId: customer.id, type: "MANUFACTURER" } },
+      select: { status: true },
+    }),
+    prisma.manufacturerApplication.findFirst({
+      where: { accountId: customer.id },
+      orderBy: { createdAt: "desc" },
+      select: { status: true, adminNotes: true },
+    }),
+  ]);
 
   return (
     <>
@@ -38,7 +51,7 @@ export default async function AccountPage() {
                 <LocalizedText es="Pedidos" en="Orders" />
               </h2>
               <p className="mt-2 text-sm text-neutral-600">
-                <LocalizedText es="El historial de pedidos del cliente aparecerá aquí más adelante." en="Future customer order history will appear here." />
+                <LocalizedText es="Aquí aparecerán tus pedidos, cotizaciones y trabajos de manufactura." en="Your orders, quotes and manufacturing jobs will appear here." />
               </p>
             </div>
             <div className="rounded-md border border-neutral-200 p-4">
@@ -57,6 +70,10 @@ export default async function AccountPage() {
                 <LocalizedText es="Usá WhatsApp desde cualquier producto para consultar disponibilidad." en="Use WhatsApp from any product page to request availability." />
               </p>
             </div>
+            <ManufacturerAccessCard
+              capabilityStatus={capability?.status ?? null}
+              application={application}
+            />
             {customer.isStoreAdmin ? (
               <div className="rounded-md border border-black bg-black p-4 text-white">
                 <h2 className="font-semibold">

@@ -11,7 +11,7 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${getExternalUrlCspSources().join(" ")}`,
+  `img-src 'self' data: blob:${supabaseOrigin ? ` ${supabaseOrigin}` : ""} ${getExternalUrlCspSources().join(" ")}`,
   "font-src 'self' data:",
   `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
   "media-src 'self'",
@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/cuenta",
+        source: "/cuenta/:path*",
         headers: [
           {
             key: "Cache-Control",

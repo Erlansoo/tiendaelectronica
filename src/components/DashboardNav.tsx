@@ -10,6 +10,8 @@ const items = [
   ["Nueva venta", "/dashboard/ventas/nueva"],
   ["Inventario", "/dashboard/inventario"],
   ["Movimientos de stock", "/dashboard/stock-movements"],
+  ["Solicitudes manufactura", "/dashboard/manufactura/solicitudes"],
+  ["Manufactureros 3D", "/dashboard/manufactura/manufactureros"],
   ["Configuración", "/dashboard/configuracion"],
 ];
 

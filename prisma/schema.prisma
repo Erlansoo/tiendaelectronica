@@ -41,6 +41,103 @@ enum StockMovementReason {
   SAMPLE_GIFT
 }
 
+enum CapabilityType {
+  MANUFACTURER
+  SELLER
+}
+
+enum CapabilityStatus {
+  ONBOARDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ManufacturerApplicationStatus {
+  DRAFT
+  PENDING
+  NEEDS_INFO
+  APPROVED
+  REJECTED
+}
+
+enum ManufacturerInviteStatus {
+  ACTIVE
+  USED
+  REVOKED
+  EXPIRED
+}
+
+enum ManufacturingTechnology {
+  FDM
+  RESIN
+}
+
+enum DeliveryMode {
+  LOCAL_PICKUP
+  NATIONAL_SHIPPING
+}
+
+enum MachineReviewStatus {
+  PENDING_REVIEW
+  ACTIVE
+  REJECTED
+  INACTIVE
+}
+
+enum InventoryUnit {
+  GRAM
+  MILLILITER
+}
+
+enum InventoryMovementType {
+  IN
+  OUT
+  ADJUSTMENT
+  RESERVE
+  RELEASE
+  CONSUME
+}
+
+enum ManufacturingQuality {
+  FAST
+  BALANCED
+  DETAIL
+}
+
+enum ManufacturingQuoteStatus {
+  DRAFT
+  QUOTING
+  OPEN
+  SELECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum ManufacturingOfferStatus {
+  ESTIMATED
+  SELECTED
+  CONFIRMED
+  REVISED
+  ACCEPTED
+  EXPIRED
+  DECLINED
+}
+
+enum InventoryReservationStatus {
+  ACTIVE
+  RELEASED
+  CONSUMED
+  EXPIRED
+}
+
+enum ManufacturingOrderStatus {
+  AWAITING_PROVIDER
+  AWAITING_CUSTOMER
+  AGREED
+  CANCELLED
+  COMPLETED
+}
+
 model Product {
   id                  String          @id @default(cuid())
   sku                 String          @unique
@@ -121,12 +218,373 @@ model StockMovement {
 }
 
 model CustomerAccount {
-  id           String   @id
+  id                       String                    @id
+  name                     String
+  email                    String                    @unique
+  imageUrl                 String?
+  provider                 String                    @default("google")
+  lastActivityAt           DateTime?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  capabilities             AccountCapability[]
+  manufacturerApplications ManufacturerApplication[]
+  manufacturerInvites      ManufacturerInvite[]
+  manufacturingQuotes      ManufacturingQuote[]
+
+  @@index([email])
+}
+
+model AccountCapability {
+  id          String           @id @default(cuid())
+  accountId   String
+  type        CapabilityType
+  status      CapabilityStatus @default(ONBOARDING)
+  activatedAt DateTime?
+  suspendedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  account     CustomerAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  profile     ManufacturerProfile?
+
+  @@unique([accountId, type])
+  @@index([type, status])
+}
+
+model ManufacturerApplication {
+  id                  String                        @id @default(cuid())
+  accountId           String
+  status              ManufacturerApplicationStatus @default(DRAFT)
+  commercialName      String
+  responsibleName     String
+  department          String
+  city                String
+  whatsapp            String
+  experience          String
+  technologies        ManufacturingTechnology[]
+  declaredMachines    String
+  deliveryModes       DeliveryMode[]
+  workLinks           String[]
+  applicantNotes      String?
+  adminNotes           String?
+  reviewedAt          DateTime?
+  reviewedByEmail     String?
+  submittedAt         DateTime?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  account             CustomerAccount               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  evidence            ManufacturerEvidence[]
+  invites             ManufacturerInvite[]
+
+  @@index([status, submittedAt])
+  @@index([accountId, createdAt])
+}
+
+model ManufacturerEvidence {
+  id            String                  @id @default(cuid())
+  applicationId String
+  storagePath   String                  @unique
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  createdAt     DateTime                @default(now())
+  application   ManufacturerApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model ManufacturerInvite {
+  id              String                   @id @default(cuid())
+  applicationId   String
+  accountId       String
+  email           String
+  codeHash        String                   @unique
+  status          ManufacturerInviteStatus @default(ACTIVE)
+  failedAttempts  Int                      @default(0)
+  lockedUntil     DateTime?
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime                 @default(now())
+  application     ManufacturerApplication  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  account         CustomerAccount           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, status])
+  @@index([email, status])
+  @@index([expiresAt])
+}
+
+model ManufacturerProfile {
+  id                       String                    @id @default(cuid())
+  capabilityId             String                    @unique
+  commercialName           String
+  logoUrl                  String?
+  description              String?
+  department               String
+  city                     String
+  whatsapp                 String
+  deliveryModes            DeliveryMode[]
+  usualLeadTimeDays        Int                       @default(3)
+  responsibilityAcceptedAt DateTime?
+  isPublic                 Boolean                   @default(false)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  capability               AccountCapability         @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  machines                 ManufacturerMachine[]
+  materialVariants         ManufacturerMaterialVariant[]
+  pricingProfiles          ManufacturerPricingProfile[]
+  offers                   ManufacturingOffer[]
+
+  @@index([isPublic, city])
+}
+
+model PrinterCatalog {
+  id           String                  @id @default(cuid())
+  brand        String
+  model        String
+  technology   ManufacturingTechnology
+  buildWidthMm Decimal                 @db.Decimal(10, 3)
+  buildDepthMm Decimal                 @db.Decimal(10, 3)
+  buildHeightMm Decimal                @db.Decimal(10, 3)
+  sourceUrl    String
+  isVerified   Boolean                 @default(true)
+  isActive     Boolean                 @default(true)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  machines     ManufacturerMachine[]
+
+  @@unique([brand, model, technology])
+  @@index([technology, isActive])
+}
+
+model ManufacturerMachine {
+  id                   String                   @id @default(cuid())
+  manufacturerId       String
+  catalogId            String?
+  customBrand          String?
+  customModel          String?
+  technology           ManufacturingTechnology
+  buildWidthMm         Decimal                  @db.Decimal(10, 3)
+  buildDepthMm         Decimal                  @db.Decimal(10, 3)
+  buildHeightMm        Decimal                  @db.Decimal(10, 3)
+  quantity             Int                      @default(1)
+  reviewStatus         MachineReviewStatus      @default(PENDING_REVIEW)
+  purchasePriceBob     Decimal                  @default(0) @db.Decimal(12, 2)
+  residualValueBob     Decimal                  @default(0) @db.Decimal(12, 2)
+  usefulLifeHours      Decimal                  @default(5000) @db.Decimal(12, 2)
+  powerWatts           Decimal                  @default(0) @db.Decimal(12, 2)
+  maintenanceBobPerHour Decimal                 @default(0) @db.Decimal(12, 4)
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  manufacturer         ManufacturerProfile      @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  catalog              PrinterCatalog?          @relation(fields: [catalogId], references: [id], onDelete: SetNull)
+  qualityProfiles      MachineQualityProfile[]
+  offers               ManufacturingOffer[]
+
+  @@index([manufacturerId, reviewStatus])
+  @@index([technology, reviewStatus])
+}
+
+model MachineQualityProfile {
+  id                  String               @id @default(cuid())
+  machineId           String
+  quality             ManufacturingQuality
+  layerHeightMm       Decimal              @db.Decimal(6, 3)
+  throughputCm3PerHour Decimal?            @db.Decimal(10, 3)
+  secondsPerLayer     Decimal?             @db.Decimal(10, 3)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  machine             ManufacturerMachine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@unique([machineId, quality])
+}
+
+model MaterialCatalog {
+  id           String                  @id @default(cuid())
+  technology   ManufacturingTechnology
   name         String
-  email        String   @unique
-  imageUrl     String?
-  provider     String   @default("google")
-  lastActivityAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  defaultDensityGcm3 Decimal?
+  isActive     Boolean                 @default(true)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  variants     ManufacturerMaterialVariant[]
+
+  @@unique([technology, name])
+  @@index([technology, isActive])
+}
+
+model ManufacturerMaterialVariant {
+  id                   String                    @id @default(cuid())
+  manufacturerId       String
+  materialId           String
+  colorName             String
+  colorHex              String?
+  unit                  InventoryUnit
+  costPerBaseUnitBob    Decimal                   @db.Decimal(12, 2)
+  densityGcm3           Decimal?                  @db.Decimal(8, 4)
+  wastePercent          Decimal                   @default(10) @db.Decimal(6, 2)
+  availableQuantity     Decimal                   @default(0) @db.Decimal(14, 3)
+  reservedQuantity      Decimal                   @default(0) @db.Decimal(14, 3)
+  isActive              Boolean                   @default(true)
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  manufacturer          ManufacturerProfile       @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  material              MaterialCatalog           @relation(fields: [materialId], references: [id])
+  movements             MaterialInventoryMovement[]
+  offers                ManufacturingOffer[]
+  reservations          InventoryReservation[]
+
+  @@unique([manufacturerId, materialId, colorName])
+  @@index([manufacturerId, isActive])
+  @@index([materialId, isActive])
+}
+
+model MaterialInventoryMovement {
+  id              String                       @id @default(cuid())
+  variantId       String
+  type            InventoryMovementType
+  quantity        Decimal                      @db.Decimal(14, 3)
+  previousAvailable Decimal                    @db.Decimal(14, 3)
+  newAvailable    Decimal                      @db.Decimal(14, 3)
+  previousReserved Decimal                     @db.Decimal(14, 3)
+  newReserved     Decimal                      @db.Decimal(14, 3)
+  referenceType   String?
+  referenceId     String?
+  notes           String?
+  createdAt       DateTime                     @default(now())
+  variant         ManufacturerMaterialVariant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+model ManufacturerPricingProfile {
+  id                    String                    @id @default(cuid())
+  manufacturerId        String
+  technology            ManufacturingTechnology
+  electricityBobKwh     Decimal                   @default(0) @db.Decimal(10, 4)
+  laborBobPerHour       Decimal                   @default(0) @db.Decimal(10, 2)
+  setupMinutes          Int                       @default(0)
+  postprocessMinutes    Int                       @default(0)
+  consumablesBob        Decimal                   @default(0) @db.Decimal(10, 2)
+  failureRiskPercent    Decimal                   @default(5) @db.Decimal(6, 2)
+  marginPercent         Decimal                   @default(20) @db.Decimal(6, 2)
+  minimumChargeBob      Decimal                   @default(0) @db.Decimal(10, 2)
+  platformCommissionPercent Decimal                @default(0) @db.Decimal(6, 2)
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  manufacturer          ManufacturerProfile       @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@unique([manufacturerId, technology])
+}
+
+model ManufacturingQuote {
+  id                 String                   @id @default(cuid())
+  customerId         String
+  technology         ManufacturingTechnology
+  materialName       String
+  colorName          String
+  quality            ManufacturingQuality
+  infillPercent      Decimal?                 @db.Decimal(5, 2)
+  copies             Int                      @default(1)
+  workspaceWidthMm   Decimal                  @db.Decimal(10, 3)
+  workspaceDepthMm   Decimal                  @db.Decimal(10, 3)
+  workspaceHeightMm  Decimal                  @db.Decimal(10, 3)
+  deliveryMode       DeliveryMode
+  destinationCity    String
+  configuration      Json
+  status             ManufacturingQuoteStatus @default(DRAFT)
+  expiresAt          DateTime
+  selectedOfferId    String?                  @unique
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  customer           CustomerAccount          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  models             ManufacturingQuoteModel[]
+  offers             ManufacturingOffer[]     @relation("QuoteOffers")
+  selectedOffer      ManufacturingOffer?      @relation("SelectedQuoteOffer", fields: [selectedOfferId], references: [id], onDelete: SetNull)
+
+  @@index([customerId, createdAt])
+  @@index([status, expiresAt])
+}
+
+model ManufacturingQuoteModel {
+  id               String              @id @default(cuid())
+  quoteId          String
+  storagePath      String              @unique
+  originalName     String
+  mimeType         String
+  sizeBytes        Int
+  position         Json
+  rotation         Json
+  scale            Json
+  copies           Int                 @default(1)
+  solidVolumeCm3   Decimal             @db.Decimal(14, 4)
+  envelopeVolumeCm3 Decimal            @db.Decimal(14, 4)
+  widthMm          Decimal             @db.Decimal(10, 3)
+  depthMm          Decimal             @db.Decimal(10, 3)
+  heightMm         Decimal             @db.Decimal(10, 3)
+  createdAt        DateTime            @default(now())
+  quote            ManufacturingQuote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}
+
+model ManufacturingOffer {
+  id                    String                    @id @default(cuid())
+  quoteId               String
+  manufacturerId        String
+  machineId             String
+  materialVariantId     String
+  status                ManufacturingOfferStatus @default(ESTIMATED)
+  estimatedMaterialQty  Decimal                   @db.Decimal(14, 3)
+  estimatedHours        Decimal                   @db.Decimal(10, 3)
+  totalBob              Decimal                   @db.Decimal(12, 2)
+  costBreakdown         Json
+  leadTimeDays          Int
+  revisionReason        String?
+  validUntil            DateTime
+  selectedAt            DateTime?
+  confirmedAt           DateTime?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  quote                 ManufacturingQuote        @relation("QuoteOffers", fields: [quoteId], references: [id], onDelete: Cascade)
+  selectedByQuote       ManufacturingQuote?       @relation("SelectedQuoteOffer")
+  manufacturer          ManufacturerProfile       @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  machine               ManufacturerMachine       @relation(fields: [machineId], references: [id])
+  materialVariant       ManufacturerMaterialVariant @relation(fields: [materialVariantId], references: [id])
+  reservation           InventoryReservation?
+  order                 ManufacturingOrder?
+
+  @@unique([quoteId, manufacturerId])
+  @@index([manufacturerId, status])
+  @@index([validUntil])
+}
+
+model InventoryReservation {
+  id             String                     @id @default(cuid())
+  offerId        String                     @unique
+  variantId      String
+  quantity       Decimal                    @db.Decimal(14, 3)
+  status         InventoryReservationStatus @default(ACTIVE)
+  expiresAt      DateTime
+  releasedAt     DateTime?
+  createdAt      DateTime                   @default(now())
+  offer          ManufacturingOffer         @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  variant        ManufacturerMaterialVariant @relation(fields: [variantId], references: [id])
+
+  @@index([status, expiresAt])
+}
+
+model ManufacturingOrder {
+  id                 String                   @id @default(cuid())
+  offerId            String                   @unique
+  status             ManufacturingOrderStatus @default(AWAITING_PROVIDER)
+  agreedTotalBob     Decimal                  @db.Decimal(12, 2)
+  agreedLeadTimeDays Int
+  revisionReason     String?
+  customerAcceptedAt DateTime?
+  providerAcceptedAt DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  offer              ManufacturingOffer       @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
 }

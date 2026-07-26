@@ -6,9 +6,9 @@ import { PublicHeader } from "@/components/PublicHeader";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; reason?: string }>;
+  searchParams: Promise<{ error?: string; reason?: string; next?: string }>;
 }) {
-  const { error, reason } = await searchParams;
+  const { error, reason, next } = await searchParams;
 
   return (
     <>
@@ -35,6 +35,7 @@ export default async function LoginPage({
             </p>
           ) : null}
           <form action={signInWithGoogle} className="mt-6">
+            <input name="next" type="hidden" value={next ?? "/cuenta"} />
             <button className="flex w-full items-center justify-center gap-3 rounded-full border border-black px-4 py-3 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:shadow-lg hover:shadow-[#f5a524]/20">
               <span className="text-lg">G</span>
               <LocalizedText es="Continuar con Google" en="Continue with Google" />

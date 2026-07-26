@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { Box, BoxSelect, Crosshair, MousePointer2, Rotate3D, Trash2, ZoomIn } from "lucide-react";
+import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { OrbitControls, STLLoader, TransformControls } from "three-stdlib";
+import { finalizeManufacturingQuote, startManufacturingQuote } from "@/app/actions/manufacturing";
 import { translate, type TranslationKey } from "@/lib/i18n";
+import type { PublicManufacturingBed } from "@/lib/manufacturing-capacity";
 import { useLocale } from "@/components/useLocale";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
@@ -44,8 +48,9 @@ type ModelEntry = {
   fitsBed: boolean;
 };
 
-export function PrintQuoteWorkspace() {
+export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: PublicManufacturingBed[] }) {
   const locale = useLocale();
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -67,41 +72,52 @@ export function PrintQuoteWorkspace() {
   const [previewNote, setPreviewNote] = useState<TranslationKey>("quotePreviewPrompt");
   const [bedIndex, setBedIndex] = useState(1);
   const [printTechnology, setPrintTechnology] = useState<"fdm" | "resin">("fdm");
-  const [material, setMaterial] = useState("pla");
+  const [material, setMaterial] = useState("PLA");
+  const [colorName, setColorName] = useState("Negro");
+  const [destinationCity, setDestinationCity] = useState("");
+  const [deliveryMode, setDeliveryMode] = useState<"LOCAL_PICKUP" | "NATIONAL_SHIPPING">("NATIONAL_SHIPPING");
+  const [orderQuantity, setOrderQuantity] = useState(1);
+  const [quoteMessage, setQuoteMessage] = useState<string | null>(null);
+  const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("automatic");
   const [qualityPreset, setQualityPreset] = useState<"draft" | "standard" | "detail">("standard");
   const [isSelectingSupportFace, setIsSelectingSupportFace] = useState(false);
   const [manualPosition, setManualPosition] = useState({ x: 0, y: 0 });
   const [isLoadingModels, setIsLoadingModels] = useState(false);
 
-  const availablePrinterBeds = printTechnology === "resin" ? resinPrinterBeds : fdmPrinterBeds;
+  const marketplacePrinterBeds = useMemo(
+    () => manufacturingBeds
+      .filter((bed) => bed.technology === printTechnology)
+      .map((bed) => ({ ...bed, y: bed.z, z: bed.y })),
+    [manufacturingBeds, printTechnology],
+  );
+  const hasMarketplaceCapacity = marketplacePrinterBeds.length > 0;
+  const availablePrinterBeds = hasMarketplaceCapacity
+    ? marketplacePrinterBeds
+    : printTechnology === "resin" ? resinPrinterBeds : fdmPrinterBeds;
   const selectedBed = availablePrinterBeds[bedIndex] ?? availablePrinterBeds[0];
   const materialOptions = printTechnology === "resin"
     ? [
-        { value: "pla-like-resin", label: translate("quotePlaLikeResin", locale) },
-        { value: "standard-resin", label: translate("quoteStandardResin", locale) },
-        { value: "abs-like-resin", label: translate("quoteAbsLikeResin", locale) },
-        { value: "tough-resin", label: translate("quoteToughResin", locale) },
-        { value: "water-wash-resin", label: translate("quoteWaterWashResin", locale) },
-        { value: "high-temp-resin", label: translate("quoteHighTempResin", locale) },
-        { value: "castable-resin", label: translate("quoteCastableResin", locale) },
+        { value: "Resina PLA-like", label: translate("quotePlaLikeResin", locale) },
+        { value: "Resina estándar", label: translate("quoteStandardResin", locale) },
+        { value: "Resina ABS-like", label: translate("quoteAbsLikeResin", locale) },
+        { value: "Resina tough", label: translate("quoteToughResin", locale) },
+        { value: "Resina lavable al agua", label: translate("quoteWaterWashResin", locale) },
+        { value: "Resina alta temperatura", label: translate("quoteHighTempResin", locale) },
+        { value: "Resina calcinable", label: translate("quoteCastableResin", locale) },
       ]
     : [
-        { value: "pla", label: "PLA" },
-        { value: "petg", label: "PETG" },
-        { value: "abs", label: "ABS" },
-        { value: "asa", label: "ASA" },
-        { value: "tpu", label: "TPU" },
-        { value: "nylon", label: "Nylon / PA" },
-        { value: "pc", label: "PC" },
+        { value: "PLA", label: "PLA" },
+        { value: "PETG", label: "PETG" },
+        { value: "ABS", label: "ABS" },
+        { value: "ASA", label: "ASA" },
+        { value: "TPU", label: "TPU" },
+        { value: "Nylon / PA", label: "Nylon / PA" },
+        { value: "PC", label: "PC" },
       ];
   const basicLayerHeights = printTechnology === "resin"
     ? { draft: "0.10 mm", standard: "0.05 mm", detail: "0.03 mm" }
     : { draft: "0.28 mm", standard: "0.20 mm", detail: "0.12 mm" };
-  selectedBedRef.current = selectedBed;
-  selectedModelIdRef.current = selectedModelId;
-  placementModeRef.current = placementMode;
-  faceSelectionModeRef.current = isSelectingSupportFace;
   const selectedModel = models.find((model) => model.id === selectedModelId) ?? null;
   const dimensions = selectedModel?.dimensions ?? null;
   const scaleFactor = selectedModel?.scaleFactor ?? 1;
@@ -124,6 +140,48 @@ export function PrintQuoteWorkspace() {
     ? Math.max(scaledDimensions.x, scaledDimensions.y, scaledDimensions.z) > 0 &&
       Math.max(scaledDimensions.x, scaledDimensions.y, scaledDimensions.z) < 5
     : false;
+
+  useEffect(() => {
+    selectedBedRef.current = selectedBed;
+    selectedModelIdRef.current = selectedModelId;
+    placementModeRef.current = placementMode;
+    faceSelectionModeRef.current = isSelectingSupportFace;
+  }, [isSelectingSupportFace, placementMode, selectedBed, selectedModelId]);
+
+  function frameModel(fallbackObject?: THREE.Object3D) {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+
+    const bed = selectedBedRef.current;
+    const sceneBox = new THREE.Box3(
+      new THREE.Vector3(-bed.x / 2, 0, -bed.z / 2),
+      new THREE.Vector3(bed.x / 2, 1, bed.z / 2),
+    );
+    if (modelsRef.current.size > 0) {
+      modelsRef.current.forEach((model) => sceneBox.union(new THREE.Box3().setFromObject(model)));
+    } else if (fallbackObject) {
+      sceneBox.union(new THREE.Box3().setFromObject(fallbackObject));
+    }
+    const sceneCenter = sceneBox.getCenter(new THREE.Vector3());
+    const sceneSphere = sceneBox.getBoundingSphere(new THREE.Sphere());
+    const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+    const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
+    const limitingFov = Math.min(verticalFov, horizontalFov);
+    const cameraDistance = (sceneSphere.radius / Math.sin(limitingFov / 2)) * 1.12;
+    const cameraDirection = new THREE.Vector3(1.05, 0.82, 1.05).normalize();
+
+    camera.position.copy(sceneCenter).add(cameraDirection.multiplyScalar(cameraDistance));
+    camera.near = Math.max(0.1, cameraDistance / 100);
+    camera.far = cameraDistance + sceneSphere.radius * 5;
+    camera.updateProjectionMatrix();
+    controls.target.copy(sceneCenter);
+    controls.update();
+  }
+
+  function syncModelMetrics(id: string) {
+    setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBedRef.current, id));
+  }
 
   useEffect(() => {
     const container = containerRef.current;
@@ -536,37 +594,6 @@ export function PrintQuoteWorkspace() {
     }
   }, [placementMode]);
 
-  function frameModel(fallbackObject?: THREE.Object3D) {
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (!camera || !controls) return;
-
-    const bed = selectedBedRef.current;
-    const sceneBox = new THREE.Box3(
-      new THREE.Vector3(-bed.x / 2, 0, -bed.z / 2),
-      new THREE.Vector3(bed.x / 2, 1, bed.z / 2),
-    );
-    if (modelsRef.current.size > 0) {
-      modelsRef.current.forEach((model) => sceneBox.union(new THREE.Box3().setFromObject(model)));
-    } else if (fallbackObject) {
-      sceneBox.union(new THREE.Box3().setFromObject(fallbackObject));
-    }
-    const sceneCenter = sceneBox.getCenter(new THREE.Vector3());
-    const sceneSphere = sceneBox.getBoundingSphere(new THREE.Sphere());
-    const verticalFov = THREE.MathUtils.degToRad(camera.fov);
-    const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
-    const limitingFov = Math.min(verticalFov, horizontalFov);
-    const cameraDistance = (sceneSphere.radius / Math.sin(limitingFov / 2)) * 1.12;
-    const cameraDirection = new THREE.Vector3(1.05, 0.82, 1.05).normalize();
-
-    camera.position.copy(sceneCenter).add(cameraDirection.multiplyScalar(cameraDistance));
-    camera.near = Math.max(0.1, cameraDistance / 100);
-    camera.far = cameraDistance + sceneSphere.radius * 5;
-    camera.updateProjectionMatrix();
-    controls.target.copy(sceneCenter);
-    controls.update();
-  }
-
   function updateSelectionBox(model: THREE.Group | null) {
     const scene = sceneRef.current;
     if (!scene) return;
@@ -612,10 +639,6 @@ export function PrintQuoteWorkspace() {
     if (transformRef.current) transformRef.current.visible = false;
     updateSelectionBox(null);
     frameModel(placeholder);
-  }
-
-  function syncModelMetrics(id: string) {
-    setModels((current) => refreshModelMetrics(current, modelsRef.current, selectedBedRef.current, id));
   }
 
   function syncAllModelMetrics() {
@@ -693,8 +716,8 @@ export function PrintQuoteWorkspace() {
 
   function changePrintTechnology(technology: "fdm" | "resin") {
     setPrintTechnology(technology);
-    setBedIndex(technology === "resin" ? 0 : 1);
-    setMaterial(technology === "resin" ? "standard-resin" : "pla");
+    setBedIndex(0);
+    setMaterial(technology === "resin" ? "Resina estándar" : "PLA");
   }
 
   function setCopies(nextCount: number) {
@@ -871,6 +894,103 @@ export function PrintQuoteWorkspace() {
     }
   }
 
+  async function submitQuote() {
+    setQuoteMessage(null);
+    if (!hasMarketplaceCapacity) {
+      setQuoteMessage("Todavía no hay manufactureros aprobados con una máquina compatible para esta tecnología.");
+      return;
+    }
+    if (!destinationCity.trim() || !colorName.trim()) {
+      setQuoteMessage("Indica el color y la ciudad de entrega antes de cotizar.");
+      return;
+    }
+    if (models.some((entry) => !entry.previewable || !entry.solidVolumeMm3 || !entry.occupiedVolumeMm3)) {
+      setQuoteMessage("La cotización automática requiere métricas 3D. Por ahora convierte los archivos OBJ/STEP/3MF a STL.");
+      return;
+    }
+
+    const modelPayload = models.map((entry) => {
+      const object = modelsRef.current.get(entry.id)!;
+      const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
+      return {
+        name: entry.file.name,
+        mimeType: entry.file.type || "application/octet-stream",
+        sizeBytes: entry.file.size,
+        position: { x: object.position.x, y: object.position.y, z: object.position.z },
+        rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+        scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+        copies: entry.copyCount,
+        solidVolumeCm3: entry.solidVolumeMm3! / entry.copyCount / 1000,
+        envelopeVolumeCm3: entry.occupiedVolumeMm3! / entry.copyCount / 1000,
+        widthMm: size.x,
+        depthMm: size.z,
+        heightMm: size.y,
+      };
+    });
+    const arrangedBounds = new THREE.Box3();
+    modelsRef.current.forEach((object) => arrangedBounds.expandByObject(object));
+    const arrangedSize = arrangedBounds.getSize(new THREE.Vector3());
+    const payload = {
+      technology: printTechnology === "fdm" ? "FDM" : "RESIN",
+      materialName: material,
+      colorName,
+      quality: qualityPreset === "draft" ? "FAST" : qualityPreset === "detail" ? "DETAIL" : "BALANCED",
+      infillPercent: printTechnology === "fdm" ? 20 : undefined,
+      copies: orderQuantity,
+      workspaceWidthMm: Math.max(0.001, arrangedSize.x),
+      workspaceDepthMm: Math.max(0.001, arrangedSize.z),
+      workspaceHeightMm: Math.max(0.001, arrangedSize.y),
+      deliveryMode,
+      destinationCity,
+      configuration: {
+        placementMode,
+        selectedBed: { x: selectedBed.x, y: selectedBed.y, z: selectedBed.z },
+        resinSupportPercent: printTechnology === "resin" ? 12 : 0,
+        hollowPercent: 0,
+      },
+    };
+
+    setIsSubmittingQuote(true);
+    try {
+      const prepared = await startManufacturingQuote(payload, modelPayload);
+      if (!prepared.ok) {
+        if (prepared.error === "AUTH_REQUIRED") {
+          window.open("/login?next=/auth/popup-complete", "nubel-google-auth", "popup=yes,width=520,height=720");
+          setQuoteMessage("Completa el acceso con Google en la ventana separada. Tus modelos permanecerán aquí; después vuelve a pulsar cotizar.");
+        } else {
+          setQuoteMessage(prepared.error);
+        }
+        return;
+      }
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !anonKey) throw new Error("Storage no configurado.");
+      const supabase = createClient(supabaseUrl, anonKey);
+      for (let index = 0; index < prepared.data.uploads.length; index += 1) {
+        const upload = prepared.data.uploads[index];
+        const file = models[index].file;
+        const { error: uploadError } = await supabase.storage
+          .from("manufacturing-quotes")
+          .uploadToSignedUrl(upload.path, upload.token, file, {
+            contentType: file.type || "application/octet-stream",
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+      }
+      const finalized = await finalizeManufacturingQuote(prepared.data.quoteId);
+      if (!finalized.ok) {
+        setQuoteMessage(finalized.error);
+        return;
+      }
+      router.push(`/cuenta/cotizaciones/${finalized.data.quoteId}`);
+    } catch (submissionError) {
+      console.error(submissionError);
+      setQuoteMessage("No se pudo completar la carga privada. Tus archivos siguen en el navegador para volver a intentar.");
+    } finally {
+      setIsSubmittingQuote(false);
+    }
+  }
+
   return (
     <section className="mx-auto grid max-w-[1600px] gap-6 px-5 py-10 sm:px-6 lg:grid-cols-[minmax(340px,0.72fr)_minmax(620px,1.28fr)] lg:px-8">
       <div className="rounded-md border border-black/10 bg-white p-6 shadow-sm">
@@ -947,15 +1067,17 @@ export function PrintQuoteWorkspace() {
             {translate("quotePrinterBed", locale)}
             <select
               className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
+              disabled={!hasMarketplaceCapacity}
               value={bedIndex}
               onChange={(event) => setBedIndex(Number(event.target.value))}
             >
-              {availablePrinterBeds.map((bed, index) => (
+              {hasMarketplaceCapacity ? availablePrinterBeds.map((bed, index) => (
                 <option key={bed.label} value={index}>
                   {bed.label}
                 </option>
-              ))}
+              )) : <option value={0}>{translate("quoteNoCompatibleBed", locale)}</option>}
             </select>
+            {!hasMarketplaceCapacity ? <span className="text-xs font-normal text-amber-700">El visor usa una cama de referencia, pero no se puede cotizar hasta que exista capacidad aprobada.</span> : null}
           </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
             {translate("quoteMaterial", locale)}
@@ -971,11 +1093,11 @@ export function PrintQuoteWorkspace() {
           </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
             {translate("quoteColor", locale)}
-            <input className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" placeholder={translate("quoteColorPlaceholder", locale)} />
+            <input className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" placeholder={translate("quoteColorPlaceholder", locale)} value={colorName} onChange={(event) => setColorName(event.target.value)} />
           </label>
           <label className="grid gap-1 text-sm font-semibold text-black">
             {translate("quoteQuantity", locale)}
-            <input className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" min={1} type="number" defaultValue={1} />
+            <input className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" min={1} max={60} type="number" value={orderQuantity} onChange={(event) => setOrderQuantity(Math.max(1, Math.min(60, Number(event.target.value) || 1)))} />
           </label>
           {placementMode === "automatic" ? (
             <label className="grid gap-1 text-sm font-semibold text-black">
@@ -1059,7 +1181,7 @@ export function PrintQuoteWorkspace() {
             <div className="flex rounded-md border border-[#a8ccc8] bg-white p-1">
               <button
                 className={`rounded px-3 py-2 text-sm font-semibold ${placementMode === "automatic" ? "bg-[#0f3d3d] text-white" : "text-slate-700"}`}
-                disabled={modelsRef.current.size === 0}
+                disabled={models.length === 0}
                 type="button"
                 onClick={() => changePlacementMode("automatic")}
               >
@@ -1237,13 +1359,28 @@ export function PrintQuoteWorkspace() {
           {translate("quoteNotes", locale)}
           <textarea className="min-h-28 rounded-md border border-neutral-300 px-3 py-2 text-neutral-800" placeholder={translate("quoteNotesPlaceholder", locale)} />
         </label>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm font-semibold text-black">
+            Ciudad de destino
+            <input className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" value={destinationCity} onChange={(event) => setDestinationCity(event.target.value)} placeholder="La Paz, Cochabamba…" />
+          </label>
+          <label className="grid gap-1 text-sm font-semibold text-black">
+            Modalidad de entrega
+            <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" value={deliveryMode} onChange={(event) => setDeliveryMode(event.target.value as typeof deliveryMode)}>
+              <option value="NATIONAL_SHIPPING">Envío nacional</option>
+              <option value="LOCAL_PICKUP">Retiro local</option>
+            </select>
+          </label>
+        </div>
+        {quoteMessage ? <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-900">{quoteMessage}</p> : null}
 
         <button
           className="mt-5 w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f5a524] hover:text-black hover:shadow-xl hover:shadow-[#f5a524]/20 disabled:cursor-not-allowed disabled:bg-neutral-400"
-          disabled={models.length === 0 || isLoadingModels || !fitsSelectedBed}
+          disabled={models.length === 0 || isLoadingModels || !fitsSelectedBed || !hasMarketplaceCapacity || isSubmittingQuote}
           type="button"
+          onClick={submitQuote}
         >
-          {translate("quoteSendRequest", locale)}
+          {isSubmittingQuote ? "Calculando ofertas…" : translate("quoteSendRequest", locale)}
         </button>
           </div>
         </div>
