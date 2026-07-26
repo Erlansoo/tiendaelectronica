@@ -434,6 +434,12 @@ export async function addManufacturerMachine(formData: FormData) {
   const width = catalog?.buildWidthMm ?? decimal(z.coerce.number().positive().max(2000).parse(formData.get("buildWidthMm")));
   const depth = catalog?.buildDepthMm ?? decimal(z.coerce.number().positive().max(2000).parse(formData.get("buildDepthMm")));
   const height = catalog?.buildHeightMm ?? decimal(z.coerce.number().positive().max(3000).parse(formData.get("buildHeightMm")));
+  const quantity = z.coerce.number().int().min(1).max(100).parse(formData.get("quantity"));
+  const purchasePriceBob = z.coerce.number().min(0).parse(formData.get("purchasePriceBob"));
+  const residualValueBob = z.coerce.number().min(0).parse(formData.get("residualValueBob"));
+  if (residualValueBob > purchasePriceBob) {
+    throw new Error("El valor residual no puede ser mayor que el precio de compra de la máquina.");
+  }
 
   await prisma.manufacturerMachine.create({
     data: {
@@ -445,10 +451,10 @@ export async function addManufacturerMachine(formData: FormData) {
       buildWidthMm: width,
       buildDepthMm: depth,
       buildHeightMm: height,
-      quantity: z.coerce.number().int().min(1).max(100).parse(formData.get("quantity")),
+      quantity,
       reviewStatus: catalog ? MachineReviewStatus.ACTIVE : MachineReviewStatus.PENDING_REVIEW,
-      purchasePriceBob: decimal(z.coerce.number().min(0).parse(formData.get("purchasePriceBob"))),
-      residualValueBob: decimal(z.coerce.number().min(0).parse(formData.get("residualValueBob"))),
+      purchasePriceBob: decimal(purchasePriceBob),
+      residualValueBob: decimal(residualValueBob),
       usefulLifeHours: decimal(z.coerce.number().positive().parse(formData.get("usefulLifeHours"))),
       powerWatts: decimal(z.coerce.number().min(0).parse(formData.get("powerWatts"))),
       maintenanceBobPerHour: decimal(z.coerce.number().min(0).parse(formData.get("maintenanceBobPerHour"))),

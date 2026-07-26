@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CircleHelp } from "lucide-react";
 import {
   addManufacturerMachine,
   addMaterialVariant,
@@ -170,16 +171,39 @@ function Panel({ id, title, description, children }: { id: string; title: string
   return <section className="mt-6 scroll-mt-6 rounded-md border border-slate-200 bg-white p-5 shadow-sm" id={id}><h2 className="text-xl font-semibold">{title}</h2><p className="mt-1 text-sm text-slate-600">{description}</p><div className="mt-5">{children}</div></section>;
 }
 function Metric({ label, value }: { label: string; value: string | number }) { return <div className="rounded-md border bg-white p-4"><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>; }
-function Field({ label, children, full = false }: { label: string; children: React.ReactNode; full?: boolean }) { return <label className={`grid gap-1 text-sm font-semibold ${full ? "md:col-span-2" : ""}`}>{label}{children}</label>; }
+function Field({ label, children, full = false }: { label: React.ReactNode; children: React.ReactNode; full?: boolean }) { return <label className={`grid gap-1 text-sm font-semibold ${full ? "md:col-span-2" : ""}`}>{label}{children}</label>; }
 function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) { return <label className="flex items-center gap-2"><input name={name} type="checkbox" defaultChecked={defaultChecked} /> {label}</label>; }
 function CostField({ label, name, value }: { label: string; name: string; value: string | number }) { return <Field label={label}><input className={input} name={name} defaultValue={value} min="0" step="0.01" type="number" required /></Field>; }
 function MachineCosts() {
   return <div className="grid grid-cols-2 gap-3">
-    <CostField label="Cantidad" name="quantity" value="1" />
-    <CostField label="Compra Bs" name="purchasePriceBob" value="0" />
-    <CostField label="Residual Bs" name="residualValueBob" value="0" />
-    <CostField label="Vida útil h" name="usefulLifeHours" value="5000" />
-    <CostField label="Potencia W" name="powerWatts" value="0" />
-    <CostField label="Mantenimiento Bs/h" name="maintenanceBobPerHour" value="0" />
+    <MachineCostField label="Cantidad" help="Número de máquinas físicas idénticas que tienes disponibles. Debe ser un número entero: 1, 2, 3…; no se pueden registrar fracciones de una máquina." name="quantity" value="1" min="1" max="100" step="1" inputMode="numeric" />
+    <MachineCostField label="Compra Bs" help="Precio real que pagaste por una unidad de esta máquina. Se usa para calcular su depreciación por cada hora de impresión." name="purchasePriceBob" value="0" min="0" step="0.01" />
+    <MachineCostField label="Residual Bs" help="Valor estimado de reventa de una unidad al final de su vida útil. Debe ser menor o igual al precio de compra; reduce la depreciación calculada." name="residualValueBob" value="0" min="0" step="0.01" />
+    <MachineCostField label="Vida útil h" help="Horas de impresión que esperas usar la máquina antes de reemplazarla o hacer una renovación importante. Ejemplo habitual: 5.000 horas." name="usefulLifeHours" value="5000" min="1" step="1" />
+    <MachineCostField label="Potencia W" help="Consumo eléctrico promedio de la máquina mientras imprime, expresado en watts. Revisa la ficha técnica o mide el consumo real para una cotización más precisa." name="powerWatts" value="0" min="0" step="0.01" />
+    <MachineCostField label="Mantenimiento Bs/h" help="Monto que reservas por cada hora de impresión para boquillas, lubricación, repuestos, limpieza y reparaciones. No incluye filamento ni resina." name="maintenanceBobPerHour" value="0" min="0" step="0.01" />
   </div>;
+}
+
+function MachineCostField({ label, help, name, value, min, max, step, inputMode }: {
+  label: string;
+  help: string;
+  name: string;
+  value: string;
+  min: string;
+  max?: string;
+  step: string;
+  inputMode?: "numeric" | "decimal";
+}) {
+  return <Field label={<HelpLabel label={label} help={help} />}><input className={input} name={name} defaultValue={value} min={min} max={max} step={step} inputMode={inputMode} type="number" required /></Field>;
+}
+
+function HelpLabel({ label, help }: { label: string; help: string }) {
+  return <span className="inline-flex items-center gap-1.5">
+    {label}
+    <span className="group relative inline-flex" tabIndex={0}>
+      <CircleHelp aria-label={`Ayuda sobre ${label}`} className="cursor-help text-slate-500" size={16} />
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-md bg-slate-950 px-3 py-2 text-xs font-normal leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100" role="tooltip">{help}</span>
+    </span>
+  </span>;
 }
