@@ -8,12 +8,20 @@ if (!url || !serviceRoleKey) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL o 
 const supabase = createClient(url, serviceRoleKey, { auth: { persistSession: false } });
 const buckets = [
   {
+    id: "manufacturer-logos",
+    public: true,
+    fileSizeLimit: 2 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
+  {
     id: "manufacturer-evidence",
+    public: false,
     fileSizeLimit: 10 * 1024 * 1024,
     allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
   },
   {
     id: "manufacturing-quotes",
+    public: false,
     fileSizeLimit: 100 * 1024 * 1024,
     allowedMimeTypes: [
       "application/octet-stream",
@@ -35,7 +43,7 @@ async function main() {
   for (const bucket of buckets) {
     const { data } = await supabase.storage.getBucket(bucket.id);
     const options = {
-      public: false,
+      public: bucket.public,
       fileSizeLimit: bucket.fileSizeLimit,
       allowedMimeTypes: bucket.allowedMimeTypes,
     };
@@ -52,7 +60,7 @@ async function main() {
       continue;
     }
     if (result.error) throw result.error;
-    console.log(`${bucket.id}: privado y configurado`);
+    console.log(`${bucket.id}: ${bucket.public ? "público" : "privado"} y configurado`);
   }
 }
 

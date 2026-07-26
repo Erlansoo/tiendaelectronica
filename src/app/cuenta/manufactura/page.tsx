@@ -2,10 +2,12 @@ import Link from "next/link";
 import {
   addManufacturerMachine,
   addMaterialVariant,
+  saveMachineQualityProfile,
   saveManufacturerProfile,
   savePricingProfile,
 } from "@/app/actions/manufacturing";
 import { ManufacturerInventoryControl, PublishManufacturerButton } from "@/components/ManufacturerInventoryControl";
+import { ManufacturerLogoUpload } from "@/components/ManufacturerLogoUpload";
 import { ProviderOfferActions } from "@/components/ProviderOfferActions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { requireManufacturerCapability } from "@/lib/manufacturing";
@@ -65,6 +67,7 @@ export default async function ManufacturerDashboardPage() {
 
         <Panel id="perfil" title="Perfil público y responsabilidad" description="El correo y teléfono permanecen privados hasta que un cliente seleccione tu oferta.">
           <form action={saveManufacturerProfile} className="grid gap-4 md:grid-cols-2">
+            <ManufacturerLogoUpload currentUrl={profile.logoUrl} name={profile.commercialName} />
             <Field label="Nombre comercial"><input className={input} name="commercialName" defaultValue={profile.commercialName} required /></Field>
             <Field label="Ciudad"><input className={input} name="city" defaultValue={profile.city} required /></Field>
             <Field label="Departamento"><input className={input} name="department" defaultValue={profile.department} required /></Field>
@@ -98,7 +101,17 @@ export default async function ManufacturerDashboardPage() {
             </form>
           </div>
           <div className="mt-5 grid gap-3">
-            {profile.machines.map((machine) => <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-slate-50 p-3 text-sm" key={machine.id}><div><strong>{machine.catalog ? `${machine.catalog.brand} ${machine.catalog.model}` : `${machine.customBrand} ${machine.customModel}`}</strong><p className="text-slate-500">{machine.technology} · {machine.buildWidthMm.toString()}×{machine.buildDepthMm.toString()}×{machine.buildHeightMm.toString()} mm · {machine.quantity} unidad(es)</p></div><span className="rounded-full bg-white px-3 py-1 text-xs font-bold">{machine.reviewStatus}</span></div>)}
+            {profile.machines.map((machine) => <article className="rounded-md bg-slate-50 p-3 text-sm" key={machine.id}>
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><strong>{machine.catalog ? `${machine.catalog.brand} ${machine.catalog.model}` : `${machine.customBrand} ${machine.customModel}`}</strong><p className="text-slate-500">{machine.technology} · {machine.buildWidthMm.toString()}×{machine.buildDepthMm.toString()}×{machine.buildHeightMm.toString()} mm · {machine.quantity} unidad(es)</p></div><span className="rounded-full bg-white px-3 py-1 text-xs font-bold">{machine.reviewStatus}</span></div>
+              <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 lg:grid-cols-3">
+                {machine.qualityProfiles.map((quality) => <form action={saveMachineQualityProfile} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 rounded-md border bg-white p-2" key={quality.id}>
+                  <input name="machineId" type="hidden" value={machine.id} /><input name="quality" type="hidden" value={quality.quality} />
+                  <Field label={`${quality.quality} · capa mm`}><input className={input} name="layerHeightMm" type="number" min="0.01" max="2" step="0.001" defaultValue={quality.layerHeightMm.toString()} required /></Field>
+                  <Field label={machine.technology === "FDM" ? "Rendimiento cm³/h" : "Segundos por capa"}><input className={input} name="performance" type="number" min="0.01" step="0.001" defaultValue={(machine.technology === "FDM" ? quality.throughputCm3PerHour : quality.secondsPerLayer)?.toString() ?? ""} required /></Field>
+                  <button className="h-10 rounded bg-slate-900 px-3 text-xs font-semibold text-white" type="submit">Guardar</button>
+                </form>)}
+              </div>
+            </article>)}
           </div>
         </Panel>
 

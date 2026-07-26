@@ -345,6 +345,40 @@ export async function saveManufacturerProfile(formData: FormData) {
   revalidatePath("/cuenta/manufactura");
 }
 
+export async function prepareManufacturerLogoUpload(
+  rawFile: unknown,
+): Promise<ActionResult<{ path: string; token: string }>> {
+  const { customer, capability } = await requireManufacturerCapability();
+  if (!capability.profile) return { ok: false, error: "Perfil no encontrado." };
+  const fileResult = z.object({
+    mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+    sizeBytes: z.number().int().positive().max(2 * 1024 * 1024),
+  }).safeParse(rawFile);
+  if (!fileResult.success) return { ok: false, error: "Usa JPG, PNG o WebP de hasta 2 MB." };
+  const extension = fileResult.data.mimeType === "image/png" ? "png" : fileResult.data.mimeType === "image/webp" ? "webp" : "jpg";
+  const path = `${customer.id}/${crypto.randomUUID()}.${extension}`;
+  const { data, error } = await createSupabaseAdminClient().storage.from("manufacturer-logos").createSignedUploadUrl(path);
+  if (error || !data) return { ok: false, error: "No se pudo preparar la carga del logo." };
+  return { ok: true, data: { path, token: data.token } };
+}
+
+export async function finalizeManufacturerLogo(path: string): Promise<ActionResult<{ publicUrl: string }>> {
+  const { customer, capability } = await requireManufacturerCapability();
+  if (!capability.profile || !path.startsWith(`${customer.id}/`) || path.includes("..")) {
+    return { ok: false, error: "Ruta de logo inválida." };
+  }
+  const storage = createSupabaseAdminClient().storage.from("manufacturer-logos");
+  const folder = path.slice(0, path.lastIndexOf("/"));
+  const filename = path.slice(path.lastIndexOf("/") + 1);
+  const { data, error } = await storage.list(folder, { search: filename, limit: 1 });
+  if (error || !data?.some((item) => item.name === filename)) return { ok: false, error: "El logo no terminó de subir." };
+  const { data: publicData } = storage.getPublicUrl(path);
+  await prisma.manufacturerProfile.update({ where: { id: capability.profile.id }, data: { logoUrl: publicData.publicUrl } });
+  updateTag("manufacturing-capacity");
+  revalidatePath("/cuenta/manufactura");
+  return { ok: true, data: { publicUrl: publicData.publicUrl } };
+}
+
 export async function addManufacturerMachine(formData: FormData) {
   const { capability } = await requireManufacturerCapability();
   if (!capability.profile) throw new Error("Perfil manufacturero no encontrado.");
@@ -386,6 +420,30 @@ export async function addManufacturerMachine(formData: FormData) {
     },
   });
   updateTag("manufacturing-capacity");
+  revalidatePath("/cuenta/manufactura");
+}
+
+export async function saveMachineQualityProfile(formData: FormData) {
+  const { capability } = await requireManufacturerCapability();
+  if (!capability.profile) throw new Error("Perfil no encontrado.");
+  const machineId = z.string().min(1).parse(formData.get("machineId"));
+  const quality = z.enum(ManufacturingQuality).parse(formData.get("quality"));
+  const machine = await prisma.manufacturerMachine.findFirst({
+    where: { id: machineId, manufacturerId: capability.profile.id },
+  });
+  if (!machine) throw new Error("Máquina no encontrada.");
+  const layerHeightMm = decimal(z.coerce.number().positive().max(2).parse(formData.get("layerHeightMm")));
+  const throughputCm3PerHour = machine.technology === "FDM"
+    ? decimal(z.coerce.number().positive().max(1000).parse(formData.get("performance")))
+    : null;
+  const secondsPerLayer = machine.technology === "RESIN"
+    ? decimal(z.coerce.number().positive().max(600).parse(formData.get("performance")))
+    : null;
+  await prisma.machineQualityProfile.upsert({
+    where: { machineId_quality: { machineId, quality } },
+    update: { layerHeightMm, throughputCm3PerHour, secondsPerLayer },
+    create: { machineId, quality, layerHeightMm, throughputCm3PerHour, secondsPerLayer },
+  });
   revalidatePath("/cuenta/manufactura");
 }
 
