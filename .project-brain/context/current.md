@@ -43,6 +43,7 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 - Manufacturing evidence and quote models use private Supabase buckets and short signed URLs.
 - Quote cards show each compatible manufacturer's commercial name, logo, city and delivery mode. WhatsApp, contact email, pickup address and map remain private until that customer selects the offer.
 - Material availability and reservations are changed atomically and recorded through inventory movements.
+- Advanced FDM/resin settings feed the estimate. A quote with no compatible manufacturer is not retained: its private uploaded models are removed and the customer can adjust and retry.
 - Public manufacturing capacity is derived only from active, approved manufacturer machines.
 - BOB is the only marketplace currency in v1; payments, commissions, ratings and seller onboarding remain disabled.
 

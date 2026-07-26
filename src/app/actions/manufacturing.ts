@@ -854,6 +854,19 @@ export async function finalizeManufacturingQuote(quoteId: string): Promise<Actio
     if (cheapest) offers.push(cheapest);
   }
 
+  if (offers.length === 0) {
+    const paths = quote.models.map((model) => model.storagePath);
+    if (paths.length) {
+      const { error } = await storage.remove(paths);
+      if (error) console.error("Could not remove unmatched quote files", error);
+    }
+    await prisma.manufacturingQuote.delete({ where: { id: quote.id } });
+    return {
+      ok: false,
+      error: "No hay manufactureros compatibles con esta tecnología, material, color, capacidad, cobertura o stock disponible. Ajusta la configuración e inténtalo nuevamente; no guardamos una cotización ni archivos sin oferta.",
+    };
+  }
+
   await prisma.$transaction([
     prisma.manufacturingOffer.createMany({ data: offers, skipDuplicates: true }),
     prisma.manufacturingQuote.update({
@@ -862,7 +875,7 @@ export async function finalizeManufacturingQuote(quoteId: string): Promise<Actio
     }),
   ]);
   revalidatePath("/cuenta");
-  return { ok: true, data: { quoteId: quote.id, offerCount: offers.length }, message: offers.length ? "Cotizaciones calculadas." : "Guardamos la solicitud, pero aún no hay manufactureros compatibles." };
+  return { ok: true, data: { quoteId: quote.id, offerCount: offers.length }, message: "Cotizaciones calculadas." };
 }
 
 export async function selectManufacturingOffer(offerId: string): Promise<ActionResult> {

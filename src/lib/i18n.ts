@@ -89,6 +89,7 @@ export const translations = {
   quoteResinSolid: { es: "Modelo sólido", en: "Solid model" },
   quoteResinHollow2: { es: "Hueco · pared de 2 mm", en: "Hollow · 2 mm wall" },
   quoteResinHollow3: { es: "Hueco · pared de 3 mm", en: "Hollow · 3 mm wall" },
+  quoteResinEstimateNotice: { es: "El vaciado y los soportes se incorporan como una estimación; el manufacturero confirmará la preparación final.", en: "Hollowing and supports are included as an estimate; the manufacturer will confirm the final preparation." },
   quoteDimensions: { es: "Dimensiones detectadas", en: "Detected dimensions" },
   quoteOriginal: { es: "Original:", en: "Original:" },
   quoteScaled: { es: "Escalado:", en: "Scaled:" },

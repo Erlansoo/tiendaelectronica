@@ -81,6 +81,9 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [placementMode, setPlacementMode] = useState<"automatic" | "manual">("automatic");
   const [qualityPreset, setQualityPreset] = useState<"draft" | "standard" | "detail">("standard");
+  const [infillPercent, setInfillPercent] = useState(20);
+  const [resinSupportPercent, setResinSupportPercent] = useState(12);
+  const [resinHollowPercent, setResinHollowPercent] = useState(0);
   const [isSelectingSupportFace, setIsSelectingSupportFace] = useState(false);
   const [manualPosition, setManualPosition] = useState({ x: 0, y: 0 });
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -718,6 +721,10 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
     setPrintTechnology(technology);
     setBedIndex(0);
     setMaterial(technology === "resin" ? "Resina estándar" : "PLA");
+    setQualityPreset("standard");
+    setInfillPercent(20);
+    setResinSupportPercent(12);
+    setResinHollowPercent(0);
   }
 
   function setCopies(nextCount: number) {
@@ -935,7 +942,7 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
       materialName: material,
       colorName,
       quality: qualityPreset === "draft" ? "FAST" : qualityPreset === "detail" ? "DETAIL" : "BALANCED",
-      infillPercent: printTechnology === "fdm" ? 20 : undefined,
+        infillPercent: printTechnology === "fdm" ? infillPercent : undefined,
       copies: orderQuantity,
       workspaceWidthMm: Math.max(0.001, arrangedSize.x),
       workspaceDepthMm: Math.max(0.001, arrangedSize.z),
@@ -945,8 +952,8 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
       configuration: {
         placementMode,
         selectedBed: { x: selectedBed.x, y: selectedBed.y, z: selectedBed.z },
-        resinSupportPercent: printTechnology === "resin" ? 12 : 0,
-        hollowPercent: 0,
+        resinSupportPercent: printTechnology === "resin" ? resinSupportPercent : 0,
+        hollowPercent: printTechnology === "resin" ? resinHollowPercent : 0,
       },
     };
 
@@ -1116,19 +1123,19 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
             <>
               <label className="grid gap-1 text-sm font-semibold text-black">
                 {translate("quoteInfill", locale)}
-                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-                  <option>20%</option>
-                  <option>40%</option>
-                  <option>60%</option>
-                  <option>100%</option>
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" value={infillPercent} onChange={(event) => setInfillPercent(Number(event.target.value))}>
+                  <option value={20}>20%</option>
+                  <option value={40}>40%</option>
+                  <option value={60}>60%</option>
+                  <option value={100}>100%</option>
                 </select>
               </label>
               <label className="grid gap-1 text-sm font-semibold text-black">
                 {translate("quoteLayerHeight", locale)}
-                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-                  <option>{translate("quoteLayerStandard", locale)}</option>
-                  <option>{translate("quoteLayerFine", locale)}</option>
-                  <option>{translate("quoteLayerDraft", locale)}</option>
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" value={qualityPreset} onChange={(event) => setQualityPreset(event.target.value as "draft" | "standard" | "detail")}>
+                  <option value="standard">{translate("quoteLayerStandard", locale)}</option>
+                  <option value="detail">{translate("quoteLayerFine", locale)}</option>
+                  <option value="draft">{translate("quoteLayerDraft", locale)}</option>
                 </select>
               </label>
             </>
@@ -1136,29 +1143,30 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
             <>
               <label className="grid gap-1 text-sm font-semibold text-black">
                 {translate("quoteLayerHeight", locale)}
-                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-                  <option>{translate("quoteResinLayerStandard", locale)}</option>
-                  <option>{translate("quoteResinLayerFine", locale)}</option>
-                  <option>{translate("quoteResinLayerDraft", locale)}</option>
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" value={qualityPreset} onChange={(event) => setQualityPreset(event.target.value as "draft" | "standard" | "detail")}>
+                  <option value="standard">{translate("quoteResinLayerStandard", locale)}</option>
+                  <option value="detail">{translate("quoteResinLayerFine", locale)}</option>
+                  <option value="draft">{translate("quoteResinLayerDraft", locale)}</option>
                 </select>
               </label>
               <label className="grid gap-1 text-sm font-semibold text-black">
                 {translate("quoteResinSupports", locale)}
-                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-                  <option>{translate("quoteSupportsAutomatic", locale)}</option>
-                  <option>{translate("quoteSupportsLight", locale)}</option>
-                  <option>{translate("quoteSupportsMedium", locale)}</option>
-                  <option>{translate("quoteSupportsHeavy", locale)}</option>
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" value={resinSupportPercent} onChange={(event) => setResinSupportPercent(Number(event.target.value))}>
+                  <option value={12}>{translate("quoteSupportsAutomatic", locale)}</option>
+                  <option value={8}>{translate("quoteSupportsLight", locale)}</option>
+                  <option value={12}>{translate("quoteSupportsMedium", locale)}</option>
+                  <option value={20}>{translate("quoteSupportsHeavy", locale)}</option>
                 </select>
               </label>
               <label className="grid gap-1 text-sm font-semibold text-black">
                 {translate("quoteResinHollowing", locale)}
-                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800">
-                  <option>{translate("quoteResinSolid", locale)}</option>
-                  <option>{translate("quoteResinHollow2", locale)}</option>
-                  <option>{translate("quoteResinHollow3", locale)}</option>
+                <select className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800" value={resinHollowPercent} onChange={(event) => setResinHollowPercent(Number(event.target.value))}>
+                  <option value={0}>{translate("quoteResinSolid", locale)}</option>
+                  <option value={50}>{translate("quoteResinHollow2", locale)}</option>
+                  <option value={35}>{translate("quoteResinHollow3", locale)}</option>
                 </select>
               </label>
+              <p className="text-xs text-slate-500 sm:col-span-2">{translate("quoteResinEstimateNotice", locale)}</p>
             </>
           )}
         </div>

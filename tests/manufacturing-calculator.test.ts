@@ -36,6 +36,13 @@ test("FDM estima gramos mediante volumen, relleno, densidad y desperdicio", () =
   assert.ok(estimate.totalBob > 0);
 });
 
+test("FDM incrementa material y precio cuando aumenta el relleno", () => {
+  const lowInfill = calculateManufacturingEstimate({ ...base, infillPercent: 20 });
+  const highInfill = calculateManufacturingEstimate({ ...base, infillPercent: 100 });
+  assert.ok(highInfill.materialQuantity > lowInfill.materialQuantity);
+  assert.ok(highInfill.totalBob > lowInfill.totalBob);
+});
+
 test("resina estima mililitros y tiempo por ciclo de capa", () => {
   const estimate = calculateManufacturingEstimate({
     ...base,
@@ -49,9 +56,37 @@ test("resina estima mililitros y tiempo por ciclo de capa", () => {
   assert.equal(estimate.printHours, 4.444);
 });
 
+test("resina incorpora soportes y vaciado al estimar material", () => {
+  const solid = calculateManufacturingEstimate({
+    ...base,
+    technology: ManufacturingTechnology.RESIN,
+    layerHeightMm: 0.05,
+    secondsPerLayer: 8,
+    resinSupportPercent: 0,
+    hollowPercent: 0,
+  });
+  const supported = calculateManufacturingEstimate({
+    ...base,
+    technology: ManufacturingTechnology.RESIN,
+    layerHeightMm: 0.05,
+    secondsPerLayer: 8,
+    resinSupportPercent: 20,
+    hollowPercent: 0,
+  });
+  const hollowed = calculateManufacturingEstimate({
+    ...base,
+    technology: ManufacturingTechnology.RESIN,
+    layerHeightMm: 0.05,
+    secondsPerLayer: 8,
+    resinSupportPercent: 0,
+    hollowPercent: 50,
+  });
+  assert.ok(supported.materialQuantity > solid.materialQuantity);
+  assert.ok(hollowed.materialQuantity < solid.materialQuantity);
+});
+
 test("respeta cobro mínimo y redondea a centavos BOB", () => {
   const estimate = calculateManufacturingEstimate({ ...base, solidVolumeCm3: 1, minimumChargeBob: 100 });
   assert.equal(estimate.totalBob, 100);
   assert.equal(Number(estimate.totalBob.toFixed(2)), estimate.totalBob);
 });
-
