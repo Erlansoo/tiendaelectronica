@@ -545,6 +545,8 @@ model ManufacturingOffer {
   revisionReason        String?
   validUntil            DateTime
   selectedAt            DateTime?
+  firstRespondedAt      DateTime?
+  estimatedResponseMinutes Int?
   confirmedAt           DateTime?
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
@@ -558,6 +560,7 @@ model ManufacturingOffer {
 
   @@unique([quoteId, manufacturerId])
   @@index([manufacturerId, status])
+  @@index([manufacturerId, selectedAt])
   @@index([validUntil])
 }
 

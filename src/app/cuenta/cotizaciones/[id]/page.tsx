@@ -7,9 +7,17 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function CustomerQuotePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CustomerQuotePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ sort?: string | string[] }>;
+}) {
   const customer = await getCurrentCustomer();
   const { id } = await params;
+  const sortValue = (await searchParams).sort;
+  const sort = sortValue === "response" ? "response" : "price";
   if (!customer) redirect(`/login?next=/cuenta/cotizaciones/${encodeURIComponent(id)}`);
   const quote = await prisma.manufacturingQuote.findFirst({
     where: { id, customerId: customer.id },
@@ -27,6 +35,13 @@ export default async function CustomerQuotePage({ params }: { params: Promise<{ 
     },
   });
   if (!quote) notFound();
+  const offers = [...quote.offers].sort((a, b) => {
+    if (sort === "response") {
+      const responseDifference = (a.estimatedResponseMinutes ?? Number.MAX_SAFE_INTEGER) - (b.estimatedResponseMinutes ?? Number.MAX_SAFE_INTEGER);
+      if (responseDifference !== 0) return responseDifference;
+    }
+    return Number(a.totalBob) - Number(b.totalBob);
+  });
   return (
     <>
       <PublicHeader />
@@ -36,9 +51,15 @@ export default async function CustomerQuotePage({ params }: { params: Promise<{ 
           <div><p className="text-sm font-semibold uppercase tracking-wide text-[#17645e]">Cotización 3D</p><h1 className="mt-1 text-3xl font-semibold">{quote.models.length} modelo(s) · {quote.materialName}</h1><p className="mt-2 text-sm text-slate-600">{quote.technology} · {quote.quality} · {quote.destinationCity} · estado {quote.status}</p></div>
           <p className="text-sm text-slate-500">Válida hasta {quote.expiresAt.toLocaleString("es-BO")}</p>
         </div>
-        {quote.offers.length ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {quote.offers.map((offer) => {
+        {offers.length ? (
+          <>
+            <nav aria-label="Orden de las ofertas" className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+              <span className="mr-1 font-semibold text-slate-700">Ordenar por:</span>
+              <Link className={`rounded-full border px-3 py-1.5 font-semibold ${sort === "price" ? "border-[#17645e] bg-[#17645e] text-white" : "border-slate-300 bg-white text-slate-700"}`} href={`/cuenta/cotizaciones/${encodeURIComponent(id)}`}>Mejor precio</Link>
+              <Link className={`rounded-full border px-3 py-1.5 font-semibold ${sort === "response" ? "border-[#17645e] bg-[#17645e] text-white" : "border-slate-300 bg-white text-slate-700"}`} href={`/cuenta/cotizaciones/${encodeURIComponent(id)}?sort=response`}>Más rápidos</Link>
+            </nav>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {offers.map((offer) => {
               const machineName = offer.machine.catalog ? `${offer.machine.catalog.brand} ${offer.machine.catalog.model}` : `${offer.machine.customBrand} ${offer.machine.customModel}`;
               const showPrivateContact = quote.selectedOfferId === offer.id;
               return <article className={`rounded-md border bg-white p-5 shadow-sm ${offer.status === "SELECTED" || offer.status === "CONFIRMED" || offer.status === "ACCEPTED" ? "border-emerald-500 ring-1 ring-emerald-500" : "border-slate-200"}`} key={offer.id}>
@@ -59,6 +80,7 @@ export default async function CustomerQuotePage({ params }: { params: Promise<{ 
                   <Row label="Máquina" value={machineName} />
                   <Row label="Entrega" value={quote.deliveryMode === "LOCAL_PICKUP" ? "Retiro local" : "Envío nacional"} />
                   <Row label="Plazo" value={`${offer.leadTimeDays} días`} />
+                  <Row label="Respuesta habitual" value={formatResponseTime(offer.estimatedResponseMinutes)} />
                 </dl>
                 {showPrivateContact ? (
                   <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
@@ -76,7 +98,8 @@ export default async function CustomerQuotePage({ params }: { params: Promise<{ 
                 {offer.revisionReason ? <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900"><strong>Cambio propuesto:</strong> {offer.revisionReason}</p> : null}
               </article>;
             })}
-          </div>
+            </div>
+          </>
         ) : (
           <div className="mt-6 rounded-md border border-dashed border-slate-300 bg-white p-10 text-center"><h2 className="text-lg font-semibold">Aún no hay una combinación compatible</h2><p className="mt-2 text-sm text-slate-600">La solicitud quedó guardada. Aparecerán ofertas cuando exista stock, máquina, tecnología, color y cobertura compatibles.</p></div>
         )}
@@ -87,4 +110,11 @@ export default async function CustomerQuotePage({ params }: { params: Promise<{ 
 
 function Row({ label, value }: { label: string; value: string }) {
   return <div className="flex justify-between gap-4"><dt className="text-slate-500">{label}</dt><dd className="text-right font-semibold">{value}</dd></div>;
+}
+
+function formatResponseTime(minutes: number | null): string {
+  if (!minutes) return "Aún sin historial";
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 24 * 60) return `~${Math.round(minutes / 60)} h`;
+  return `~${Math.round(minutes / (24 * 60))} días`;
 }

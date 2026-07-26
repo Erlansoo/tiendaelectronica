@@ -24,6 +24,7 @@ import {
   safeCodeMatch,
 } from "@/lib/manufacturing";
 import { calculateManufacturingEstimate } from "@/lib/manufacturing-calculator";
+import { getTypicalResponseMinutes } from "@/lib/manufacturer-response";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -794,6 +795,25 @@ export async function finalizeManufacturingQuote(quoteId: string): Promise<Actio
   const solidVolume = quote.models.reduce((sum, model) => sum + Number(model.solidVolumeCm3) * model.copies, 0);
   const envelopeVolume = quote.models.reduce((sum, model) => sum + Number(model.envelopeVolumeCm3) * model.copies, 0);
   const maxHeight = Math.max(...quote.models.map((model) => Number(model.heightMm)));
+  const responseHistory = await prisma.manufacturingOffer.findMany({
+    where: {
+      manufacturerId: { in: manufacturers.map((manufacturer) => manufacturer.id) },
+      selectedAt: { not: null },
+      firstRespondedAt: { not: null },
+    },
+    select: { manufacturerId: true, selectedAt: true, firstRespondedAt: true },
+  });
+  const responseMinutesByManufacturer = new Map<string, number | null>();
+  for (const manufacturer of manufacturers) {
+    responseMinutesByManufacturer.set(
+      manufacturer.id,
+      getTypicalResponseMinutes(
+        responseHistory
+          .filter((offer) => offer.manufacturerId === manufacturer.id && offer.selectedAt && offer.firstRespondedAt)
+          .map((offer) => ({ selectedAt: offer.selectedAt!, firstRespondedAt: offer.firstRespondedAt! })),
+      ),
+    );
+  }
   const offers: Prisma.ManufacturingOfferCreateManyInput[] = [];
 
   for (const manufacturer of manufacturers) {
@@ -846,6 +866,7 @@ export async function finalizeManufacturingQuote(quoteId: string): Promise<Actio
           totalBob: decimal(estimate.totalBob),
           costBreakdown: estimate.breakdown,
           leadTimeDays: manufacturer.usualLeadTimeDays,
+          estimatedResponseMinutes: responseMinutesByManufacturer.get(manufacturer.id) ?? undefined,
           validUntil: quote.expiresAt,
         };
         if (!cheapest || Number(candidate.totalBob) < Number(cheapest.totalBob)) cheapest = candidate;
@@ -943,13 +964,15 @@ export async function respondToSelectedOffer(
     include: { order: true },
   });
   if (!offer?.order) return { ok: false, error: "La oferta ya no espera una respuesta." };
+  const respondedAt = new Date();
+  const firstRespondedAt = offer.firstRespondedAt ?? respondedAt;
 
   if (response === "CONFIRM") {
     await prisma.$transaction([
-      prisma.manufacturingOffer.update({ where: { id: offer.id }, data: { status: "CONFIRMED", confirmedAt: new Date() } }),
+      prisma.manufacturingOffer.update({ where: { id: offer.id }, data: { status: "CONFIRMED", confirmedAt: respondedAt, firstRespondedAt } }),
       prisma.manufacturingOrder.update({
         where: { offerId: offer.id },
-        data: { status: "AGREED", providerAcceptedAt: new Date(), agreedTotalBob: offer.totalBob, agreedLeadTimeDays: offer.leadTimeDays },
+        data: { status: "AGREED", providerAcceptedAt: respondedAt, agreedTotalBob: offer.totalBob, agreedLeadTimeDays: offer.leadTimeDays },
       }),
     ]);
   } else {
@@ -959,7 +982,7 @@ export async function respondToSelectedOffer(
     await prisma.$transaction([
       prisma.manufacturingOffer.update({
         where: { id: offer.id },
-        data: { status: "REVISED", totalBob: decimal(total), leadTimeDays: leadTime, revisionReason: reason },
+        data: { status: "REVISED", totalBob: decimal(total), leadTimeDays: leadTime, revisionReason: reason, firstRespondedAt },
       }),
       prisma.manufacturingOrder.update({
         where: { offerId: offer.id },
