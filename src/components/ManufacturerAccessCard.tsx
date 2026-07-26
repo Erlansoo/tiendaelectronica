@@ -3,7 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { BadgeCheck, Clock3, Factory, KeyRound, RotateCcw, Send, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   activateManufacturerCode,
   finalizeManufacturerApplication,
@@ -20,6 +20,11 @@ type Props = {
   } | null;
 };
 
+type EvidencePreview = {
+  name: string;
+  url: string;
+};
+
 const inputClass = "h-11 rounded-md border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-[#17645e] focus:ring-2 focus:ring-[#17645e]/15";
 
 export function ManufacturerAccessCard({ capabilityStatus, application }: Props) {
@@ -28,7 +33,13 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
   const [tab, setTab] = useState<"request" | "code">(application?.status === "APPROVED" ? "code" : "request");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [evidencePreviews, setEvidencePreviews] = useState<EvidencePreview[]>([]);
   const [isPending, startTransition] = useTransition();
+  const evidencePreviewUrls = useRef<string[]>([]);
+
+  useEffect(() => () => {
+    evidencePreviewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
 
   const applicationStatus = application?.status ?? null;
   const canSubmitApplication = applicationStatus === null
@@ -42,6 +53,27 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
     setError(null);
     setMessage(null);
     setOpen(true);
+  }
+
+  function clearEvidencePreviews() {
+    evidencePreviewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    evidencePreviewUrls.current = [];
+    setEvidencePreviews([]);
+  }
+
+  function closeAccess() {
+    clearEvidencePreviews();
+    setOpen(false);
+  }
+
+  function previewEvidence(event: React.ChangeEvent<HTMLInputElement>) {
+    clearEvidencePreviews();
+    const previews = Array.from(event.currentTarget.files ?? []).map((file) => {
+      const url = URL.createObjectURL(file);
+      evidencePreviewUrls.current.push(url);
+      return { name: file.name, url };
+    });
+    setEvidencePreviews(previews);
   }
 
   async function submitApplication(event: React.FormEvent<HTMLFormElement>) {
@@ -106,6 +138,7 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
         }
         setMessage(finalized.message ?? "Solicitud enviada.");
         form.reset();
+        clearEvidencePreviews();
         router.refresh();
         setTimeout(() => setOpen(false), 900);
       } catch (uploadError) {
@@ -140,7 +173,7 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
               <h2 className="text-xl font-semibold text-black" id="manufacturer-access-title">Acceso manufacturero</h2>
               <p className="mt-1 text-sm text-neutral-500">La aprobación no concede acceso al dashboard administrativo de Nubel.</p>
             </div>
-            <button className="rounded-full p-2 hover:bg-neutral-100" type="button" onClick={() => setOpen(false)} aria-label="Cerrar">
+            <button className="rounded-full p-2 hover:bg-neutral-100" type="button" onClick={closeAccess} aria-label="Cerrar">
               <X size={20} />
             </button>
           </div>
@@ -189,8 +222,22 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
                   <textarea className="min-h-20 rounded-md border border-neutral-300 p-3 text-sm" name="applicantNotes" maxLength={2000} />
                 </Field>
                 <Field label="Fotografías privadas del equipo o taller (1–5, 10 MB cada una)">
-                  <input className={inputClass} name="evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple required />
+                  <input className={inputClass} name="evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple required onChange={previewEvidence} />
                 </Field>
+                {evidencePreviews.length ? (
+                  <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3">
+                    <p className="mb-3 text-sm font-semibold text-neutral-800">Vista previa de las fotos seleccionadas</p>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                      {evidencePreviews.map((preview) => (
+                        <figure className="min-w-0" key={preview.url}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img className="aspect-square w-full rounded-md border border-neutral-300 bg-white object-cover shadow-sm" src={preview.url} alt={`Vista previa de ${preview.name}`} />
+                          <figcaption className="mt-1 truncate text-xs text-neutral-600" title={preview.name}>{preview.name}</figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <p className="rounded-md bg-neutral-100 p-3 text-xs text-neutral-600">
                   Las fotografías son privadas y se usan únicamente para verificación por Nubel. No aparecerán en tu perfil público.
                 </p>
