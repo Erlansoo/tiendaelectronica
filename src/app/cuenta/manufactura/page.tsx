@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { CircleHelp } from "lucide-react";
 import {
   addManufacturerMachine,
-  addMaterialVariant,
   saveMachineQualityProfile,
   saveManufacturerProfile,
   savePricingProfile,
 } from "@/app/actions/manufacturing";
 import { ManufacturerInventoryControl, PublishManufacturerButton } from "@/components/ManufacturerInventoryControl";
+import { ManufacturerFieldHelp } from "@/components/ManufacturerFieldHelp";
 import { ManufacturerLogoUpload } from "@/components/ManufacturerLogoUpload";
+import { ManufacturerMaterialForm } from "@/components/ManufacturerMaterialForm";
 import { ProviderOfferActions } from "@/components/ProviderOfferActions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { requireManufacturerCapability } from "@/lib/manufacturing";
@@ -69,17 +69,17 @@ export default async function ManufacturerDashboardPage() {
         <Panel id="perfil" title="Perfil público, contacto y responsabilidad" description="El logo, nombre, ciudad y modalidad se muestran al cotizar. Correo, WhatsApp y dirección exacta solo se comparten después de que el cliente elija tu oferta.">
           <form action={saveManufacturerProfile} className="grid gap-4 md:grid-cols-2">
             <ManufacturerLogoUpload currentUrl={profile.logoUrl} name={profile.commercialName} />
-            <Field label="Nombre comercial"><input className={input} name="commercialName" defaultValue={profile.commercialName} required /></Field>
-            <Field label="Ciudad"><input className={input} name="city" defaultValue={profile.city} required /></Field>
-            <Field label="Departamento"><input className={input} name="department" defaultValue={profile.department} required /></Field>
-            <Field label="WhatsApp de contacto"><input className={input} name="whatsapp" defaultValue={profile.whatsapp} required /></Field>
-            <Field label="Correo de contacto"><input className={input} name="contactEmail" type="email" defaultValue={profile.contactEmail ?? ""} required /></Field>
-            <Field label="Plazo habitual (días)"><input className={input} name="usualLeadTimeDays" defaultValue={profile.usualLeadTimeDays} type="number" min={1} max={90} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="Nombre comercial" help="Nombre que verá el cliente junto a tu logo cuando compare cotizaciones. Usa el nombre real de tu empresa o taller." />}><input className={input} name="commercialName" defaultValue={profile.commercialName} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="Ciudad" help="Ciudad desde la que fabricas. Ayuda al cliente a identificar si puede retirar localmente o estimar el envío." />}><input className={input} name="city" defaultValue={profile.city} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="Departamento" help="Departamento de Bolivia donde opera tu taller. Se muestra junto a la ciudad en las cotizaciones." />}><input className={input} name="department" defaultValue={profile.department} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="WhatsApp de contacto" help="Número empresarial que se revela solo al cliente después de seleccionar tu oferta." />}><input className={input} name="whatsapp" defaultValue={profile.whatsapp} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="Correo de contacto" help="Correo empresarial para coordinar una orden ya seleccionada. No se publica antes de que el cliente elija tu oferta." />}><input className={input} name="contactEmail" type="email" defaultValue={profile.contactEmail ?? ""} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="Plazo habitual (días)" help="Días calendario que normalmente necesitas para preparar y entregar un trabajo. Será la base de las ofertas automáticas." />}><input className={input} name="usualLeadTimeDays" defaultValue={profile.usualLeadTimeDays} type="number" min={1} max={90} required /></Field>
             <fieldset className="rounded-md border p-3"><legend className="px-1 text-sm font-semibold">Entrega</legend><div className="flex gap-4 text-sm"><Check name="localPickup" label="Retiro local" defaultChecked={profile.deliveryModes.includes("LOCAL_PICKUP")} /><Check name="nationalShipping" label="Envío nacional" defaultChecked={profile.deliveryModes.includes("NATIONAL_SHIPPING")} /></div></fieldset>
-            <Field label="Dirección de retiro local" full><input className={input} name="localPickupAddress" defaultValue={profile.localPickupAddress ?? ""} placeholder="Zona, calle, número, referencia y horario de retiro" maxLength={300} /></Field>
-            <Field label="Ubicación en Google Maps (opcional)" full><input className={input} name="localPickupMapUrl" type="url" defaultValue={profile.localPickupMapUrl ?? ""} placeholder="https://maps.google.com/..." maxLength={2048} /></Field>
+            <Field label={<ManufacturerFieldHelp label="Dirección de retiro local" help="Dirección y horario donde el cliente puede recoger su pieza. Solo es obligatoria si ofreces retiro local y se comparte después de elegir tu oferta." />} full><input className={input} name="localPickupAddress" defaultValue={profile.localPickupAddress ?? ""} placeholder="Zona, calle, número, referencia y horario de retiro" maxLength={300} /></Field>
+            <Field label={<ManufacturerFieldHelp label="Ubicación en Google Maps (opcional)" help="Enlace directo a la ubicación de retiro. Facilita que el cliente encuentre tu taller una vez seleccionada la oferta." />} full><input className={input} name="localPickupMapUrl" type="url" defaultValue={profile.localPickupMapUrl ?? ""} placeholder="https://maps.google.com/..." maxLength={2048} /></Field>
             <p className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 md:col-span-2">Si ofreces retiro local, la dirección es obligatoria. La dirección, enlace del mapa, WhatsApp y correo solo se muestran al cliente que elija tu oferta.</p>
-            <Field label="Descripción pública" full><textarea className="min-h-24 rounded-md border border-slate-300 p-3 text-sm" name="description" defaultValue={profile.description ?? ""} minLength={30} maxLength={1500} required /></Field>
+            <Field label={<ManufacturerFieldHelp label="Descripción pública" help="Presentación breve de tu experiencia, equipos y especialidades. El cliente la verá al comparar manufactureros." />} full><textarea className="min-h-24 rounded-md border border-slate-300 p-3 text-sm" name="description" defaultValue={profile.description ?? ""} minLength={30} maxLength={1500} required /></Field>
             <label className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm md:col-span-2">
               <input className="mt-1" name="acceptResponsibility" type="checkbox" defaultChecked={Boolean(profile.responsibilityAcceptedAt)} required={!profile.responsibilityAcceptedAt} />
               Declaro que máquinas, materiales, colores, inventario, precios y plazos publicados son reales y que responderé por su disponibilidad y cumplimiento.
@@ -92,15 +92,15 @@ export default async function ManufacturerDashboardPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <form action={addManufacturerMachine} className="grid gap-3 rounded-md border p-4">
               <h3 className="font-semibold">Añadir del catálogo verificado</h3>
-              <Field label="Modelo"><select className={input} name="catalogId" required>{printerCatalog.map((printer) => <option value={printer.id} key={printer.id}>{printer.technology} · {printer.brand} {printer.model} · {printer.buildWidthMm.toString()}×{printer.buildDepthMm.toString()}×{printer.buildHeightMm.toString()} mm</option>)}</select></Field>
+              <Field label={<ManufacturerFieldHelp label="Modelo" help="Selecciona una impresora comercial verificada. Sus dimensiones y tecnología quedan registradas automáticamente y se activan sin revisión adicional." />}><select className={input} name="catalogId" required>{printerCatalog.map((printer) => <option value={printer.id} key={printer.id}>{printer.technology} · {printer.brand} {printer.model} · {printer.buildWidthMm.toString()}×{printer.buildDepthMm.toString()}×{printer.buildHeightMm.toString()} mm</option>)}</select></Field>
               <MachineCosts />
               <button className="rounded-md bg-[#17645e] px-4 py-2 text-sm font-semibold text-white" type="submit">Añadir máquina verificada</button>
             </form>
             <form action={addManufacturerMachine} className="grid gap-3 rounded-md border p-4">
               <h3 className="font-semibold">Registrar máquina personalizada</h3>
-              <Field label="Tecnología"><select className={input} name="technology"><option value="FDM">FDM</option><option value="RESIN">Resina</option></select></Field>
-              <div className="grid grid-cols-2 gap-3"><Field label="Marca"><input className={input} name="customBrand" required /></Field><Field label="Modelo"><input className={input} name="customModel" required /></Field></div>
-              <div className="grid grid-cols-3 gap-3"><Field label="X mm"><input className={input} name="buildWidthMm" type="number" step="0.001" required /></Field><Field label="Y mm"><input className={input} name="buildDepthMm" type="number" step="0.001" required /></Field><Field label="Z mm"><input className={input} name="buildHeightMm" type="number" step="0.001" required /></Field></div>
+              <Field label={<ManufacturerFieldHelp label="Tecnología" help="FDM usa filamento y una cama caliente; resina usa una cuba de resina y pantalla UV. Solo recibirás solicitudes compatibles con la tecnología elegida." />}><select className={input} name="technology"><option value="FDM">FDM</option><option value="RESIN">Resina</option></select></Field>
+              <div className="grid grid-cols-2 gap-3"><Field label={<ManufacturerFieldHelp label="Marca" help="Fabricante real de la impresora personalizada. Nubel podrá usarlo para verificar el equipo." />}><input className={input} name="customBrand" required /></Field><Field label={<ManufacturerFieldHelp label="Modelo" help="Modelo exacto de la impresora personalizada, tal como aparece en su ficha técnica." />}><input className={input} name="customModel" required /></Field></div>
+              <div className="grid grid-cols-3 gap-3"><Field label={<ManufacturerFieldHelp label="X mm" help="Ancho útil de impresión de la cama o cuba, en milímetros." />}><input className={input} name="buildWidthMm" type="number" step="0.001" required /></Field><Field label={<ManufacturerFieldHelp label="Y mm" help="Profundidad útil de impresión de la cama o cuba, en milímetros." />}><input className={input} name="buildDepthMm" type="number" step="0.001" required /></Field><Field label={<ManufacturerFieldHelp label="Z mm" help="Altura máxima útil de impresión, en milímetros." />}><input className={input} name="buildHeightMm" type="number" step="0.001" required /></Field></div>
               <MachineCosts />
               <button className="rounded-md border border-[#17645e] px-4 py-2 text-sm font-semibold text-[#17645e]" type="submit">Enviar a revisión</button>
             </form>
@@ -111,8 +111,8 @@ export default async function ManufacturerDashboardPage() {
               <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 lg:grid-cols-3">
                 {machine.qualityProfiles.map((quality) => <form action={saveMachineQualityProfile} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 rounded-md border bg-white p-2" key={quality.id}>
                   <input name="machineId" type="hidden" value={machine.id} /><input name="quality" type="hidden" value={quality.quality} />
-                  <Field label={`${quality.quality} · capa mm`}><input className={input} name="layerHeightMm" type="number" min="0.01" max="2" step="0.001" defaultValue={quality.layerHeightMm.toString()} required /></Field>
-                  <Field label={machine.technology === "FDM" ? "Rendimiento cm³/h" : "Segundos por capa"}><input className={input} name="performance" type="number" min="0.01" step="0.001" defaultValue={(machine.technology === "FDM" ? quality.throughputCm3PerHour : quality.secondsPerLayer)?.toString() ?? ""} required /></Field>
+                  <Field label={<ManufacturerFieldHelp label={`${quality.quality} · capa mm`} help="Altura de cada capa para esta calidad. Una capa menor mejora el detalle, pero aumenta el tiempo de impresión." />}><input className={input} name="layerHeightMm" type="number" min="0.01" max="2" step="0.001" defaultValue={quality.layerHeightMm.toString()} required /></Field>
+                  <Field label={<ManufacturerFieldHelp label={machine.technology === "FDM" ? "Rendimiento cm³/h" : "Segundos por capa"} help={machine.technology === "FDM" ? "Volumen promedio que esta máquina imprime por hora con esta calidad. Usa una medida realista para estimar el plazo." : "Duración media de una capa, incluyendo exposición y movimientos. En resina el tiempo depende sobre todo de altura y número de capas."} />}><input className={input} name="performance" type="number" min="0.01" step="0.001" defaultValue={(machine.technology === "FDM" ? quality.throughputCm3PerHour : quality.secondsPerLayer)?.toString() ?? ""} required /></Field>
                   <button className="h-10 rounded bg-slate-900 px-3 text-xs font-semibold text-white" type="submit">Guardar</button>
                 </form>)}
               </div>
@@ -121,19 +121,10 @@ export default async function ManufacturerDashboardPage() {
         </Panel>
 
         <Panel id="materiales" title="Materiales, colores e inventario" description="FDM se controla en gramos y costo por kilogramo; resina en mililitros y costo por litro.">
-          <form action={addMaterialVariant} className="grid gap-3 rounded-md border bg-slate-50 p-4 md:grid-cols-4">
-            <Field label="Material"><select className={input} name="materialId">{materials.map((material) => <option value={material.id} key={material.id}>{material.technology} · {material.name}</option>)}</select></Field>
-            <Field label="Color"><input className={input} name="colorName" required /></Field>
-            <Field label="Color visual"><input className={`${input} w-full p-1`} name="colorHex" type="color" defaultValue="#000000" /></Field>
-            <Field label="Costo Bs/kg o Bs/litro"><input className={input} name="costPerBaseUnitBob" type="number" min="0.01" step="0.01" required /></Field>
-            <Field label="Densidad g/cm³ (FDM)"><input className={input} name="densityGcm3" type="number" min="0.1" max="5" step="0.0001" defaultValue="1.24" required /></Field>
-            <Field label="Desperdicio %"><input className={input} name="wastePercent" type="number" min="0" max="100" step="0.1" defaultValue="10" required /></Field>
-            <Field label="Inventario inicial"><input className={input} name="availableQuantity" type="number" min="0" step="0.001" defaultValue="0" required /></Field>
-            <button className="self-end rounded-md bg-[#17645e] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Añadir variante</button>
-          </form>
+          <ManufacturerMaterialForm materials={materials.map((material) => ({ id: material.id, technology: material.technology, name: material.name, defaultDensityGcm3: material.defaultDensityGcm3?.toString() ?? null }))} />
           <div className="mt-5 overflow-x-auto" id="inventario">
             <table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-slate-100"><tr><th className="p-3">Variante</th><th className="p-3">Disponible</th><th className="p-3">Reservado</th><th className="p-3">Costo</th><th className="p-3">Movimiento auditable</th></tr></thead><tbody className="divide-y">
-              {profile.materialVariants.map((variant) => <tr key={variant.id}><td className="p-3"><strong>{variant.material.name}</strong> · {variant.colorName}<br /><span className="text-xs text-slate-500">{variant.unit}</span></td><td className="p-3">{variant.availableQuantity.toString()}</td><td className="p-3">{variant.reservedQuantity.toString()}</td><td className="p-3">Bs {variant.costPerBaseUnitBob.toString()}</td><td className="p-3"><ManufacturerInventoryControl variantId={variant.id} /></td></tr>)}
+              {profile.materialVariants.map((variant) => <tr key={variant.id}><td className="p-3"><strong>{variant.material.name}</strong> · {variant.colorName}<br /><span className="text-xs text-slate-500">{variant.unit}</span></td><td className="p-3">{variant.availableQuantity.toString()}</td><td className="p-3">{variant.reservedQuantity.toString()}</td><td className="p-3">Bs {variant.costPerBaseUnitBob.toString()} / {variant.unit === "GRAM" ? "kg" : "litro"}</td><td className="p-3"><ManufacturerInventoryControl variantId={variant.id} /></td></tr>)}
             </tbody></table>
           </div>
         </Panel>
@@ -145,14 +136,14 @@ export default async function ManufacturerDashboardPage() {
               return <form action={savePricingProfile} className="grid gap-3 rounded-md border p-4 sm:grid-cols-2" key={technology}>
                 <h3 className="text-lg font-semibold sm:col-span-2">{technology === "FDM" ? "FDM / filamento" : "Resina / MSLA"}</h3>
                 <input name="technology" type="hidden" value={technology} />
-                <CostField label="Electricidad Bs/kWh" name="electricityBobKwh" value={current?.electricityBobKwh.toString() ?? "0.8"} />
-                <CostField label="Mano de obra Bs/h" name="laborBobPerHour" value={current?.laborBobPerHour.toString() ?? "20"} />
-                <CostField label="Preparación (min)" name="setupMinutes" value={current?.setupMinutes ?? 20} />
-                <CostField label="Postproceso (min)" name="postprocessMinutes" value={current?.postprocessMinutes ?? 20} />
-                <CostField label="Consumibles Bs" name="consumablesBob" value={current?.consumablesBob.toString() ?? "2"} />
-                <CostField label="Riesgo de fallo %" name="failureRiskPercent" value={current?.failureRiskPercent.toString() ?? "8"} />
-                <CostField label="Margen %" name="marginPercent" value={current?.marginPercent.toString() ?? "25"} />
-                <CostField label="Cobro mínimo Bs" name="minimumChargeBob" value={current?.minimumChargeBob.toString() ?? "20"} />
+                <CostField label="Electricidad Bs/kWh" help="Tarifa que pagas por cada kilovatio-hora. Se multiplica por el consumo de la máquina y las horas estimadas." name="electricityBobKwh" value={current?.electricityBobKwh.toString() ?? "0.8"} />
+                <CostField label="Mano de obra Bs/h" help="Valor de tu trabajo por hora para preparación y postproceso. El tiempo de impresión automática no se cobra aquí." name="laborBobPerHour" value={current?.laborBobPerHour.toString() ?? "20"} />
+                <CostField label="Preparación (min)" help="Tiempo promedio para revisar archivos, preparar material, nivelar o configurar la máquina antes de imprimir." name="setupMinutes" value={current?.setupMinutes ?? 20} />
+                <CostField label="Postproceso (min)" help="Tiempo promedio para retirar la pieza, limpiar, curar resina, quitar soportes o realizar el acabado básico." name="postprocessMinutes" value={current?.postprocessMinutes ?? 20} />
+                <CostField label="Consumibles Bs" help="Costo fijo adicional por trabajo: adhesivos, boquillas, guantes, alcohol IPA, papel, empaques u otros insumos." name="consumablesBob" value={current?.consumablesBob.toString() ?? "2"} />
+                <CostField label="Riesgo de fallo %" help="Reserva porcentual para cubrir impresiones fallidas, repetición de trabajos y variaciones normales del proceso." name="failureRiskPercent" value={current?.failureRiskPercent.toString() ?? "8"} />
+                <CostField label="Margen %" help="Ganancia que se suma después de los costos, consumibles y riesgo. No es una comisión de Nubel." name="marginPercent" value={current?.marginPercent.toString() ?? "25"} />
+                <CostField label="Cobro mínimo Bs" help="Precio mínimo que aceptarás por una impresión, incluso si el cálculo de material y tiempo resulta menor." name="minimumChargeBob" value={current?.minimumChargeBob.toString() ?? "20"} />
                 <button className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white sm:col-span-2" type="submit">Guardar costos {technology}</button>
               </form>;
             })}
@@ -173,7 +164,7 @@ function Panel({ id, title, description, children }: { id: string; title: string
 function Metric({ label, value }: { label: string; value: string | number }) { return <div className="rounded-md border bg-white p-4"><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>; }
 function Field({ label, children, full = false }: { label: React.ReactNode; children: React.ReactNode; full?: boolean }) { return <label className={`grid gap-1 text-sm font-semibold ${full ? "md:col-span-2" : ""}`}>{label}{children}</label>; }
 function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) { return <label className="flex items-center gap-2"><input name={name} type="checkbox" defaultChecked={defaultChecked} /> {label}</label>; }
-function CostField({ label, name, value }: { label: string; name: string; value: string | number }) { return <Field label={label}><input className={input} name={name} defaultValue={value} min="0" step="0.01" type="number" required /></Field>; }
+function CostField({ label, name, value, help }: { label: string; name: string; value: string | number; help?: string }) { return <Field label={help ? <ManufacturerFieldHelp label={label} help={help} /> : label}><input className={input} name={name} defaultValue={value} min="0" step="0.01" type="number" required /></Field>; }
 function MachineCosts() {
   return <div className="grid grid-cols-2 gap-3">
     <MachineCostField label="Cantidad" help="Número de máquinas físicas idénticas que tienes disponibles. Debe ser un número entero: 1, 2, 3…; no se pueden registrar fracciones de una máquina." name="quantity" value="1" min="1" max="100" step="1" inputMode="numeric" />
@@ -195,15 +186,5 @@ function MachineCostField({ label, help, name, value, min, max, step, inputMode 
   step: string;
   inputMode?: "numeric" | "decimal";
 }) {
-  return <Field label={<HelpLabel label={label} help={help} />}><input className={input} name={name} defaultValue={value} min={min} max={max} step={step} inputMode={inputMode} type="number" required /></Field>;
-}
-
-function HelpLabel({ label, help }: { label: string; help: string }) {
-  return <span className="inline-flex items-center gap-1.5">
-    {label}
-    <span className="group relative inline-flex" tabIndex={0}>
-      <CircleHelp aria-label={`Ayuda sobre ${label}`} className="cursor-help text-slate-500" size={16} />
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-md bg-slate-950 px-3 py-2 text-xs font-normal leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100" role="tooltip">{help}</span>
-    </span>
-  </span>;
+  return <Field label={<ManufacturerFieldHelp label={label} help={help} />}><input className={input} name={name} defaultValue={value} min={min} max={max} step={step} inputMode={inputMode} type="number" required /></Field>;
 }
