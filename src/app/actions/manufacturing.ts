@@ -18,6 +18,7 @@ import { getCurrentCustomer } from "@/lib/customer-auth";
 import {
   decimal,
   generateManufacturerCode,
+  grantManufacturerAreaAccess,
   hashManufacturerCode,
   requireManufacturerCapability,
   safeCodeMatch,
@@ -152,7 +153,7 @@ export async function activateManufacturerCode(rawCode: string): Promise<ActionR
   if (!/^[A-Z2-9]{20}$/.test(code)) return { ok: false, error: "El código debe tener exactamente 20 caracteres." };
 
   const invite = await prisma.manufacturerInvite.findFirst({
-    where: { accountId: customer.id, email: customer.email.toLowerCase(), status: "ACTIVE" },
+    where: { accountId: customer.id, email: customer.email.toLowerCase(), status: { in: ["ACTIVE", "USED"] } },
     orderBy: { createdAt: "desc" },
     include: { application: true },
   });
@@ -163,7 +164,7 @@ export async function activateManufacturerCode(rawCode: string): Promise<ActionR
     const minutes = Math.ceil((invite.lockedUntil.getTime() - now.getTime()) / 60000);
     return { ok: false, error: `Demasiados intentos. Intenta nuevamente en ${minutes} min.` };
   }
-  if (invite.expiresAt <= now) {
+  if (invite.status === "ACTIVE" && invite.expiresAt <= now) {
     await prisma.manufacturerInvite.update({ where: { id: invite.id }, data: { status: "EXPIRED" } });
     return { ok: false, error: "El código venció. Solicita a Nubel que genere uno nuevo." };
   }
@@ -181,39 +182,66 @@ export async function activateManufacturerCode(rawCode: string): Promise<ActionR
     return { ok: false, error: attempts >= 5 ? "Se bloqueó el ingreso durante 15 minutos." : `Código incorrecto. Quedan ${5 - attempts} intentos.` };
   }
 
-  await prisma.$transaction(async (tx) => {
-    const claimed = await tx.manufacturerInvite.updateMany({
-      where: { id: invite.id, status: "ACTIVE", usedAt: null, expiresAt: { gt: now } },
-      data: { status: "USED", usedAt: now, failedAttempts: 0, lockedUntil: null },
-    });
-    if (claimed.count !== 1) throw new Error("El código ya fue utilizado.");
+  let capabilityId: string;
+  let activatedNow = false;
+  if (invite.status === "ACTIVE") {
+    const capability = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.manufacturerInvite.updateMany({
+        where: { id: invite.id, status: "ACTIVE", usedAt: null, expiresAt: { gt: now } },
+        data: { status: "USED", usedAt: now, failedAttempts: 0, lockedUntil: null },
+      });
+      if (claimed.count !== 1) throw new Error("El código ya no está disponible.");
 
-    const capability = await tx.accountCapability.upsert({
+      const activatedCapability = await tx.accountCapability.upsert({
+        where: { accountId_type: { accountId: customer.id, type: CapabilityType.MANUFACTURER } },
+        update: { status: CapabilityStatus.ONBOARDING, activatedAt: now, suspendedAt: null },
+        create: {
+          accountId: customer.id,
+          type: CapabilityType.MANUFACTURER,
+          status: CapabilityStatus.ONBOARDING,
+          activatedAt: now,
+        },
+      });
+      await tx.manufacturerProfile.upsert({
+        where: { capabilityId: activatedCapability.id },
+        update: {},
+        create: {
+          capabilityId: activatedCapability.id,
+          commercialName: invite.application.commercialName,
+          department: invite.application.department,
+          city: invite.application.city,
+          whatsapp: invite.application.whatsapp,
+          deliveryModes: invite.application.deliveryModes,
+        },
+      });
+      return activatedCapability;
+    });
+    capabilityId = capability.id;
+    activatedNow = true;
+  } else {
+    const capability = await prisma.accountCapability.findUnique({
       where: { accountId_type: { accountId: customer.id, type: CapabilityType.MANUFACTURER } },
-      update: { status: CapabilityStatus.ONBOARDING, activatedAt: now, suspendedAt: null },
-      create: {
-        accountId: customer.id,
-        type: CapabilityType.MANUFACTURER,
-        status: CapabilityStatus.ONBOARDING,
-        activatedAt: now,
-      },
+      select: { id: true, status: true },
     });
-    await tx.manufacturerProfile.upsert({
-      where: { capabilityId: capability.id },
-      update: {},
-      create: {
-        capabilityId: capability.id,
-        commercialName: invite.application.commercialName,
-        department: invite.application.department,
-        city: invite.application.city,
-        whatsapp: invite.application.whatsapp,
-        deliveryModes: invite.application.deliveryModes,
-      },
+    if (!capability || !["ONBOARDING", "ACTIVE"].includes(capability.status)) {
+      return { ok: false, error: "Tu acceso manufacturero no está disponible. Contacta a Nubel." };
+    }
+    await prisma.manufacturerInvite.update({
+      where: { id: invite.id },
+      data: { failedAttempts: 0, lockedUntil: null },
     });
-  });
+    capabilityId = capability.id;
+  }
 
+  await grantManufacturerAreaAccess(customer.id, capabilityId);
   revalidatePath("/cuenta");
-  return { ok: true, data: undefined, message: "Acceso activado. Completa tu perfil manufacturero." };
+  return {
+    ok: true,
+    data: undefined,
+    message: activatedNow
+      ? "Acceso activado. Completa tu perfil manufacturero."
+      : "Código verificado. Entrando al panel manufacturero.",
+  };
 }
 
 export async function reviewManufacturerApplication(

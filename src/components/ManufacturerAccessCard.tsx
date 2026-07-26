@@ -2,7 +2,6 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { BadgeCheck, Clock3, Factory, KeyRound, RotateCcw, Send, X } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
@@ -128,8 +127,7 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
         return;
       }
       setMessage(result.message ?? "Acceso activado.");
-      router.refresh();
-      setTimeout(() => setOpen(false), 900);
+      router.push("/cuenta/manufactura");
     });
   }
 
@@ -203,11 +201,11 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
             ) : (
               <form className="mx-auto max-w-md py-8" onSubmit={submitCode}>
                 <KeyRound className="mx-auto text-[#17645e]" size={34} />
-                <h3 className="mt-3 text-center text-lg font-semibold">Código personal de activación</h3>
-                <p className="mt-2 text-center text-sm text-neutral-600">Debe tener 20 caracteres, ser usado dentro de siete días y corresponder a esta misma cuenta Google.</p>
+                <h3 className="mt-3 text-center text-lg font-semibold">Código de acceso manufacturero</h3>
+                <p className="mt-2 text-center text-sm text-neutral-600">Es el código personal de 20 caracteres entregado por Nubel y está ligado a esta misma cuenta Google.</p>
                 <input className={`${inputClass} mt-5 w-full font-mono uppercase tracking-[0.22em]`} name="code" minLength={20} maxLength={20} pattern="[A-Za-z2-9]{20}" autoComplete="one-time-code" required />
                 <button className="mt-4 w-full rounded-md bg-black px-4 py-3 font-semibold text-white disabled:opacity-50" disabled={isPending} type="submit">
-                  {isPending ? "Verificando…" : "Activar acceso"}
+                  {isPending ? "Verificando…" : "Verificar e ingresar"}
                 </button>
               </form>
             )}
@@ -235,10 +233,11 @@ export function ManufacturerAccessCard({ capabilityStatus, application }: Props)
               : "Tu capacidad está suspendida. Contacta a Nubel para revisar el caso."}
         </p>
         {!isSuspended ? (
-          <Link className="mt-4 inline-flex rounded-full bg-[#0f3d3d] px-4 py-2 text-sm font-semibold text-white" href="/cuenta/manufactura">
-            Abrir panel manufacturero
-          </Link>
+          <button className="mt-4 inline-flex rounded-full bg-[#0f3d3d] px-4 py-2 text-sm font-semibold text-white" type="button" onClick={() => openAccess("code")}>
+            Ingresar al panel manufacturero
+          </button>
         ) : null}
+        {open ? renderAccessModal() : null}
       </div>
     );
   }

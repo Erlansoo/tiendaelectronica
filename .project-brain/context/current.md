@@ -39,7 +39,7 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 - Authenticated sessions expire after 15 minutes without browser activity; the server also validates the last recorded activity before serving protected customer or dashboard data.
 - Optional browser storage (language preference) requires cookie consent; authentication cookies remain necessary.
 - Manufacturer access is a separate `MANUFACTURER` account capability and never grants electronics `/dashboard` access.
-- Manufacturer invitations are single-use, Google-email-bound, hash-only, expire after seven days, and lock after five failed attempts.
+- Manufacturer approval codes are Google-email-bound and stored only as hashes. They expire after seven days before first activation; once activated, the same 20-character code unlocks the manufacturer panel in the current browser session. Five failed attempts lock access for 15 minutes.
 - Manufacturing evidence and quote models use private Supabase buckets and short signed URLs.
 - Material availability and reservations are changed atomically and recorded through inventory movements.
 - Public manufacturing capacity is derived only from active, approved manufacturer machines.

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentCustomer } from "@/lib/customer-auth";
+import { hasManufacturerAreaAccess } from "@/lib/manufacturing";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -18,8 +19,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const isOwner = offer.quote.customerId === customer.id;
   const isSelectedProvider =
     offer.manufacturer.capability.accountId === customer.id &&
+    ["ONBOARDING", "ACTIVE"].includes(offer.manufacturer.capability.status) &&
     ["SELECTED", "CONFIRMED", "REVISED", "ACCEPTED"].includes(offer.status);
-  if (!isOwner && !isSelectedProvider && !customer.isStoreAdmin) {
+  const hasUnlockedManufacturerArea = isSelectedProvider
+    && await hasManufacturerAreaAccess(customer.id, offer.manufacturer.capability.id);
+  if (!isOwner && !hasUnlockedManufacturerArea && !customer.isStoreAdmin) {
     return NextResponse.json({ error: "No tienes acceso a estos archivos" }, { status: 403 });
   }
   const storage = createSupabaseAdminClient().storage.from("manufacturing-quotes");
@@ -33,4 +37,3 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     { headers: { "Cache-Control": "private, no-store, max-age=0" } },
   );
 }
-

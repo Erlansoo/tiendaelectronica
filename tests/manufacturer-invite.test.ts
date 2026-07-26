@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  createManufacturerAccessToken,
   generateManufacturerCode,
   hashManufacturerCode,
+  isManufacturerAccessTokenValid,
   safeCodeMatch,
 } from "../src/lib/manufacturer-invite";
 
@@ -23,3 +25,9 @@ test("el hash queda ligado al correo Google", () => {
   assert.equal(safeCodeMatch(otherHash, ownerHash), false);
 });
 
+test("el acceso manufacturero queda firmado y ligado a una cuenta y capacidad", () => {
+  const token = createManufacturerAccessToken("account-1", "capability-1", pepper);
+  assert.equal(isManufacturerAccessTokenValid(token, "account-1", "capability-1", pepper), true);
+  assert.equal(isManufacturerAccessTokenValid(token, "account-2", "capability-1", pepper), false);
+  assert.equal(isManufacturerAccessTokenValid(`${token}x`, "account-1", "capability-1", pepper), false);
+});

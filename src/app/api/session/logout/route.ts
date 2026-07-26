@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { MANUFACTURER_ACCESS_COOKIE } from "@/lib/manufacturer-invite";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -21,5 +22,13 @@ export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
 
-  return noStoreResponse(204);
+  const response = noStoreResponse(204);
+  response.cookies.set(MANUFACTURER_ACCESS_COOKIE, "", {
+    httpOnly: true,
+    maxAge: 0,
+    path: "/",
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  });
+  return response;
 }
