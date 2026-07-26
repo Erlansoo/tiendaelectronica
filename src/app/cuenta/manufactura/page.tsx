@@ -7,6 +7,7 @@ import {
 } from "@/app/actions/manufacturing";
 import { ManufacturerInventoryControl, PublishManufacturerButton } from "@/components/ManufacturerInventoryControl";
 import { ManufacturerFieldHelp } from "@/components/ManufacturerFieldHelp";
+import { ManufacturerDashboardNav } from "@/components/ManufacturerDashboardNav";
 import { ManufacturerLogoUpload } from "@/components/ManufacturerLogoUpload";
 import { ManufacturerMaterialForm } from "@/components/ManufacturerMaterialForm";
 import { ProviderOfferActions } from "@/components/ProviderOfferActions";
@@ -56,11 +57,9 @@ export default async function ManufacturerDashboardPage() {
           <PublishManufacturerButton isPublic={profile.isPublic} />
         </div>
 
-        <nav className="mt-6 flex gap-2 overflow-x-auto rounded-md border bg-white p-2 text-sm font-semibold">
-          {["resumen", "perfil", "maquinas", "materiales", "inventario", "calculadora", "trabajos"].map((section) => <a className="whitespace-nowrap rounded px-3 py-2 hover:bg-slate-100" href={`#${section}`} key={section}>{section[0].toUpperCase() + section.slice(1)}</a>)}
-        </nav>
+        <ManufacturerDashboardNav />
 
-        <section className="mt-6 grid gap-4 md:grid-cols-4" id="resumen">
+        <section className="mt-6 scroll-mt-24 grid gap-4 md:grid-cols-4" id="resumen">
           <Metric label="Máquinas activas" value={profile.machines.filter((machine) => machine.reviewStatus === "ACTIVE").length} />
           <Metric label="Variantes activas" value={profile.materialVariants.filter((variant) => variant.isActive).length} />
           <Metric label="Stock reservado" value={profile.materialVariants.reduce((sum, variant) => sum + Number(variant.reservedQuantity), 0).toFixed(2)} />
@@ -123,7 +122,7 @@ export default async function ManufacturerDashboardPage() {
 
         <Panel id="materiales" title="Materiales, colores e inventario" description="FDM se controla en gramos y costo por kilogramo; resina en mililitros y costo por litro.">
           <ManufacturerMaterialForm materials={materials.map((material) => ({ id: material.id, technology: material.technology, name: material.name, defaultDensityGcm3: material.defaultDensityGcm3?.toString() ?? null }))} />
-          <div className="mt-5 overflow-x-auto" id="inventario">
+          <div className="mt-5 scroll-mt-24 overflow-x-auto" id="inventario">
             <table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-slate-100"><tr><th className="p-3">Variante</th><th className="p-3">Disponible</th><th className="p-3">Reservado</th><th className="p-3">Costo</th><th className="p-3">Movimiento auditable</th></tr></thead><tbody className="divide-y">
               {profile.materialVariants.map((variant) => <tr key={variant.id}><td className="p-3"><strong>{variant.material.name}</strong> · {variant.colorName}<br /><span className="text-xs text-slate-500">{variant.unit}</span></td><td className="p-3">{variant.availableQuantity.toString()}</td><td className="p-3">{variant.reservedQuantity.toString()}</td><td className="p-3">Bs {variant.costPerBaseUnitBob.toString()} / {variant.unit === "GRAM" ? "kg" : "litro"}</td><td className="p-3"><ManufacturerInventoryControl variantId={variant.id} /></td></tr>)}
             </tbody></table>
@@ -160,7 +159,7 @@ export default async function ManufacturerDashboardPage() {
 }
 
 function Panel({ id, title, description, children }: { id: string; title: string; description: string; children: React.ReactNode }) {
-  return <section className="mt-6 scroll-mt-6 rounded-md border border-slate-200 bg-white p-5 shadow-sm" id={id}><h2 className="text-xl font-semibold">{title}</h2><p className="mt-1 text-sm text-slate-600">{description}</p><div className="mt-5">{children}</div></section>;
+  return <section className="mt-6 scroll-mt-24 rounded-md border border-slate-200 bg-white p-5 shadow-sm" id={id}><h2 className="text-xl font-semibold">{title}</h2><p className="mt-1 text-sm text-slate-600">{description}</p><div className="mt-5">{children}</div></section>;
 }
 function Metric({ label, value }: { label: string; value: string | number }) { return <div className="rounded-md border bg-white p-4"><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>; }
 function Field({ label, children, full = false }: { label: React.ReactNode; children: React.ReactNode; full?: boolean }) { return <label className={`grid min-w-0 gap-1 text-sm font-semibold ${full ? "md:col-span-2" : ""}`}>{label}{children}</label>; }
