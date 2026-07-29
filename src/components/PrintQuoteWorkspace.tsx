@@ -1113,7 +1113,7 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
             <h3 className="font-semibold text-slate-950">{translate("quoteConfigurationPanel", locale)}</h3>
             <p className="mt-0.5 text-xs text-slate-500">{translate("quoteConfigurationScrollHelp", locale)}</p>
           </div>
-          <div className="max-h-[680px] overflow-y-auto overscroll-contain p-4 [scrollbar-gutter:stable]">
+          <div className="max-h-[680px] overflow-y-auto overscroll-auto p-4 [scrollbar-gutter:stable]">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold text-black">
             {translate("quotePrintTechnology", locale)}
