@@ -8,8 +8,8 @@ export type NewProductImage = { id: string; blob: Blob; previewUrl: string };
 export type ExistingProductImage = { id: string; url: string };
 
 const FRAME_SIZE = 320;
-const OUTPUT_SIZE = 1200;
-const MAX_OUTPUT_BYTES = 2 * 1024 * 1024;
+const OUTPUT_SIZE = 500;
+const MAX_OUTPUT_BYTES = 1024 * 1024;
 
 export function ProductImageManager({
   existingImages,
@@ -59,8 +59,8 @@ export function ProductImageManager({
   }
 
   return <section className="rounded-md border border-slate-200 bg-white p-5 md:col-span-2">
-    <h2 className="text-base font-semibold text-slate-950"><ManufacturerFieldHelp label="Imágenes del producto" help="Sube hasta tres fotos propias del producto. Ajusta el encuadre antes de guardar; Nubel las convierte a un formato uniforme y agrega la marca de agua automáticamente." /></h2>
-    <p className="mt-1 text-sm text-slate-600">Hasta tres imágenes. Antes de subirlas podrás encuadrarlas; Nubel las guarda en WebP 1200×1200 con marca de agua. La primera será la portada.</p>
+    <h2 className="text-base font-semibold text-slate-950"><ManufacturerFieldHelp label="Imágenes del producto" help="Sube hasta tres fotos propias del producto. Ajusta el encuadre antes de guardar; Nubel las convierte a WebP 500×500, un formato ligero y uniforme con marca de agua." /></h2>
+    <p className="mt-1 text-sm text-slate-600">Hasta tres imágenes. Antes de subirlas podrás encuadrarlas dentro del marco final; Nubel las guarda en WebP 500×500 con marca de agua. La primera será la portada.</p>
     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
       {existing.map((image, index) => <ImageTile key={image.id} index={index} url={image.url} onRemove={() => removeExisting(image.id)} />)}
       {newImages.map((image, index) => <ImageTile key={image.id} index={existing.length + index} url={image.previewUrl} onRemove={() => removeNew(image.id)} />)}
@@ -111,8 +111,8 @@ function ProductImageCropModal({ file, onCancel, onConfirm }: { file: File; onCa
     const y = (FRAME_SIZE / 2 + offset.y - displayHeight / 2) * factor;
     context.fillStyle = "#ffffff"; context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
     context.drawImage(image, x, y, displayWidth * factor, displayHeight * factor);
-    context.save(); context.globalAlpha = 0.56; context.fillStyle = "#ffffff"; context.font = "700 42px Arial, sans-serif"; context.textAlign = "right"; context.textBaseline = "bottom";
-    context.fillText("NUBEL STORE", OUTPUT_SIZE - 42, OUTPUT_SIZE - 38); context.restore();
+    context.save(); context.globalAlpha = 0.58; context.fillStyle = "#ffffff"; context.font = "700 21px Arial, sans-serif"; context.textAlign = "right"; context.textBaseline = "bottom";
+    context.fillText("NUBEL STORE", OUTPUT_SIZE - 22, OUTPUT_SIZE - 20); context.restore();
     let blob: Blob | null = null;
     for (const quality of [0.9, 0.82, 0.74, 0.66]) {
       const candidate = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
@@ -121,18 +121,21 @@ function ProductImageCropModal({ file, onCancel, onConfirm }: { file: File; onCa
       if (candidate.size <= MAX_OUTPUT_BYTES) break;
     }
     if (!blob || blob.size > MAX_OUTPUT_BYTES) {
-      setError("Esta imagen conserva demasiado detalle para el límite de 2 MB. Recórtala más o usa una imagen de menor resolución.");
+      setError("No se pudo optimizar la imagen por debajo de 1 MB. Prueba con otra foto o reduce el zoom.");
       return;
     }
     onConfirm(blob);
   }
 
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-label="Editar imagen del producto">
-    <div className="w-full max-w-2xl rounded-xl bg-white p-5 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><h3 className="text-lg font-semibold">Ajustar imagen</h3><p className="mt-1 text-sm text-slate-600">Arrastra para mover y usa el control para acercar. El resultado será cuadrado.</p></div><button className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" type="button" onClick={onCancel}>Cerrar</button></div>
-      <div className="mt-5 flex justify-center"><div className="relative touch-none overflow-hidden rounded-md bg-slate-100 shadow-inner" style={{ width: FRAME_SIZE, height: FRAME_SIZE }} onPointerDown={(event) => { drag.current = { x: event.clientX, y: event.clientY, startX: offset.x, startY: offset.y }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={move} onPointerUp={() => { drag.current = null; }}>
+    <div className="w-full max-w-2xl rounded-xl bg-white p-5 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><h3 className="text-lg font-semibold">Encuadrar imagen</h3><p className="mt-1 text-sm text-slate-600">Arrastra la foto y usa el zoom. Solo lo que quede dentro del marco se guardará.</p></div><button className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" type="button" onClick={onCancel}>Cerrar</button></div>
+      <div className="mt-5 flex justify-center rounded-xl bg-slate-950 p-5 shadow-inner sm:p-8"><div className="relative touch-none overflow-hidden rounded-sm border-2 border-white bg-black shadow-[0_0_0_1px_rgba(245,165,36,0.9),0_10px_28px_rgba(0,0,0,0.55)]" style={{ width: FRAME_SIZE, height: FRAME_SIZE }} onPointerDown={(event) => { drag.current = { x: event.clientX, y: event.clientY, startX: offset.x, startY: offset.y }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
         {sourceUrl ? <img className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none" style={{ width: displayWidth, height: displayHeight, transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))` }} src={sourceUrl} alt="Vista previa de recorte" onLoad={(event) => setDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} /> : null}
-        <div className="pointer-events-none absolute inset-0 ring-1 ring-white/80" />
+        <div className="pointer-events-none absolute inset-0 border border-[#f5a524]" />
+        <span className="pointer-events-none absolute left-2 top-2 rounded bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-white">Área final · 500 × 500 px</span>
+        <span className="pointer-events-none absolute left-1/3 top-0 h-full border-l border-white/35" /><span className="pointer-events-none absolute left-2/3 top-0 h-full border-l border-white/35" /><span className="pointer-events-none absolute left-0 top-1/3 w-full border-t border-white/35" /><span className="pointer-events-none absolute left-0 top-2/3 w-full border-t border-white/35" />
       </div></div>
+      <p className="mt-3 text-center text-xs text-slate-500">El fondo negro queda fuera de la foto. El rectángulo delimitado representa exactamente la imagen que se publicará.</p>
       <label className="mt-5 grid gap-2 text-sm font-semibold">Zoom<input type="range" min="1" max="3" step="0.01" value={zoom} onChange={(event) => { const next = Number(event.target.value); setZoom(next); setOffset((current) => ({ x: clamp(current.x, dimensions.width * baseScale * next), y: clamp(current.y, dimensions.height * baseScale * next) })); }} /></label>
       {error ? <p className="mt-4 rounded-md bg-rose-50 p-3 text-sm text-rose-800">{error}</p> : null}
       <div className="mt-6 flex justify-end gap-3"><button className="rounded border border-slate-300 px-4 py-2 text-sm font-semibold" type="button" onClick={onCancel}>Cancelar</button><button className="rounded bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={!dimensions.width} type="button" onClick={save}>Usar esta imagen</button></div>
