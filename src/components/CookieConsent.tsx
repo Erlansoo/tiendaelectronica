@@ -8,6 +8,7 @@ import { useLocale } from "@/components/useLocale";
 const CONSENT_COOKIE = "nubel-cookie-consent";
 const CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
 type Consent = "accepted" | "rejected";
+type ConsentSnapshot = Consent | null | undefined;
 
 function getConsent(): Consent | null {
   const value = document.cookie
@@ -29,8 +30,11 @@ function subscribeToConsent(onStoreChange: () => void) {
   return () => window.removeEventListener("nubel-consent-change", onStoreChange);
 }
 
-function getServerConsent() {
-  return null;
+function getServerConsent(): ConsentSnapshot {
+  // The server cannot inspect this browser-only preference without making the
+  // whole public site request-specific. Render nothing until hydration reads
+  // the real cookie, avoiding a brief false consent dialog on navigation.
+  return undefined;
 }
 
 export function CookieConsent() {
@@ -43,6 +47,10 @@ export function CookieConsent() {
     saveConsent(value);
     setIsOpen(false);
   };
+
+  if (consent === undefined) {
+    return null;
+  }
 
   if (consent !== null && !isOpen) {
     return (
