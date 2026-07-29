@@ -8,6 +8,12 @@ if (!url || !serviceRoleKey) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL o 
 const supabase = createClient(url, serviceRoleKey, { auth: { persistSession: false } });
 const buckets = [
   {
+    id: "product-images",
+    public: true,
+    fileSizeLimit: 2 * 1024 * 1024,
+    allowedMimeTypes: ["image/webp"],
+  },
+  {
     id: "manufacturer-logos",
     public: true,
     fileSizeLimit: 2 * 1024 * 1024,

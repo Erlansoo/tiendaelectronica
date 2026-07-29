@@ -72,6 +72,7 @@ const getCachedProductBySlug = unstable_cache(
   async (slug: string) =>
     prisma.product.findFirst({
       where: { slug, isActive: true },
+      include: { images: { orderBy: { position: "asc" } } },
     }),
   ["product-by-slug"],
   { revalidate: 300, tags: ["products"] },

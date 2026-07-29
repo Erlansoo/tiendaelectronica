@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Cpu } from "lucide-react";
 import { LocalizedText } from "@/components/LocalizedText";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductGallery } from "@/components/ProductGallery";
 import { PublicHeader } from "@/components/PublicHeader";
 import { StockBadge } from "@/components/StockBadge";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -25,6 +26,7 @@ export default async function ProductDetailPage({
     product.technicalAttributes && typeof product.technicalAttributes === "object"
       ? Object.entries(product.technicalAttributes as Record<string, unknown>)
       : [];
+  const images = product.images.length ? product.images : product.imageUrl ? [{ id: "legacy", url: product.imageUrl }] : [];
 
   return (
     <>
@@ -34,14 +36,7 @@ export default async function ProductDetailPage({
         <LocalizedText es="Volver a productos" en="Back to products" />
       </Link>
       <section className="mt-6 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="flex aspect-square items-center justify-center rounded-md bg-white text-slate-500 shadow-sm ring-1 ring-slate-200">
-          {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="h-full w-full rounded-md object-cover" src={product.imageUrl} alt={product.name} />
-          ) : (
-            <Cpu size={72} aria-hidden />
-          )}
-        </div>
+        <div>{images.length ? <ProductGallery images={images} productName={product.name} /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white text-slate-500 shadow-sm ring-1 ring-slate-200"><Cpu size={72} aria-hidden /></div>}</div>
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
