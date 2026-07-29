@@ -14,6 +14,8 @@ import { useLocale } from "@/components/useLocale";
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const MAX_MODELS = 5;
 const MODEL_BED_CLEARANCE = 0.025;
+const MIN_SCALE_FACTOR = 0.0001;
+const MAX_SCALE_FACTOR = 1000;
 const allowedExtensions = [".stl", ".obj", ".step", ".stp", ".3mf"];
 const scalePresets = [1, 0.1, 0.01, 0.001];
 const modelColors = ["#35ad7d", "#4f8edc", "#d88a35", "#9b6bd6", "#d65f78"];
@@ -26,6 +28,20 @@ const fdmPrinterBeds = [
 const resinPrinterBeds = [
   { label: "Anycubic Photon Mono X 4K · 192 x 120 x 245 mm", x: 192, y: 245, z: 120 },
 ];
+
+function parseScaleFactor(value: string) {
+  const normalized = value.trim().replace(",", ".");
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+
+  const scale = Number(normalized);
+  return Number.isFinite(scale) && scale >= MIN_SCALE_FACTOR && scale <= MAX_SCALE_FACTOR
+    ? scale
+    : null;
+}
+
+function formatScaleFactor(value: number) {
+  return Number.isFinite(value) ? String(value) : "1";
+}
 
 type Dimensions = {
   x: number;
@@ -46,6 +62,12 @@ type ModelEntry = {
   solidVolumeMm3: number | null;
   occupiedVolumeMm3: number | null;
   fitsBed: boolean;
+};
+
+type ScaleDraft = {
+  modelId: string | null;
+  value: string;
+  appliedScale: number;
 };
 
 export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: PublicManufacturingBed[] }) {
@@ -87,6 +109,8 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
   const [isSelectingSupportFace, setIsSelectingSupportFace] = useState(false);
   const [manualPosition, setManualPosition] = useState({ x: 0, y: 0 });
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [scaleDraft, setScaleDraft] = useState<ScaleDraft>({ modelId: null, value: "1", appliedScale: 1 });
+  const [scaleInputError, setScaleInputError] = useState<{ modelId: string | null; key: TranslationKey } | null>(null);
 
   const marketplacePrinterBeds = useMemo(
     () => manufacturingBeds
@@ -124,6 +148,13 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
   const selectedModel = models.find((model) => model.id === selectedModelId) ?? null;
   const dimensions = selectedModel?.dimensions ?? null;
   const scaleFactor = selectedModel?.scaleFactor ?? 1;
+  const activeScaleDraft =
+    scaleDraft.modelId === selectedModelId && Math.abs(scaleDraft.appliedScale - scaleFactor) <= Number.EPSILON
+      ? scaleDraft.value
+      : formatScaleFactor(scaleFactor);
+  const activeScaleInputError = scaleInputError?.modelId === selectedModelId ? scaleInputError.key : null;
+  const parsedScaleDraft = parseScaleFactor(activeScaleDraft);
+  const hasPendingScale = parsedScaleDraft !== null && Math.abs(parsedScaleDraft - scaleFactor) > Number.EPSILON;
   const copyCount = selectedModel?.copyCount ?? 1;
   const fileSummary = useMemo(() => {
     if (models.length === 0) return translate("quoteNoFile", locale);
@@ -650,7 +681,9 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
 
   function applyModelScale(nextScale: number) {
     if (!selectedModelId) return;
-    const safeScale = Number.isFinite(nextScale) && nextScale > 0 ? nextScale : 1;
+    const safeScale = Number.isFinite(nextScale) && nextScale >= MIN_SCALE_FACTOR && nextScale <= MAX_SCALE_FACTOR
+      ? nextScale
+      : 1;
     const model = modelsRef.current.get(selectedModelId);
     if (!model) return;
     setModels((current) => current.map((entry) => entry.id === selectedModelId ? { ...entry, scaleFactor: safeScale } : entry));
@@ -662,6 +695,29 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
       constrainToBuildPlate(model, selectedBed);
     }
     syncAllModelMetrics();
+  }
+
+  function applyCustomModelScale() {
+    const nextScale = parseScaleFactor(activeScaleDraft);
+    if (nextScale === null) {
+      setScaleInputError({ modelId: selectedModelId, key: "quoteScaleInvalid" });
+      return;
+    }
+
+    applyModelScale(nextScale);
+    setScaleDraft({ modelId: selectedModelId, value: formatScaleFactor(nextScale), appliedScale: nextScale });
+    setScaleInputError(null);
+  }
+
+  function updateScaleDraft(value: string) {
+    const nextValue = value.replace(/\s/g, "");
+    if (!/^\d*(?:[.,]\d*)?$/.test(nextValue)) {
+      setScaleInputError({ modelId: selectedModelId, key: "quoteScaleInvalid" });
+      return;
+    }
+
+    setScaleDraft({ modelId: selectedModelId, value: nextValue, appliedScale: scaleFactor });
+    setScaleInputError(null);
   }
 
   function resetView() {
@@ -1301,20 +1357,45 @@ export function PrintQuoteWorkspace({ manufacturingBeds }: { manufacturingBeds: 
               </button>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
               <label className="grid gap-1 text-sm font-semibold text-black">
                 {translate("quoteScaleFactor", locale)}
                 <input
                   aria-label="Scale factor"
-                  className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800"
-                  min={0.0001}
-                  step={0.001}
-                  type="number"
-                  value={scaleFactor}
-                  onChange={(event) => applyModelScale(Number(event.target.value))}
+                  aria-describedby="scale-factor-help"
+                  aria-invalid={Boolean(activeScaleInputError)}
+                  className="h-11 rounded-md border border-neutral-300 px-3 text-neutral-800 outline-none transition focus:border-[#f5a524] focus:ring-2 focus:ring-[#f5a524]/25 aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-200"
+                  inputMode="decimal"
+                  placeholder="1"
+                  type="text"
+                  value={activeScaleDraft}
+                  onChange={(event) => updateScaleDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      applyCustomModelScale();
+                    }
+                  }}
                 />
+                <span id="scale-factor-help" className="text-xs font-normal text-neutral-500">
+                  {activeScaleInputError
+                    ? translate(activeScaleInputError, locale)
+                    : translate("quoteScaleInputHelp", locale)}
+                </span>
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                    hasPendingScale
+                      ? "border-black bg-black text-white hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black"
+                      : "pointer-events-none border-neutral-300 bg-neutral-100 text-neutral-400 opacity-45"
+                  }`}
+                  disabled={!hasPendingScale}
+                  type="button"
+                  onClick={applyCustomModelScale}
+                >
+                  {translate("quoteApplyScale", locale)}
+                </button>
                 {scalePresets.map((preset) => (
                   <button
                     className="rounded-full border border-neutral-300 px-3 py-2 text-sm font-semibold text-black transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524]"
