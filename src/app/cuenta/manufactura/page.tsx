@@ -11,6 +11,7 @@ import { ManufacturerDashboardNav } from "@/components/ManufacturerDashboardNav"
 import { ManufacturerLogoUpload } from "@/components/ManufacturerLogoUpload";
 import { ManufacturerMaterialForm } from "@/components/ManufacturerMaterialForm";
 import { ProviderOfferActions } from "@/components/ProviderOfferActions";
+import { ProviderManufacturingOrderPanel } from "@/components/ProviderManufacturingOrderPanel";
 import { PublicHeader } from "@/components/PublicHeader";
 import { StrictIntegerInput } from "@/components/StrictIntegerInput";
 import { requireManufacturerCapability } from "@/lib/manufacturing";
@@ -21,7 +22,7 @@ export const dynamic = "force-dynamic";
 const input = "h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 text-sm";
 
 export default async function ManufacturerDashboardPage() {
-  const { capability } = await requireManufacturerCapability();
+  const { capability, customer } = await requireManufacturerCapability();
   const [profile, printerCatalog, materials] = await Promise.all([
     prisma.manufacturerProfile.findUniqueOrThrow({
       where: { capabilityId: capability.id },
@@ -29,7 +30,24 @@ export default async function ManufacturerDashboardPage() {
         machines: { orderBy: { createdAt: "desc" }, include: { catalog: true, qualityProfiles: true } },
         materialVariants: { orderBy: { createdAt: "desc" }, include: { material: true, movements: { take: 3, orderBy: { createdAt: "desc" } } } },
         pricingProfiles: true,
-        offers: { take: 10, orderBy: { createdAt: "desc" }, include: { quote: true } },
+        offers: {
+          take: 20,
+          orderBy: { createdAt: "desc" },
+          include: {
+            quote: true,
+            order: {
+              include: {
+                payment: true,
+                payout: true,
+                conversation: {
+                  include: {
+                    messages: { include: { sender: { select: { name: true } } }, orderBy: { createdAt: "asc" }, take: 100 },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     }),
     prisma.printerCatalog.findMany({ where: { isActive: true }, orderBy: [{ technology: "asc" }, { brand: "asc" }, { model: "asc" }] }),
@@ -151,7 +169,7 @@ export default async function ManufacturerDashboardPage() {
         </Panel>
 
         <Panel id="trabajos" title="Cotizaciones y trabajos" description="Las estimaciones duran 72 horas. Una selección reservará material durante 24 horas.">
-          {profile.offers.length ? <div className="grid gap-3">{profile.offers.map((offer) => <div className="rounded-md border p-3 text-sm" key={offer.id}><div className="flex flex-wrap justify-between gap-3"><span>{offer.quote.materialName} · {offer.quote.quality}</span><strong>Bs {offer.totalBob.toString()} · {offer.status}</strong></div>{offer.status === "SELECTED" ? <ProviderOfferActions offerId={offer.id} currentTotal={offer.totalBob.toString()} currentLeadTime={offer.leadTimeDays} /> : null}</div>)}</div> : <p className="text-sm text-slate-500">Aún no hay cotizaciones compatibles.</p>}
+          {profile.offers.length ? <div className="grid gap-3">{profile.offers.map((offer) => <div className="rounded-md border p-3 text-sm" key={offer.id}><div className="flex flex-wrap justify-between gap-3"><span>{offer.quote.materialName} · {offer.quote.quality}</span><strong>Bs {offer.totalBob.toString()} · {offer.status}</strong></div>{offer.status === "SELECTED" ? <ProviderOfferActions offerId={offer.id} currentTotal={offer.totalBob.toString()} currentLeadTime={offer.leadTimeDays} /> : null}{offer.order ? <ProviderManufacturingOrderPanel orderId={offer.order.id} status={offer.order.status} paymentStatus={offer.order.payment?.status ?? null} payoutStatus={offer.order.payout?.status ?? null} commissionPercent={offer.order.commissionPercent.toString()} payoutBob={offer.order.payoutBob.toString()} messages={(offer.order.conversation?.messages ?? []).map((message) => ({ id: message.id, body: message.body, createdAt: message.createdAt.toISOString(), senderName: message.sender.name, mine: message.senderAccountId === customer.id }))} /> : null}</div>)}</div> : <p className="text-sm text-slate-500">Aún no hay cotizaciones compatibles.</p>}
         </Panel>
       </main>
     </>

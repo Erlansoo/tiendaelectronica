@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { PublicHeader } from "@/components/PublicHeader";
 import { AcceptRevisedOfferButton, SelectManufacturingOfferButton } from "@/components/SelectManufacturingOfferButton";
+import { CustomerManufacturingOrderPanel } from "@/components/CustomerManufacturingOrderPanel";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { prisma } from "@/lib/prisma";
 
@@ -29,7 +30,14 @@ export default async function CustomerQuotePage({
           manufacturer: true,
           machine: { include: { catalog: true } },
           materialVariant: { include: { material: true } },
-          order: true,
+          order: {
+            include: {
+              payment: true,
+              payout: true,
+              dispute: true,
+              conversation: { include: { messages: { include: { sender: { select: { name: true } } }, orderBy: { createdAt: "asc" }, take: 100 } } },
+            },
+          },
         },
       },
     },
@@ -94,8 +102,22 @@ export default async function CustomerQuotePage({
                   </div>
                 ) : null}
                 {quote.status === "OPEN" && offer.status === "ESTIMATED" ? <div className="mt-5"><SelectManufacturingOfferButton offerId={offer.id} /></div> : null}
-                {offer.status === "REVISED" ? <div className="mt-5"><AcceptRevisedOfferButton offerId={offer.id} /></div> : null}
+                {(offer.status === "REVISED" || offer.status === "CONFIRMED") ? <div className="mt-5"><AcceptRevisedOfferButton offerId={offer.id} revised={offer.status === "REVISED"} /></div> : null}
                 {offer.revisionReason ? <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900"><strong>Cambio propuesto:</strong> {offer.revisionReason}</p> : null}
+                {offer.order ? <CustomerManufacturingOrderPanel
+                  orderId={offer.order.id}
+                  status={offer.order.status}
+                  agreedTotalBob={offer.order.agreedTotalBob.toString()}
+                  agreedLeadTimeDays={offer.order.agreedLeadTimeDays}
+                  recommendedLeadTimeDays={offer.order.recommendedLeadTimeDays}
+                  payment={offer.order.payment ? { status: offer.order.payment.status, providerReference: offer.order.payment.providerReference, qrPayload: offer.order.payment.qrPayload, expiresAt: offer.order.payment.expiresAt.toISOString() } : null}
+                  payoutStatus={offer.order.payout?.status ?? null}
+                  deliveredAt={offer.order.deliveredAt?.toISOString() ?? null}
+                  deliveryNotes={offer.order.deliveryNotes}
+                  customerResponseDueAt={offer.order.customerResponseDueAt?.toISOString() ?? null}
+                  dispute={offer.order.dispute ? { status: offer.order.dispute.status, reason: offer.order.dispute.reason } : null}
+                  messages={(offer.order.conversation?.messages ?? []).map((message) => ({ id: message.id, body: message.body, createdAt: message.createdAt.toISOString(), senderName: message.sender.name, mine: message.senderAccountId === customer.id }))}
+                /> : null}
               </article>;
             })}
             </div>

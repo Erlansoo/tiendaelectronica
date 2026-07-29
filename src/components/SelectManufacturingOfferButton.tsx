@@ -20,7 +20,8 @@ export function SelectManufacturingOfferButton({ offerId }: { offerId: string })
   );
 }
 
-export function AcceptRevisedOfferButton({ offerId }: { offerId: string }) {
+export function AcceptRevisedOfferButton({ offerId, revised = true }: { offerId: string; revised?: boolean }) {
+  void revised;
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

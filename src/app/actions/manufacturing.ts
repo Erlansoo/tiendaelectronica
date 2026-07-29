@@ -9,6 +9,7 @@ import {
   MachineReviewStatus,
   ManufacturingQuality,
   ManufacturingTechnology,
+  ManufacturingOrderEventType,
   Prisma,
 } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
@@ -19,11 +20,18 @@ import {
   decimal,
   generateManufacturerCode,
   grantManufacturerAreaAccess,
+  hasManufacturerAreaAccess,
   hashManufacturerCode,
   requireManufacturerCapability,
   safeCodeMatch,
 } from "@/lib/manufacturing";
 import { calculateManufacturingEstimate } from "@/lib/manufacturing-calculator";
+import {
+  calculateOrderSettlement,
+  MAX_MANUFACTURING_LEAD_DAYS,
+  recommendedLeadTimeDays,
+} from "@/lib/manufacturing-order";
+import { manufacturingPaymentProvider } from "@/lib/manufacturing-payment";
 import { getTypicalResponseMinutes } from "@/lib/manufacturer-response";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -944,8 +952,24 @@ export async function selectManufacturingOffer(offerId: string): Promise<ActionR
       await tx.manufacturingOffer.update({ where: { id: offer.id }, data: { status: "SELECTED", selectedAt: new Date() } });
       await tx.manufacturingQuote.update({ where: { id: offer.quoteId }, data: { status: "SELECTED", selectedOfferId: offer.id } });
       await tx.manufacturingOffer.updateMany({ where: { quoteId: offer.quoteId, id: { not: offer.id } }, data: { status: "DECLINED" } });
+      const recommendedDays = recommendedLeadTimeDays({
+        estimatedHours: Number(offer.estimatedHours),
+        technology: offer.quote.technology,
+        deliveryMode: offer.quote.deliveryMode,
+      });
+      const settlement = calculateOrderSettlement(Number(offer.totalBob), offer.leadTimeDays, recommendedDays);
       await tx.manufacturingOrder.create({
-        data: { offerId: offer.id, agreedTotalBob: offer.totalBob, agreedLeadTimeDays: offer.leadTimeDays },
+        data: {
+          offerId: offer.id,
+          agreedTotalBob: offer.totalBob,
+          agreedLeadTimeDays: offer.leadTimeDays,
+          recommendedLeadTimeDays: recommendedDays,
+          commissionPercent: decimal(settlement.commissionPercent),
+          commissionBob: decimal(settlement.commissionBob),
+          payoutBob: decimal(settlement.payoutBob),
+          conversation: { create: { customerId: customer.id, manufacturerId: offer.manufacturerId } },
+          events: { create: { type: ManufacturingOrderEventType.OFFER_SELECTED, actorAccountId: customer.id, details: { reservationExpiresAt: expiresAt.toISOString(), recommendedDays } } },
+        },
       });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) {
@@ -967,35 +991,51 @@ export async function respondToSelectedOffer(
   if (!capability.profile) return { ok: false, error: "Perfil no encontrado." };
   const offer = await prisma.manufacturingOffer.findFirst({
     where: { id: offerId, manufacturerId: capability.profile.id, status: "SELECTED" },
-    include: { order: true },
+    include: { order: true, quote: true },
   });
   if (!offer?.order) return { ok: false, error: "La oferta ya no espera una respuesta." };
+  const order = offer.order;
   const respondedAt = new Date();
   const firstRespondedAt = offer.firstRespondedAt ?? respondedAt;
 
-  if (response === "CONFIRM") {
-    await prisma.$transaction([
-      prisma.manufacturingOffer.update({ where: { id: offer.id }, data: { status: "CONFIRMED", confirmedAt: respondedAt, firstRespondedAt } }),
-      prisma.manufacturingOrder.update({
-        where: { offerId: offer.id },
-        data: { status: "AGREED", providerAcceptedAt: respondedAt, agreedTotalBob: offer.totalBob, agreedLeadTimeDays: offer.leadTimeDays },
-      }),
-    ]);
-  } else {
-    const total = z.number().positive().max(1_000_000).parse(newTotalInput);
-    const leadTime = z.number().int().min(1).max(180).parse(newLeadTimeInput);
-    const reason = z.string().trim().min(10).max(800).parse(reasonInput);
-    await prisma.$transaction([
-      prisma.manufacturingOffer.update({
-        where: { id: offer.id },
-        data: { status: "REVISED", totalBob: decimal(total), leadTimeDays: leadTime, revisionReason: reason, firstRespondedAt },
-      }),
-      prisma.manufacturingOrder.update({
-        where: { offerId: offer.id },
-        data: { status: "AWAITING_CUSTOMER", agreedTotalBob: decimal(total), agreedLeadTimeDays: leadTime, revisionReason: reason },
-      }),
-    ]);
-  }
+  const total = response === "CONFIRM" ? Number(offer.totalBob) : z.number().positive().max(1_000_000).parse(newTotalInput);
+  const leadTime = response === "CONFIRM" ? offer.leadTimeDays : z.number().int().min(1).max(MAX_MANUFACTURING_LEAD_DAYS).parse(newLeadTimeInput);
+  const reason = response === "CONFIRM" ? null : z.string().trim().min(10).max(800).parse(reasonInput);
+  const recommendedDays = order.recommendedLeadTimeDays ?? recommendedLeadTimeDays({
+    estimatedHours: Number(offer.estimatedHours),
+    technology: offer.quote.technology,
+    deliveryMode: offer.quote.deliveryMode,
+  });
+  const settlement = calculateOrderSettlement(total, leadTime, recommendedDays);
+  await prisma.$transaction(async (tx) => {
+    await tx.manufacturingOffer.update({
+      where: { id: offer.id },
+      data: {
+        status: response === "CONFIRM" ? "CONFIRMED" : "REVISED",
+        totalBob: decimal(total),
+        leadTimeDays: leadTime,
+        revisionReason: reason,
+        firstRespondedAt,
+        confirmedAt: response === "CONFIRM" ? respondedAt : null,
+      },
+    });
+    await tx.manufacturingOrder.update({
+      where: { id: order.id },
+      data: {
+        status: "AWAITING_CUSTOMER",
+        providerAcceptedAt: respondedAt,
+        agreedTotalBob: decimal(total),
+        agreedLeadTimeDays: leadTime,
+        recommendedLeadTimeDays: recommendedDays,
+        commissionPercent: decimal(settlement.commissionPercent),
+        commissionBob: decimal(settlement.commissionBob),
+        payoutBob: decimal(settlement.payoutBob),
+        revisionReason: reason,
+        revisions: { create: { totalBob: decimal(total), leadTimeDays: leadTime, recommendedLeadTimeDays: recommendedDays, commissionPercent: decimal(settlement.commissionPercent), commissionBob: decimal(settlement.commissionBob), payoutBob: decimal(settlement.payoutBob), reason } },
+        events: { create: { type: ManufacturingOrderEventType.PROVIDER_RESPONDED, actorAccountId: capability.accountId, details: { response, totalBob: total, leadTimeDays: leadTime, recommendedDays, commissionPercent: settlement.commissionPercent } } },
+      },
+    });
+  });
   revalidatePath("/cuenta/manufactura");
   revalidatePath(`/cuenta/cotizaciones/${offer.quoteId}`);
   return { ok: true, data: undefined, message: response === "CONFIRM" ? "Trabajo confirmado." : "Cambio enviado al cliente para nueva aceptación." };
@@ -1005,18 +1045,269 @@ export async function acceptRevisedManufacturingOffer(offerId: string): Promise<
   const customer = await getCurrentCustomer();
   if (!customer) return { ok: false, error: "Inicia sesión nuevamente." };
   const offer = await prisma.manufacturingOffer.findFirst({
-    where: { id: offerId, status: "REVISED", quote: { customerId: customer.id, status: "SELECTED" } },
-    include: { order: true },
+    where: { id: offerId, status: { in: ["REVISED", "CONFIRMED"] }, quote: { customerId: customer.id, status: "SELECTED" } },
+    include: { order: true, reservation: true },
   });
   if (!offer?.order) return { ok: false, error: "La revisión ya no está disponible." };
-  await prisma.$transaction([
-    prisma.manufacturingOffer.update({ where: { id: offer.id }, data: { status: "ACCEPTED", confirmedAt: new Date() } }),
-    prisma.manufacturingOrder.update({
-      where: { offerId: offer.id },
-      data: { status: "AGREED", customerAcceptedAt: new Date(), agreedTotalBob: offer.totalBob, agreedLeadTimeDays: offer.leadTimeDays },
-    }),
-  ]);
+  const now = new Date();
+  if (!offer.reservation || offer.reservation.status !== "ACTIVE" || offer.reservation.expiresAt <= now) {
+    return { ok: false, error: "La reserva de material venció. Solicita una nueva cotización." };
+  }
+  const order = offer.order;
+  const paymentDueAt = offer.reservation.expiresAt;
+  const paymentIntent = manufacturingPaymentProvider.createIntent({ orderId: order.id, amountBob: Number(order.agreedTotalBob) });
+  await prisma.$transaction(async (tx) => {
+    const acceptedAt = new Date();
+    await tx.manufacturingOffer.update({ where: { id: offer.id }, data: { status: "ACCEPTED", confirmedAt: acceptedAt } });
+    await tx.manufacturingOrder.update({
+      where: { id: order.id },
+      data: {
+        status: "AWAITING_PAYMENT",
+        customerAcceptedAt: acceptedAt,
+        paymentDueAt,
+        revisions: { updateMany: { where: { acceptedAt: null }, data: { acceptedAt } } },
+        payment: { create: { provider: paymentIntent.provider, providerReference: paymentIntent.providerReference, amountBob: order.agreedTotalBob, qrPayload: paymentIntent.qrPayload, expiresAt: paymentDueAt } },
+        payout: { create: { grossBob: order.agreedTotalBob, commissionBob: order.commissionBob, netBob: order.payoutBob } },
+        events: { create: [
+          { type: ManufacturingOrderEventType.CUSTOMER_ACCEPTED, actorAccountId: customer.id },
+          { type: ManufacturingOrderEventType.PAYMENT_CREATED, actorAccountId: customer.id, details: { provider: paymentIntent.provider, providerReference: paymentIntent.providerReference, expiresAt: paymentDueAt.toISOString() } },
+        ] },
+      },
+    });
+  });
   revalidatePath(`/cuenta/cotizaciones/${offer.quoteId}`);
   revalidatePath("/cuenta/manufactura");
   return { ok: true, data: undefined, message: "Nuevo precio y plazo aceptados." };
+}
+
+async function getCustomerManufacturingOrder(orderId: string, customerId: string) {
+  return prisma.manufacturingOrder.findFirst({
+    where: { id: orderId, offer: { quote: { customerId } } },
+    include: { offer: { include: { quote: true, reservation: true } }, payment: true, payout: true, conversation: true, dispute: true },
+  });
+}
+
+async function getProviderManufacturingOrder(orderId: string) {
+  const { customer, capability } = await requireManufacturerCapability(["ACTIVE"]);
+  if (!capability.profile) return { customer, capability, order: null };
+  const order = await prisma.manufacturingOrder.findFirst({
+    where: { id: orderId, offer: { manufacturerId: capability.profile.id } },
+    include: { offer: { include: { quote: true } }, payment: true, payout: true, conversation: true },
+  });
+  return { customer, capability, order };
+}
+
+export async function sendManufacturingMessage(orderId: string, bodyInput: string): Promise<ActionResult> {
+  const customer = await getCurrentCustomer();
+  if (!customer) return { ok: false, error: "Inicia sesión para enviar un mensaje." };
+  const body = z.string().trim().min(1).max(2000).parse(bodyInput);
+  let conversation = await prisma.manufacturingConversation.findFirst({
+    where: { orderId, customerId: customer.id, order: { status: { notIn: ["CANCELLED", "COMPLETED"] } } },
+  });
+  if (!conversation) {
+    const capability = await prisma.accountCapability.findUnique({
+      where: { accountId_type: { accountId: customer.id, type: CapabilityType.MANUFACTURER } },
+      include: { profile: true },
+    });
+    if (!capability?.profile || !["ONBOARDING", "ACTIVE"].includes(capability.status) || !await hasManufacturerAreaAccess(customer.id, capability.id)) {
+      return { ok: false, error: "No tienes acceso a esta conversación." };
+    }
+    conversation = await prisma.manufacturingConversation.findFirst({
+      where: { orderId, manufacturerId: capability.profile.id, order: { status: { notIn: ["CANCELLED", "COMPLETED"] } } },
+    });
+  }
+  if (!conversation) return { ok: false, error: "La conversación no está disponible." };
+  const recentCount = await prisma.manufacturingMessage.count({ where: { conversationId: conversation.id, senderAccountId: customer.id, createdAt: { gte: new Date(Date.now() - 60_000) } } });
+  if (recentCount >= 12) return { ok: false, error: "Espera un momento antes de enviar más mensajes." };
+  await prisma.manufacturingMessage.create({ data: { conversationId: conversation.id, senderAccountId: customer.id, body } });
+  revalidatePath(`/cuenta/cotizaciones/${conversation.orderId}`);
+  revalidatePath("/cuenta/manufactura");
+  return { ok: true, data: undefined, message: "Mensaje enviado." };
+}
+
+export async function confirmMockManufacturingPayment(orderId: string): Promise<ActionResult> {
+  await requireStoreAdmin();
+  const admin = await getCurrentCustomer();
+  if (!admin) return { ok: false, error: "Sesión administrativa no disponible." };
+  try {
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.manufacturingOrder.findFirst({
+        where: { id: orderId, status: "AWAITING_PAYMENT" },
+        include: { offer: { include: { materialVariant: true, reservation: true } }, payment: true, payout: true },
+      });
+      if (!order?.payment || !order.payout || order.payment.provider !== "MOCK" || order.payment.status !== "PENDING" || order.payment.expiresAt <= new Date()) {
+        throw new Error("El pago de prueba no está disponible.");
+      }
+      const reservation = order.offer.reservation;
+      if (!reservation || reservation.status !== "ACTIVE" || reservation.expiresAt <= new Date()) throw new Error("La reserva de material venció.");
+      const material = order.offer.materialVariant;
+      const consumed = await tx.$queryRaw<Array<{ availableQuantity: Prisma.Decimal; reservedQuantity: Prisma.Decimal }>>(Prisma.sql`
+        UPDATE "ManufacturerMaterialVariant"
+        SET "availableQuantity" = "availableQuantity" - ${reservation.quantity},
+            "reservedQuantity" = "reservedQuantity" - ${reservation.quantity},
+            "updatedAt" = NOW()
+        WHERE "id" = ${reservation.variantId}
+          AND "availableQuantity" >= ${reservation.quantity}
+          AND "reservedQuantity" >= ${reservation.quantity}
+        RETURNING "availableQuantity", "reservedQuantity"
+      `);
+      if (consumed.length !== 1) throw new Error("El inventario reservado ya no está disponible.");
+      const now = new Date();
+      await tx.inventoryReservation.update({ where: { id: reservation.id }, data: { status: "CONSUMED" } });
+      await tx.materialInventoryMovement.create({
+        data: {
+          variantId: reservation.variantId,
+          type: InventoryMovementType.CONSUME,
+          quantity: reservation.quantity,
+          previousAvailable: material.availableQuantity,
+          newAvailable: consumed[0].availableQuantity,
+          previousReserved: material.reservedQuantity,
+          newReserved: consumed[0].reservedQuantity,
+          referenceType: "MANUFACTURING_ORDER",
+          referenceId: order.id,
+          notes: "Pago de prueba confirmado por Nubel",
+        },
+      });
+      await tx.manufacturingPayment.update({ where: { id: order.payment.id }, data: { status: "PAID", paidAt: now, verifiedAt: now, providerPayload: { mode: "mock", confirmedBy: admin.email } } });
+      await tx.manufacturingOrder.update({
+        where: { id: order.id },
+        data: {
+          status: "IN_PRODUCTION",
+          productionStartedAt: now,
+          events: { create: [
+            { type: ManufacturingOrderEventType.PAYMENT_CONFIRMED, actorAccountId: admin.id, details: { provider: "MOCK" } },
+            { type: ManufacturingOrderEventType.PRODUCTION_STARTED, actorAccountId: admin.id },
+          ] },
+        },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "No se pudo confirmar el pago." };
+  }
+  revalidatePath("/dashboard/manufactura/ordenes");
+  revalidatePath("/cuenta/manufactura");
+  return { ok: true, data: undefined, message: "Pago de prueba confirmado; el trabajo pasó a producción." };
+}
+
+export async function declareManufacturingDelivery(orderId: string, notesInput: string): Promise<ActionResult> {
+  const { customer, order } = await getProviderManufacturingOrder(orderId);
+  if (!order || order.status !== "IN_PRODUCTION") return { ok: false, error: "Este trabajo no está listo para declarar entrega." };
+  const notes = z.string().trim().min(10).max(1200).parse(notesInput);
+  const deliveredAt = new Date();
+  const customerResponseDueAt = new Date(deliveredAt.getTime() + 4 * 24 * 60 * 60 * 1000);
+  await prisma.manufacturingOrder.update({
+    where: { id: order.id },
+    data: {
+      status: "DELIVERED",
+      deliveredAt,
+      deliveryNotes: notes,
+      customerResponseDueAt,
+      events: { create: { type: ManufacturingOrderEventType.DELIVERY_DECLARED, actorAccountId: customer.id, details: { customerResponseDueAt: customerResponseDueAt.toISOString() } } },
+    },
+  });
+  revalidatePath("/cuenta/manufactura");
+  return { ok: true, data: undefined, message: "Entrega declarada. El cliente tiene cuatro días para confirmar o abrir una disputa." };
+}
+
+export async function confirmManufacturingReceipt(orderId: string): Promise<ActionResult> {
+  const customer = await getCurrentCustomer();
+  if (!customer) return { ok: false, error: "Inicia sesión para confirmar la recepción." };
+  const order = await getCustomerManufacturingOrder(orderId, customer.id);
+  if (!order || order.status !== "DELIVERED" || order.dispute || !order.payout) return { ok: false, error: "Esta orden no está disponible para confirmación." };
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.manufacturingOrder.update({ where: { id: order.id }, data: { status: "RECEIVED", receivedAt: now, events: { create: [
+      { type: ManufacturingOrderEventType.CUSTOMER_RECEIVED, actorAccountId: customer.id },
+      { type: ManufacturingOrderEventType.PAYOUT_READY, actorAccountId: customer.id },
+    ] } } }),
+    prisma.manufacturingPayout.update({ where: { orderId: order.id }, data: { status: "READY_FOR_REVIEW", holdReason: null } }),
+  ]);
+  revalidatePath(`/cuenta/cotizaciones/${order.offer.quoteId}`);
+  revalidatePath("/dashboard/manufactura/ordenes");
+  return { ok: true, data: undefined, message: "Recepción confirmada. Nubel revisará y realizará el desembolso al manufacturero." };
+}
+
+export async function openManufacturingDispute(orderId: string, reasonInput: string): Promise<ActionResult> {
+  const customer = await getCurrentCustomer();
+  if (!customer) return { ok: false, error: "Inicia sesión para abrir una disputa." };
+  const reason = z.string().trim().min(15).max(2000).parse(reasonInput);
+  const order = await getCustomerManufacturingOrder(orderId, customer.id);
+  if (!order || order.status !== "DELIVERED" || order.dispute || !order.payout) return { ok: false, error: "No puedes abrir una disputa para esta orden." };
+  await prisma.$transaction([
+    prisma.manufacturingOrder.update({ where: { id: order.id }, data: { status: "DISPUTED", events: { create: [
+      { type: ManufacturingOrderEventType.DISPUTE_OPENED, actorAccountId: customer.id },
+      { type: ManufacturingOrderEventType.PAYOUT_HELD, actorAccountId: customer.id, details: { reason: "Disputa del cliente" } },
+    ] } } }),
+    prisma.manufacturingDispute.create({ data: { orderId: order.id, openedById: customer.id, reason } }),
+    prisma.manufacturingPayout.update({ where: { orderId: order.id }, data: { status: "ON_HOLD", holdReason: "Disputa abierta por el cliente" } }),
+  ]);
+  revalidatePath(`/cuenta/cotizaciones/${order.offer.quoteId}`);
+  revalidatePath("/dashboard/manufactura/ordenes");
+  return { ok: true, data: undefined, message: "Disputa enviada a Nubel. El desembolso queda retenido." };
+}
+
+export async function markManufacturingPayoutPaid(orderId: string, referenceInput: string): Promise<ActionResult> {
+  await requireStoreAdmin();
+  const admin = await getCurrentCustomer();
+  if (!admin) return { ok: false, error: "Sesión administrativa no disponible." };
+  const reference = z.string().trim().min(3).max(120).parse(referenceInput);
+  const order = await prisma.manufacturingOrder.findFirst({ where: { id: orderId, status: "RECEIVED", payout: { status: "READY_FOR_REVIEW" } }, include: { payout: true } });
+  if (!order?.payout) return { ok: false, error: "El desembolso no está disponible." };
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.manufacturingPayout.update({ where: { id: order.payout.id }, data: { status: "PAID", paidAt: now, paidByEmail: admin.email, paymentReference: reference } }),
+    prisma.manufacturingOrder.update({ where: { id: order.id }, data: { status: "COMPLETED", events: { create: { type: ManufacturingOrderEventType.PAYOUT_PAID, actorAccountId: admin.id, details: { reference } } } } }),
+  ]);
+  revalidatePath("/dashboard/manufactura/ordenes");
+  revalidatePath("/cuenta/manufactura");
+  return { ok: true, data: undefined, message: "Desembolso registrado y orden completada." };
+}
+
+export async function reviewManufacturingDispute(
+  orderId: string,
+  decision: "RELEASE_PAYOUT" | "KEEP_ON_HOLD" | "CANCEL_ORDER",
+  notesInput: string,
+): Promise<ActionResult> {
+  await requireStoreAdmin();
+  const admin = await getCurrentCustomer();
+  if (!admin) return { ok: false, error: "Sesión administrativa no disponible." };
+  const notes = z.string().trim().min(10).max(3000).parse(notesInput);
+  const order = await prisma.manufacturingOrder.findFirst({
+    where: { id: orderId, dispute: { status: { in: ["OPEN", "UNDER_REVIEW"] } }, payout: { status: "ON_HOLD" } },
+    include: { dispute: true, payout: true },
+  });
+  if (!order?.dispute || !order.payout) return { ok: false, error: "La disputa no está disponible para revisión." };
+  const now = new Date();
+  if (decision === "KEEP_ON_HOLD") {
+    await prisma.$transaction([
+      prisma.manufacturingDispute.update({ where: { id: order.dispute.id }, data: { status: "UNDER_REVIEW", adminNotes: notes } }),
+      prisma.manufacturingPayout.update({ where: { id: order.payout.id }, data: { status: "ON_HOLD", holdReason: notes } }),
+    ]);
+    revalidatePath("/dashboard/manufactura/ordenes");
+    return { ok: true, data: undefined, message: "Disputa mantenida en revisión; el desembolso continúa retenido." };
+  }
+  const release = decision === "RELEASE_PAYOUT";
+  await prisma.$transaction([
+    prisma.manufacturingDispute.update({
+      where: { id: order.dispute.id },
+      data: { status: "RESOLVED", adminNotes: notes, resolution: release ? "Desembolso autorizado por Nubel" : "Orden cancelada; gestionar devolución manual", resolvedAt: now, resolvedByEmail: admin.email },
+    }),
+    prisma.manufacturingPayout.update({
+      where: { id: order.payout.id },
+      data: release ? { status: "READY_FOR_REVIEW", holdReason: null } : { status: "CANCELLED", holdReason: "Orden cancelada por resolución de disputa" },
+    }),
+    prisma.manufacturingOrder.update({
+      where: { id: order.id },
+      data: {
+        status: release ? "RECEIVED" : "CANCELLED",
+        events: { create: [
+          { type: ManufacturingOrderEventType.DISPUTE_RESOLVED, actorAccountId: admin.id, details: { decision, notes } },
+          { type: release ? ManufacturingOrderEventType.PAYOUT_READY : ManufacturingOrderEventType.ORDER_CANCELLED, actorAccountId: admin.id },
+        ] },
+      },
+    }),
+  ]);
+  revalidatePath("/dashboard/manufactura/ordenes");
+  revalidatePath("/cuenta/manufactura");
+  return { ok: true, data: undefined, message: release ? "Disputa resuelta; el desembolso quedó listo para revisión." : "Orden cancelada. Gestiona cualquier devolución bancaria de forma manual." };
 }
