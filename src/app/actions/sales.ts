@@ -40,9 +40,9 @@ export async function createSale(formData: FormData) {
 
     const saleItems = items.map((item) => {
       const product = productById.get(item.productId);
-      if (!product) throw new Error("Product not found.");
+      if (!product) throw new Error("El producto ya no existe.");
       if (parsed.saleStatus === SaleStatus.COMPLETED && product.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${product.name}.`);
+        throw new Error(`Stock insuficiente para ${product.name}.`);
       }
 
       const unitPrice = new Prisma.Decimal(product.priceSale);
@@ -99,7 +99,7 @@ export async function createSale(formData: FormData) {
             reason: StockMovementReason.SALE_OUT,
             referenceType: "Sale",
             referenceId: sale.id,
-            notes: `Sale ${sale.saleNumber}`,
+            notes: `Venta ${sale.saleNumber}`,
           },
         });
       }

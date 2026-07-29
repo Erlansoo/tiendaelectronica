@@ -12,13 +12,13 @@ export function ProductTable({ products }: { products: Product[] }) {
         <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-4 py-3">SKU</th>
-            <th className="px-4 py-3">Name</th>
-            <th className="px-4 py-3">Category</th>
+            <th className="px-4 py-3">Producto</th>
+            <th className="px-4 py-3">Categoría</th>
             <th className="px-4 py-3">Stock</th>
-            <th className="px-4 py-3">Price</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3">Published</th>
-            <th className="px-4 py-3">Actions</th>
+            <th className="px-4 py-3">Precio</th>
+            <th className="px-4 py-3">Estado</th>
+            <th className="px-4 py-3">Publicación</th>
+            <th className="px-4 py-3">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -35,16 +35,16 @@ export function ProductTable({ products }: { products: Product[] }) {
               <td className="px-4 py-3">
                 <form action={toggleProductActive.bind(null, product.id, product.isActive)}>
                   <button className="rounded-md border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
-                    {product.isActive ? "Published" : "Hidden"}
+                    {product.isActive ? "Publicado" : "Oculto"}
                   </button>
                 </form>
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Link className="rounded-md p-2 text-slate-600 hover:bg-slate-100" href={`/dashboard/productos/${product.id}/editar`} title="Edit">
+                  <Link className="rounded-md p-2 text-slate-600 hover:bg-slate-100" href={`/dashboard/productos/${product.id}/editar`} title="Editar producto" aria-label="Editar producto">
                     <Pencil size={16} aria-hidden />
                   </Link>
-                  <Link className="rounded-md p-2 text-slate-600 hover:bg-slate-100" href={`/productos/${product.slug}`} title="View in store">
+                  <Link className="rounded-md p-2 text-slate-600 hover:bg-slate-100" href={`/productos/${product.slug}`} title="Ver en tienda" aria-label="Ver en tienda">
                     <Eye size={16} aria-hidden />
                   </Link>
                 </div>

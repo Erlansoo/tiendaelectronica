@@ -13,8 +13,8 @@ export default async function NewSalePage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-slate-950">New sale</h1>
-      <p className="mt-1 text-sm text-slate-600">Completed sales automatically discount stock.</p>
+      <h1 className="text-3xl font-semibold text-slate-950">Nueva venta</h1>
+      <p className="mt-1 text-sm text-slate-600">Las ventas completadas descuentan el stock automáticamente.</p>
       <div className="mt-6">
         <SaleForm
           products={products.map((product) => ({

@@ -37,6 +37,7 @@ export function ProductCard({
         )}
       </div>
       <div className="mt-4 flex flex-1 flex-col">
+        {accentColor ? <span className="mb-3 w-fit rounded-full px-2.5 py-1 text-xs font-semibold" style={{ backgroundColor: `${accentColor}18`, color: accentColor }}>{product.category}</span> : null}
         <div className="grid min-h-[78px] grid-cols-[1fr_auto] items-start gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold leading-snug text-slate-950">{product.name}</h2>
