@@ -8,8 +8,8 @@ export type NewProductImage = { id: string; blob: Blob; previewUrl: string };
 export type ExistingProductImage = { id: string; url: string };
 
 const FRAME_SIZE = 320;
-const OUTPUT_SIZE = 500;
-const MAX_OUTPUT_BYTES = 1024 * 1024;
+const OUTPUT_SIZE = 800;
+const MAX_OUTPUT_BYTES = Math.floor(1.5 * 1024 * 1024);
 
 export function ProductImageManager({
   existingImages,
@@ -59,12 +59,12 @@ export function ProductImageManager({
   }
 
   return <section className="rounded-md border border-slate-200 bg-white p-5 md:col-span-2">
-    <h2 className="text-base font-semibold text-slate-950"><ManufacturerFieldHelp label="Imágenes del producto" help="Sube hasta tres fotos propias del producto. Ajusta el encuadre antes de guardar; Nubel las convierte a WebP 500×500, un formato ligero y uniforme con marca de agua." /></h2>
-    <p className="mt-1 text-sm text-slate-600">Hasta tres imágenes. Antes de subirlas podrás encuadrarlas dentro del marco final; Nubel las guarda en WebP 500×500 con marca de agua. La primera será la portada.</p>
-    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <h2 className="text-base font-semibold text-slate-950"><ManufacturerFieldHelp label="Imágenes del producto" help="Sube hasta tres fotos propias del producto. Ajusta el encuadre antes de guardar; Nubel las convierte a WebP 800×800, un formato nítido y optimizado con marca de agua." /></h2>
+    <p className="mt-1 text-sm text-slate-600">Hasta tres imágenes. Antes de subirlas podrás encuadrarlas dentro del marco final; Nubel las guarda en WebP 800×800 con marca de agua. La primera será la portada.</p>
+    <div className="mt-4 flex flex-wrap gap-3">
       {existing.map((image, index) => <ImageTile key={image.id} index={index} url={image.url} onRemove={() => removeExisting(image.id)} />)}
       {newImages.map((image, index) => <ImageTile key={image.id} index={existing.length + index} url={image.previewUrl} onRemove={() => removeNew(image.id)} />)}
-      {total < 3 ? <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm font-semibold text-slate-600 transition hover:border-[#f5a524] hover:bg-amber-50"><span className="text-2xl">+</span><span className="mt-1">Añadir imagen</span><input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { choose(event.target.files); event.currentTarget.value = ""; }} /></label> : null}
+      {total < 3 ? <label className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 p-3 text-center text-sm font-semibold text-slate-600 transition hover:border-[#f5a524] hover:bg-amber-50 sm:h-36 sm:w-36"><span className="text-2xl">+</span><span className="mt-1">Añadir imagen</span><input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { choose(event.target.files); event.currentTarget.value = ""; }} /></label> : null}
     </div>
     {fileError ? <p className="mt-3 text-sm text-amber-800">{fileError}</p> : null}
     {editing ? <ProductImageCropModal key={`${editing.name}-${editing.lastModified}`} file={editing} onCancel={() => { setEditing(null); setQueue([]); }} onConfirm={finish} /> : null}
@@ -72,7 +72,7 @@ export function ProductImageManager({
 }
 
 function ImageTile({ index, url, onRemove }: { index: number; url: string; onRemove: () => void }) {
-  return <div className="relative aspect-square overflow-hidden rounded-md border bg-slate-50">
+  return <div className="relative h-32 w-32 overflow-hidden rounded-md border bg-slate-50 sm:h-36 sm:w-36">
     <img className="h-full w-full object-cover" src={url} alt={index === 0 ? "Imagen principal" : `Imagen ${index + 1}`} />
     <span className="absolute left-2 top-2 rounded bg-slate-950/80 px-2 py-1 text-[10px] font-bold text-white">{index === 0 ? "PORTADA" : `IMAGEN ${index + 1}`}</span>
     <button className="absolute right-2 top-2 rounded bg-white/95 px-2 py-1 text-xs font-bold text-rose-700 shadow" type="button" onClick={onRemove}>Quitar</button>
@@ -111,8 +111,8 @@ function ProductImageCropModal({ file, onCancel, onConfirm }: { file: File; onCa
     const y = (FRAME_SIZE / 2 + offset.y - displayHeight / 2) * factor;
     context.fillStyle = "#ffffff"; context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
     context.drawImage(image, x, y, displayWidth * factor, displayHeight * factor);
-    context.save(); context.globalAlpha = 0.58; context.fillStyle = "#ffffff"; context.font = "700 21px Arial, sans-serif"; context.textAlign = "right"; context.textBaseline = "bottom";
-    context.fillText("NUBEL STORE", OUTPUT_SIZE - 22, OUTPUT_SIZE - 20); context.restore();
+    context.save(); context.globalAlpha = 0.58; context.fillStyle = "#ffffff"; context.font = "700 32px Arial, sans-serif"; context.textAlign = "right"; context.textBaseline = "bottom";
+    context.fillText("NUBEL STORE", OUTPUT_SIZE - 32, OUTPUT_SIZE - 28); context.restore();
     let blob: Blob | null = null;
     for (const quality of [0.9, 0.82, 0.74, 0.66]) {
       const candidate = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
@@ -121,7 +121,7 @@ function ProductImageCropModal({ file, onCancel, onConfirm }: { file: File; onCa
       if (candidate.size <= MAX_OUTPUT_BYTES) break;
     }
     if (!blob || blob.size > MAX_OUTPUT_BYTES) {
-      setError("No se pudo optimizar la imagen por debajo de 1 MB. Prueba con otra foto o reduce el zoom.");
+      setError("No se pudo optimizar la imagen por debajo de 1.5 MB. Prueba con otra foto o reduce el zoom.");
       return;
     }
     onConfirm(blob);
@@ -132,7 +132,7 @@ function ProductImageCropModal({ file, onCancel, onConfirm }: { file: File; onCa
       <div className="mt-5 flex justify-center rounded-xl bg-slate-950 p-5 shadow-inner sm:p-8"><div className="relative touch-none overflow-hidden rounded-sm border-2 border-white bg-black shadow-[0_0_0_1px_rgba(245,165,36,0.9),0_10px_28px_rgba(0,0,0,0.55)]" style={{ width: FRAME_SIZE, height: FRAME_SIZE }} onPointerDown={(event) => { drag.current = { x: event.clientX, y: event.clientY, startX: offset.x, startY: offset.y }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
         {sourceUrl ? <img className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none" style={{ width: displayWidth, height: displayHeight, transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))` }} src={sourceUrl} alt="Vista previa de recorte" onLoad={(event) => setDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} /> : null}
         <div className="pointer-events-none absolute inset-0 border border-[#f5a524]" />
-        <span className="pointer-events-none absolute left-2 top-2 rounded bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-white">Área final · 500 × 500 px</span>
+        <span className="pointer-events-none absolute left-2 top-2 rounded bg-slate-950/85 px-2 py-1 text-[11px] font-semibold text-white">Área final · 800 × 800 px</span>
         <span className="pointer-events-none absolute left-1/3 top-0 h-full border-l border-white/35" /><span className="pointer-events-none absolute left-2/3 top-0 h-full border-l border-white/35" /><span className="pointer-events-none absolute left-0 top-1/3 w-full border-t border-white/35" /><span className="pointer-events-none absolute left-0 top-2/3 w-full border-t border-white/35" />
       </div></div>
       <p className="mt-3 text-center text-xs text-slate-500">El fondo negro queda fuera de la foto. El rectángulo delimitado representa exactamente la imagen que se publicará.</p>
