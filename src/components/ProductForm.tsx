@@ -7,6 +7,7 @@ import { useState, useTransition } from "react";
 import { createProduct, prepareProductImageUpload, updateProduct } from "@/app/actions/products";
 import { ManufacturerFieldHelp } from "@/components/ManufacturerFieldHelp";
 import { ProductImageManager, type NewProductImage } from "@/components/ProductImageManager";
+import { createSuggestedProductSku, getProductCategory, PRODUCT_CATEGORIES } from "@/lib/product-catalog";
 
 type ProductWithImages = Product & { images: ProductImage[] };
 
@@ -15,9 +16,19 @@ function fieldValue(value?: string | number | null) { return value ?? ""; }
 export function ProductForm({ product }: { product?: ProductWithImages }) {
   const router = useRouter();
   const [imageState, setImageState] = useState<{ existingIds: string[]; newImages: NewProductImage[] }>({ existingIds: product?.images.map((image) => image.id) ?? [], newImages: [] });
+  const [category, setCategory] = useState(product?.category ?? "");
+  const [subcategory, setSubcategory] = useState(product?.subcategory ?? "");
+  const [sku, setSku] = useState(() => product?.sku ?? createSuggestedProductSku(product?.category ?? ""));
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const technicalAttributes = product?.technicalAttributes ? JSON.stringify(product.technicalAttributes, null, 2) : "";
+  const selectedCategory = getProductCategory(category);
+
+  function selectCategory(nextCategory: string) {
+    setCategory(nextCategory);
+    setSubcategory("");
+    if (!product) setSku(createSuggestedProductSku(nextCategory));
+  }
 
   async function uploadImages(images: NewProductImage[]) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -54,9 +65,9 @@ export function ProductForm({ product }: { product?: ProductWithImages }) {
 
   return <form action={submit} className="space-y-6">
     <section className="rounded-md border border-slate-200 bg-white p-5"><h2 className="text-base font-semibold text-slate-950">Datos básicos</h2><div className="mt-4 grid gap-4 md:grid-cols-2">
-      <Input name="name" label="Nombre" help="Nombre comercial claro que verá el cliente. Incluye modelo, capacidad o medida cuando ayude a identificar el producto." defaultValue={fieldValue(product?.name)} required /><Input name="sku" label="SKU" help="Código interno único para identificar el producto en inventario, ventas y reposiciones. Ejemplo: NUB-ARD-UNO-R4." defaultValue={fieldValue(product?.sku)} required />
+      <Input name="name" label="Nombre" help="Nombre comercial claro que verá el cliente. Incluye modelo, capacidad o medida cuando ayude a identificar el producto." defaultValue={fieldValue(product?.name)} required /><Input name="sku" label="SKU generado" help="Nubel genera este código único según la categoría. No necesitas escribirlo ni modificarlo." value={sku} readOnly required />
       <Input name="slug" label="Slug" help="Parte final de la URL pública del producto. Usa minúsculas, números y guiones; por ejemplo: arduino-uno-r4." defaultValue={fieldValue(product?.slug)} pattern="[a-z0-9]+(-[a-z0-9]+)*" title="Usá solo minúsculas, números y guiones." required />
-      <Input name="category" label="Categoría" help="Grupo principal para que los clientes encuentren el producto. Ejemplo: Microcontroladores, Sensores o Herramientas." defaultValue={fieldValue(product?.category)} required /><Input name="subcategory" label="Subcategoría" help="Clasificación más específica dentro de la categoría. Es opcional; por ejemplo: Arduino, ESP32 o Sensores de temperatura." defaultValue={fieldValue(product?.subcategory)} /><Input name="brand" label="Marca" help="Marca o fabricante real del producto. Déjalo vacío solo si no corresponde o se desconoce." defaultValue={fieldValue(product?.brand)} />
+      <Select name="category" label="Categoría" help="Selecciona el grupo principal. Las categorías están controladas para que el catálogo mantenga un orden uniforme." value={category} onChange={(event) => selectCategory(event.target.value)} required><option value="">Seleccionar categoría</option>{PRODUCT_CATEGORIES.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</Select><Select name="subcategory" label="Subcategoría" help="Las opciones cambian según la categoría seleccionada. Puedes dejarla vacía si ninguna describe bien el producto." value={subcategory} onChange={(event) => setSubcategory(event.target.value)} disabled={!selectedCategory}><option value="">Sin subcategoría</option>{selectedCategory?.subcategories.map((item) => <option key={item} value={item}>{item}</option>)}</Select><Input name="brand" label="Marca" help="Marca o fabricante real del producto. Déjalo vacío solo si no corresponde o se desconoce." defaultValue={fieldValue(product?.brand)} />
       <Textarea name="shortDescription" label="Descripción corta" help="Resumen de una o dos frases que explica qué es el producto y su principal uso. Aparece en el catálogo." defaultValue={fieldValue(product?.shortDescription)} /><Textarea name="longDescription" label="Descripción larga" help="Detalle completo para orientar al comprador: compatibilidad, usos, contenido del paquete, limitaciones y recomendaciones." defaultValue={fieldValue(product?.longDescription)} />
       <Check name="isActive" label="Publicado" help="Si está marcado, el producto será visible para los clientes en el catálogo. Desmárcalo para conservarlo sin venderlo públicamente." defaultChecked={product?.isActive ?? true} /><Check name="isFeatured" label="Destacado" help="Da prioridad visual al producto en las secciones destacadas de la tienda. Úsalo solo para productos importantes." defaultChecked={product?.isFeatured ?? false} />
     </div></section>
@@ -78,5 +89,6 @@ export function ProductForm({ product }: { product?: ProductWithImages }) {
 }
 
 function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { label: string; help?: string }) { const { label, help, ...inputProps } = props; return <label className="grid gap-1 text-sm font-medium text-slate-700">{help ? <ManufacturerFieldHelp label={label} help={help} /> : label}<input className="h-11 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-900" {...inputProps} /></label>; }
+function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; help?: string }) { const { label, help, children, ...selectProps } = props; return <label className="grid gap-1 text-sm font-medium text-slate-700">{help ? <ManufacturerFieldHelp label={label} help={help} /> : label}<select className="h-11 rounded-md border border-slate-300 bg-white px-3 text-slate-950 outline-none focus:border-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100" {...selectProps}>{children}</select></label>; }
 function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; help?: string }) { const { label, help, ...textareaProps } = props; return <label className="grid gap-1 text-sm font-medium text-slate-700">{help ? <ManufacturerFieldHelp label={label} help={help} /> : label}<textarea className="min-h-28 rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-slate-900" {...textareaProps} /></label>; }
 function Check({ name, label, help, defaultChecked }: { name: string; label: string; help: string; defaultChecked: boolean }) { return <div className="flex items-center gap-2 text-sm font-medium text-slate-700"><label className="flex items-center gap-2"><input name={name} type="checkbox" defaultChecked={defaultChecked} />{label}</label><ManufacturerFieldHelp label={label} help={help} showLabel={false} /></div>; }

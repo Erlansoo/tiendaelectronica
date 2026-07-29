@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireStoreAdmin } from "@/lib/admin-auth";
+import { createSuggestedProductSku, getProductCategory } from "@/lib/product-catalog";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { parseJsonObject, parseTags, productSchema } from "@/lib/validators";
@@ -31,6 +32,11 @@ function productPayload(formData: FormData) {
     isActive: formData.get("isActive") === "on",
     isFeatured: formData.get("isFeatured") === "on",
   });
+  const category = getProductCategory(parsed.category);
+  if (!category) throw new Error("Selecciona una categoría válida del catálogo.");
+  if (parsed.subcategory && !category.subcategories.includes(parsed.subcategory as never)) {
+    throw new Error("Selecciona una subcategoría válida para la categoría elegida.");
+  }
 
   const { imageUrl: _ignoredImageUrl, ...payload } = parsed;
   void _ignoredImageUrl;
@@ -41,6 +47,23 @@ function productPayload(formData: FormData) {
     tags: parseTags(parsed.tags),
     technicalAttributes: parseJsonObject(parsed.technicalAttributes),
   };
+}
+
+async function resolveGeneratedSku(suggestedSku: string, categoryName: string) {
+  const category = getProductCategory(categoryName);
+  if (!category) throw new Error("Selecciona una categoría válida del catálogo.");
+  const expectedFormat = new RegExp(`^NUB-${category.skuPrefix}-[A-F0-9]{8}$`);
+  const candidate = suggestedSku.trim().toUpperCase();
+  if (expectedFormat.test(candidate)) {
+    const exists = await prisma.product.findUnique({ where: { sku: candidate }, select: { id: true } });
+    if (!exists) return candidate;
+  }
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const generated = createSuggestedProductSku(category.name);
+    const exists = await prisma.product.findUnique({ where: { sku: generated }, select: { id: true } });
+    if (!exists) return generated;
+  }
+  throw new Error("No se pudo generar un SKU único. Inténtalo nuevamente.");
 }
 
 function parseImageList(formData: FormData, field: "newImagePaths" | "existingImageIds") {
@@ -93,9 +116,11 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
   let uploadedImages: Array<{ storagePath: string; url: string }> = [];
   try {
     uploadedImages = await resolveUploadedProductImages(parseImageList(formData, "newImagePaths"));
+    const payload = productPayload(formData);
     const product = await prisma.product.create({
       data: {
-        ...productPayload(formData),
+        ...payload,
+        sku: await resolveGeneratedSku(payload.sku, payload.category),
         imageUrl: uploadedImages[0]?.url ?? null,
         images: { create: uploadedImages.map((image, position) => ({ ...image, position })) },
       },
@@ -114,6 +139,8 @@ export async function updateProduct(id: string, formData: FormData): Promise<Act
   try {
     const existingIds = parseImageList(formData, "existingImageIds");
     newImages = await resolveUploadedProductImages(parseImageList(formData, "newImagePaths"));
+    const currentProduct = await prisma.product.findUnique({ where: { id }, select: { sku: true } });
+    if (!currentProduct) return { ok: false, error: "El producto ya no existe." };
     const allExisting = await prisma.productImage.findMany({ where: { productId: id } });
     const existing = allExisting.filter((image) => existingIds.includes(image.id));
     if (existing.length !== existingIds.length) return { ok: false, error: "Una imagen existente ya no pertenece a este producto." };
@@ -127,6 +154,7 @@ export async function updateProduct(id: string, formData: FormData): Promise<Act
         where: { id },
         data: {
           ...productPayload(formData),
+          sku: currentProduct.sku,
           imageUrl: images[0]?.url ?? null,
           images: { create: images.map((image, position) => ({ storagePath: image.storagePath, url: image.url, position })) },
         },
