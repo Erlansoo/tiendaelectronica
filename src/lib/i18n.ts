@@ -17,7 +17,7 @@ export const translations = {
     en: "Your session was signed out after 15 minutes of inactivity.",
   },
   searchProducts: { es: "Buscar productos", en: "Search products" },
-  searchCatalog: { es: "Buscar MOSFET, HC-12, Arduino, STM32, SKU...", en: "Search MOSFET, HC-12, Arduino, STM32, SKU..." },
+  searchCatalog: { es: "Buscar producto, marca, categoría o SKU...", en: "Search product, brand, category or SKU..." },
   stock: { es: "Stock", en: "Stock" },
   stockLabel: { es: "Stock: ", en: "Stock: " },
   quoteBackToStore: { es: "Volver a Nubel Store", en: "Back to Nubel Store" },

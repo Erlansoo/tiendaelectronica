@@ -151,7 +151,7 @@ export default async function Home() {
             <LocalizedText es="Buscá piezas en stock, módulos técnicos y componentes para reparación, prototipado y manufactura en Bolivia." en="Search stocked parts, technical modules and components for repair, prototyping and manufacturing work in Bolivia." />
           </p>
           <div className="mt-9 w-full max-w-3xl rounded-md bg-white p-2 shadow-2xl shadow-black/30">
-            <SearchInput placeholder="Buscar MOSFET, HC-12, Arduino, STM32, SKU..." />
+            <SearchInput placeholder="Buscar producto, marca, categoría o SKU..." />
           </div>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link

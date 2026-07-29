@@ -4,6 +4,12 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  await seedManufacturingCatalogs();
+}
+
+// Legacy sample products intentionally remain disabled: real inventory is entered from the dashboard.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function legacyProductExamplesDisabled() {
   await prisma.product.upsert({
     where: { sku: "MOS-IRFZ44N-TO220" },
     update: {
@@ -75,6 +81,9 @@ async function main() {
     },
   });
 
+}
+
+async function seedManufacturingCatalogs() {
   const printers = [
     ["Bambu Lab", "A1 mini", "FDM", 180, 180, 180, "https://us.store.bambulab.com/products/a1-mini"],
     ["Bambu Lab", "A1", "FDM", 256, 256, 256, "https://us.store.bambulab.com/products/a1"],
