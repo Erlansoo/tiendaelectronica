@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ManufacturerFieldHelp } from "@/components/ManufacturerFieldHelp";
 
 export type NewProductImage = { id: string; blob: Blob; previewUrl: string };
 export type ExistingProductImage = { id: string; url: string };
@@ -58,7 +59,7 @@ export function ProductImageManager({
   }
 
   return <section className="rounded-md border border-slate-200 bg-white p-5 md:col-span-2">
-    <h2 className="text-base font-semibold text-slate-950">Imágenes del producto</h2>
+    <h2 className="text-base font-semibold text-slate-950"><ManufacturerFieldHelp label="Imágenes del producto" help="Sube hasta tres fotos propias del producto. Ajusta el encuadre antes de guardar; Nubel las convierte a un formato uniforme y agrega la marca de agua automáticamente." /></h2>
     <p className="mt-1 text-sm text-slate-600">Hasta tres imágenes. Antes de subirlas podrás encuadrarlas; Nubel las guarda en WebP 1200×1200 con marca de agua. La primera será la portada.</p>
     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
       {existing.map((image, index) => <ImageTile key={image.id} index={index} url={image.url} onRemove={() => removeExisting(image.id)} />)}
