@@ -35,6 +35,7 @@ Build Nubel Store as a professional electronics storefront with customer Google 
 - Electronics store admins are identified by allowlisted Google email through `STORE_ADMIN_EMAILS`.
 - `erlan514@gmail.com` is the first electronics store admin.
 - Admin access is for the electronics store dashboard only, not for future 3D printing manufacturer accounts.
+- `STORE_ADMIN_EMAILS` are store owners; `STORE_STAFF_EMAILS` are operational staff. Staff can manage the electronics catalog, inventory and sales, but cannot access manufacturing administration, private evidence, payment confirmation, disputes or payouts.
 - Real secrets stay in `.env` and must never be committed.
 - Authenticated sessions expire after 15 minutes without browser activity; the server also validates the last recorded activity before serving protected customer or dashboard data.
 - Optional browser storage (language preference) requires cookie consent; authentication cookies remain necessary.

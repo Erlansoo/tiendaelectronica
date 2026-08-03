@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { isStoreAdminEmail } from "@/lib/store-admin";
+import { canAccessStoreDashboard, isStoreAdminEmail } from "@/lib/store-admin";
 import { isSessionWithinIdleLimit } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
@@ -34,5 +34,6 @@ export async function getCurrentCustomer() {
     name: profile?.name ?? user.user_metadata?.full_name ?? user.email,
     imageUrl: profile?.imageUrl ?? user.user_metadata?.avatar_url ?? null,
     isStoreAdmin: isStoreAdminEmail(user.email),
+    canAccessStoreDashboard: canAccessStoreDashboard(user.email),
   };
 }

@@ -1,8 +1,8 @@
 import { ProductForm } from "@/components/ProductForm";
-import { requireStoreAdmin } from "@/lib/admin-auth";
+import { requireStoreOperator } from "@/lib/admin-auth";
 
 export default async function NewProductPage() {
-  await requireStoreAdmin();
+  await requireStoreOperator();
 
   return (
     <div>

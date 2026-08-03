@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isStoreAdminEmail } from "@/lib/store-admin";
+import { canAccessStoreDashboard } from "@/lib/store-admin";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -26,13 +26,13 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const isGoogleStoreAdmin = isStoreAdminEmail(user?.email);
+  const hasDashboardAccess = canAccessStoreDashboard(user?.email);
 
   if (isLogin) {
     return response;
   }
 
-  if (isGoogleStoreAdmin) return response;
+  if (hasDashboardAccess) return response;
 
   return NextResponse.redirect(new URL("/dashboard/login?error=forbidden", request.url));
 }

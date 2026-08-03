@@ -4,7 +4,7 @@ import { PaymentStatus, SaleStatus, StockMovementReason, StockMovementType } fro
 import { Prisma } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireStoreAdmin } from "@/lib/admin-auth";
+import { requireStoreOperator } from "@/lib/admin-auth";
 import { runSerializableTransaction } from "@/lib/transactions";
 import { saleSchema } from "@/lib/validators";
 
@@ -14,7 +14,7 @@ function makeSaleNumber() {
 }
 
 export async function createSale(formData: FormData) {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   const rawItems = String(formData.get("items") ?? "[]");
   const parsed = saleSchema.parse({
     items: JSON.parse(rawItems),

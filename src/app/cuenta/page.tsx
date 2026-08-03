@@ -74,7 +74,7 @@ export default async function AccountPage() {
               capabilityStatus={capability?.status ?? null}
               application={application}
             />
-            {customer.isStoreAdmin ? (
+            {customer.canAccessStoreDashboard ? (
               <div className="rounded-md border border-black bg-black p-4 text-white">
                 <h2 className="font-semibold">
                   <LocalizedText es="Administración de tienda" en="Store admin" />

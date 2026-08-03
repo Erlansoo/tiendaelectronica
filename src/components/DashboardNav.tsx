@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { logout } from "@/app/actions/auth";
 
-const items = [
+const storeItems = [
   ["Resumen", "/dashboard"],
   ["Productos", "/dashboard/productos"],
   ["Nuevo producto", "/dashboard/productos/nuevo"],
@@ -10,13 +10,16 @@ const items = [
   ["Nueva venta", "/dashboard/ventas/nueva"],
   ["Inventario", "/dashboard/inventario"],
   ["Movimientos de stock", "/dashboard/stock-movements"],
+  ["Configuración", "/dashboard/configuracion"],
+];
+const manufacturingItems = [
   ["Solicitudes manufactura", "/dashboard/manufactura/solicitudes"],
   ["Manufactureros 3D", "/dashboard/manufactura/manufactureros"],
   ["Órdenes manufactura", "/dashboard/manufactura/ordenes"],
-  ["Configuración", "/dashboard/configuracion"],
 ];
 
-export function DashboardNav() {
+export function DashboardNav({ isStoreOwner }: { isStoreOwner: boolean }) {
+  const items = isStoreOwner ? [...storeItems, ...manufacturingItems] : storeItems;
   return (
     <aside className="border-b border-slate-200 bg-white lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
       <div className="px-5 py-5">
@@ -28,7 +31,7 @@ export function DashboardNav() {
             Nubel <span className="text-[#f5a524]">Store</span>
           </span>
         </Link>
-        <p className="mt-1 text-sm text-slate-500">Dashboard de Nubel Systems</p>
+        <p className="mt-1 text-sm text-slate-500">{isStoreOwner ? "Dashboard de Nubel Systems" : "Operaciones de tienda"}</p>
       </div>
       <nav className="flex gap-1 overflow-x-auto px-3 pb-4 lg:grid lg:overflow-visible">
         {items.map(([label, href]) => (

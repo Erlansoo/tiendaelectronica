@@ -1,10 +1,10 @@
-import { requireStoreAdmin } from "@/lib/admin-auth";
+import { requireStoreOperator } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function StockMovementsPage() {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   const movements = await prisma.stockMovement.findMany({
     include: { product: true },
     orderBy: { createdAt: "desc" },

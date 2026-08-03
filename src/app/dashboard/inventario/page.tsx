@@ -1,13 +1,13 @@
 import { StockMovementReason } from "@prisma/client";
 import { adjustStock } from "@/app/actions/stock";
 import { StockBadge } from "@/components/StockBadge";
-import { requireStoreAdmin } from "@/lib/admin-auth";
+import { requireStoreOperator } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function InventoryPage() {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   const products = await prisma.product.findMany({
     include: { stockMovements: { take: 1, orderBy: { createdAt: "desc" } } },
     orderBy: { name: "asc" },

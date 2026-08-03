@@ -3,7 +3,7 @@
 import { Prisma } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
-import { requireStoreAdmin } from "@/lib/admin-auth";
+import { requireStoreOperator } from "@/lib/admin-auth";
 import { createSuggestedProductSku, getProductCategory } from "@/lib/product-catalog";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -102,7 +102,7 @@ function revalidateProducts() {
 }
 
 export async function prepareProductImageUpload(rawFile: unknown): Promise<ActionResult<{ path: string; token: string }>> {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   const file = productImageUploadSchema.safeParse(rawFile);
   if (!file.success) return { ok: false, error: "La imagen final debe ser WebP y pesar como máximo 2 MB." };
   const path = `products/${crypto.randomUUID()}.webp`;
@@ -112,7 +112,7 @@ export async function prepareProductImageUpload(rawFile: unknown): Promise<Actio
 }
 
 export async function createProduct(formData: FormData): Promise<ActionResult<{ id: string }>> {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   let uploadedImages: Array<{ storagePath: string; url: string }> = [];
   try {
     uploadedImages = await resolveUploadedProductImages(parseImageList(formData, "newImagePaths"));
@@ -134,7 +134,7 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
 }
 
 export async function updateProduct(id: string, formData: FormData): Promise<ActionResult<{ id: string }>> {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   let newImages: Array<{ storagePath: string; url: string }> = [];
   try {
     const existingIds = parseImageList(formData, "existingImageIds");
@@ -174,7 +174,7 @@ export async function updateProduct(id: string, formData: FormData): Promise<Act
 }
 
 export async function toggleProductActive(id: string, isActive: boolean) {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   await prisma.product.update({
     where: { id },
     data: { isActive: !isActive },

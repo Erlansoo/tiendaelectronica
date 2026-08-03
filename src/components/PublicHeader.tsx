@@ -60,7 +60,7 @@ export async function PublicHeader() {
                   <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/cuenta">
                     <LocalizedText es="Mi cuenta" en="User dashboard" />
                   </Link>
-                  {customer.isStoreAdmin ? (
+                  {customer.canAccessStoreDashboard ? (
                     <Link className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100" href="/dashboard">
                       <LocalizedText es="Administrar tienda" en="Store admin" />
                     </Link>

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/ProductForm";
-import { requireStoreAdmin } from "@/lib/admin-auth";
+import { requireStoreOperator } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireStoreAdmin();
+  await requireStoreOperator();
   const { id } = await params;
   const product = await prisma.product.findUnique({ where: { id }, include: { images: { orderBy: { position: "asc" } } } });
   if (!product) notFound();

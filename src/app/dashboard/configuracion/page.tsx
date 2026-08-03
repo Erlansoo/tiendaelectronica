@@ -1,7 +1,7 @@
-import { requireStoreAdmin } from "@/lib/admin-auth";
+import { requireStoreOperator } from "@/lib/admin-auth";
 
 export default async function SettingsPage() {
-  await requireStoreAdmin();
+  await requireStoreOperator();
 
   return (
     <div>
