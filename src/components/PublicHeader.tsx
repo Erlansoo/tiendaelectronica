@@ -15,17 +15,17 @@ export async function PublicHeader() {
     <header className="public-header border-b border-white/10 bg-[#111111]/95 text-white backdrop-blur">
       {customer ? <SessionInactivityGuard logoutPath="/login?reason=inactive" /> : null}
       <PublicHeaderScrollState />
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="brand-lockup group flex items-center gap-2 rounded-full px-1.5 py-1 text-white">
           <span className="brand-lockup-mark flex h-10 w-10 items-center justify-center rounded-md bg-white p-1.5">
             <Image src="/nubel-store-mark.png" alt="" width={30} height={30} priority />
           </span>
-          <span className="brand-lockup-text font-mono text-[15px] font-black uppercase leading-none tracking-[0.08em]">
+          <span className="brand-lockup-text hidden whitespace-nowrap font-mono text-[15px] font-black uppercase leading-none tracking-[0.08em] sm:inline">
             Nubel <span className="text-[#f5a524]">Store</span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-2 text-sm font-semibold text-white md:flex">
+        <nav className="hidden items-center gap-1 whitespace-nowrap text-sm font-semibold text-white lg:flex">
           <Link className="rounded-full border border-transparent px-4 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f5a524] hover:bg-[#f5a524] hover:text-black hover:shadow-lg hover:shadow-[#f5a524]/20" href="/">
             Nubel Systems
           </Link>
@@ -37,7 +37,7 @@ export async function PublicHeader() {
           </Link>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
           <LanguageToggle />
           {customer ? (
             <>

@@ -44,3 +44,6 @@ next-env.d.ts
 # local attachments and drafts
 /.codex-remote-attachments/
 /Fabricio/
+
+# local editor/launch config
+/.claude/

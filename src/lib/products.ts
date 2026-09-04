@@ -49,7 +49,7 @@ export const getFeaturedProducts = unstable_cache(
   async () =>
     prisma.product.findMany({
       where: { isActive: true, isFeatured: true },
-      take: 4,
+      take: 8,
       orderBy: { createdAt: "desc" },
     }),
   ["featured-products"],
