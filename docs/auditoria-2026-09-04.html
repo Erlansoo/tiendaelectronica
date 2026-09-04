@@ -1,0 +1,497 @@
+<title>Auditoría Nubel Store</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --surface: #ffffff;
+    --surface-2: #efede7;
+    --ink: #17181a;
+    --ink-2: #4a4b4f;
+    --ink-3: #7b7c80;
+    --line: #dcdad3;
+    --line-strong: #b9b6ad;
+    --brand: #f5a524;
+    --brand-ink: #7a4d00;
+    --brand-soft: #fff3dc;
+    --crit: #b42318;
+    --crit-soft: #fde7e4;
+    --warn: #9a5b00;
+    --warn-soft: #fff0d6;
+    --low: #1f5fbf;
+    --low-soft: #e3ecfb;
+    --ok: #1f7a3f;
+    --ok-soft: #e1f3e6;
+    --focus: #1f5fbf;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141517;
+      --surface: #1d1e21;
+      --surface-2: #26272b;
+      --ink: #ecebe6;
+      --ink-2: #b9b8b2;
+      --ink-3: #85857f;
+      --line: #33343a;
+      --line-strong: #4b4c53;
+      --brand: #f5a524;
+      --brand-ink: #ffd27a;
+      --brand-soft: #3a2a08;
+      --crit: #ff7b6b;
+      --crit-soft: #3d1a16;
+      --warn: #ffbd4d;
+      --warn-soft: #3b2a0c;
+      --low: #7aa7ff;
+      --low-soft: #17253f;
+      --ok: #62d18a;
+      --ok-soft: #142d1c;
+      --focus: #7aa7ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141517;
+    --surface: #1d1e21;
+    --surface-2: #26272b;
+    --ink: #ecebe6;
+    --ink-2: #b9b8b2;
+    --ink-3: #85857f;
+    --line: #33343a;
+    --line-strong: #4b4c53;
+    --brand: #f5a524;
+    --brand-ink: #ffd27a;
+    --brand-soft: #3a2a08;
+    --crit: #ff7b6b;
+    --crit-soft: #3d1a16;
+    --warn: #ffbd4d;
+    --warn-soft: #3b2a0c;
+    --low: #7aa7ff;
+    --low-soft: #17253f;
+    --ok: #62d18a;
+    --ok-soft: #142d1c;
+    --focus: #7aa7ff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--low); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  code, .mono { font-family: var(--mono); font-size: 0.86em; }
+  code { background: var(--surface-2); padding: 0.1em 0.4em; border-radius: 3px; color: var(--ink); }
+  pre { background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; overflow-x: auto; font-family: var(--mono); font-size: 0.84rem; line-height: 1.55; margin: 12px 0 0; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+  h1 { font-size: clamp(1.9rem, 3.4vw, 2.6rem); font-weight: 700; letter-spacing: -0.015em; }
+  h2 { font-size: 1.45rem; font-weight: 600; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; font-weight: 600; }
+  p { margin: 0; }
+  .eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-ink); font-weight: 600; }
+
+  .page { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; max-width: 1180px; margin: 0 auto; padding: 40px 28px 96px; }
+  @media (max-width: 860px) { .page { grid-template-columns: 1fr; gap: 24px; padding: 24px 18px 72px; } .toc { position: static !important; } }
+
+  .toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; }
+  .toc .eyebrow { margin-bottom: 8px; }
+  .toc a { color: var(--ink-2); text-decoration: none; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+  .toc a:hover { color: var(--ink); border-left-color: var(--brand); }
+
+  main { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
+  section { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 24px; }
+  .prose { max-width: 68ch; color: var(--ink-2); }
+  .prose strong { color: var(--ink); font-weight: 600; }
+  .lead { font-size: 1.1rem; color: var(--ink-2); max-width: 66ch; }
+
+  header.hero { display: flex; flex-direction: column; gap: 16px; padding-bottom: 28px; border-bottom: 2px solid var(--ink); }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-3); }
+  .meta b { color: var(--ink-2); font-weight: 500; }
+
+  .verdict { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); gap: 20px; }
+  @media (max-width: 700px) { .verdict { grid-template-columns: 1fr; } }
+  .verdict-card { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--brand); padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+  .verdict-card h2 { font-size: 1.25rem; }
+  .tally { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; font-variant-numeric: tabular-nums; }
+  .tally-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+  .tally-row:last-child { border-bottom: 0; }
+  .tally-row .n { font-family: var(--mono); font-weight: 600; font-size: 1.1rem; }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .chip.crit { color: var(--crit); background: var(--crit-soft); }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); }
+  .chip.low { color: var(--low); background: var(--low-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+
+  .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .check { background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .check .t { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 0.95rem; }
+  .check p { color: var(--ink-2); font-size: 0.9rem; }
+
+  .findings { display: flex; flex-direction: column; gap: 14px; }
+  .finding { background: var(--surface); border: 1px solid var(--line); border-left-width: 5px; display: grid; grid-template-columns: 1fr; }
+  .finding.crit { border-left-color: var(--crit); }
+  .finding.warn { border-left-color: var(--warn); }
+  .finding.low { border-left-color: var(--low); }
+  .finding-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 18px 0; }
+  .finding-head h3 { flex: 1 1 320px; }
+  .finding-head .id { font-family: var(--mono); color: var(--ink-3); font-size: 0.78rem; }
+  .finding-body { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 18px; padding: 10px 18px 16px; font-size: 0.93rem; }
+  @media (max-width: 600px) { .finding-body { grid-template-columns: 1fr; gap: 4px; } .finding-body dt { margin-top: 8px; } }
+  .finding-body dt { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); padding-top: 4px; }
+  .finding-body dd { margin: 0; color: var(--ink-2); max-width: 74ch; }
+  .finding-body dd strong { color: var(--ink); }
+  .files { display: flex; flex-wrap: wrap; gap: 6px; }
+  .files code { font-size: 0.78rem; }
+
+  ol.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; counter-reset: step; }
+  ol.steps li { counter-increment: step; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  ol.steps li:first-child { border-top: 1px solid var(--line-strong); }
+  ol.steps li::before { content: counter(step, decimal-leading-zero); font-family: var(--mono); font-weight: 600; color: var(--brand-ink); font-size: 0.95rem; padding-top: 3px; }
+  ol.steps .st { display: flex; flex-direction: column; gap: 6px; }
+  ol.steps .st h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  ol.steps .st h3 label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+  ol.steps .st h3 input { width: 16px; height: 16px; accent-color: var(--brand); margin: 0; }
+  ol.steps .st p, ol.steps .st ul { color: var(--ink-2); font-size: 0.93rem; max-width: 74ch; }
+  ol.steps .st ul { margin: 4px 0 0; padding-left: 18px; }
+  ol.steps li.done h3 label { text-decoration: line-through; color: var(--ink-3); }
+  .where { font-family: var(--mono); font-size: 0.74rem; color: var(--ink-3); }
+
+  .phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .phase { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .phase .eyebrow { color: var(--ink-3); }
+  .phase ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 0.92rem; display: flex; flex-direction: column; gap: 4px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .note { border: 1px solid var(--line); background: var(--brand-soft); padding: 12px 16px; font-size: 0.92rem; color: var(--ink-2); max-width: 74ch; }
+  .note strong { color: var(--brand-ink); }
+  footer { color: var(--ink-3); font-size: 0.82rem; font-family: var(--mono); border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (prefers-reduced-motion: no-preference) { .toc a { transition: color .15s, border-color .15s; } }
+</style>
+
+<div class="page">
+  <nav class="toc" aria-label="Contenido">
+    <span class="eyebrow">Contenido</span>
+    <a href="#veredicto">Veredicto</a>
+    <a href="#fortalezas">Lo que ya está bien</a>
+    <a href="#hallazgos">Hallazgos priorizados</a>
+    <a href="#dominio">Checklist del dominio</a>
+    <a href="#plan">Plan de maduración</a>
+    <a href="#evidencia">Evidencia técnica</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="eyebrow">Nubel Store · auditoría técnica previa al dominio</span>
+      <h1>Auditoría Nubel Store</h1>
+      <p class="lead">Revisión de código, seguridad, SEO, rendimiento y despliegue de la tienda de componentes electrónicos, con la lista exacta de pasos para comprar el dominio y migrar sin romper el login de Google.</p>
+      <div class="meta">
+        <span>Repo <b>Erlansoo/tiendaelectronica</b> · rama master · commit 95a5bf4</span>
+        <span>Producción <b>tiendaelectronica.vercel.app</b></span>
+        <span>Stack <b>Next.js 16.2.9 · React 19 · Prisma 6 · Supabase · Vercel</b></span>
+        <span>Fecha <b>2026-09-04</b></span>
+      </div>
+    </header>
+
+    <section id="veredicto">
+      <div class="verdict">
+        <div class="verdict-card">
+          <span class="chip ok">Apto para comprar el dominio</span>
+          <h2>La base es sólida. Lo que falta es visibilidad, peso y detalles legales, no seguridad.</h2>
+          <p class="prose">La autenticación, las cabeceras de seguridad, la validación de datos y las transacciones de stock están bien resueltas. Lint, tipos, build y las 14 pruebas pasan. Puedes comprar el dominio hoy. Antes de anunciarlo públicamente conviene cerrar los cinco puntos de prioridad alta: son trabajo de uno o dos días y ninguno requiere rediseñar nada.</p>
+        </div>
+        <div class="tally" aria-label="Resumen de hallazgos">
+          <span class="eyebrow">Hallazgos</span>
+          <div class="tally-row"><span class="chip crit">Alta</span><span class="n">5</span></div>
+          <div class="tally-row"><span class="chip warn">Media</span><span class="n">8</span></div>
+          <div class="tally-row"><span class="chip low">Baja</span><span class="n">6</span></div>
+          <div class="tally-row"><span class="chip ok">Fortalezas</span><span class="n">9</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="fortalezas">
+      <span class="eyebrow">Lo que ya está bien</span>
+      <h2>Fortalezas verificadas</h2>
+      <div class="checks">
+        <div class="check"><div class="t">Cabeceras de seguridad <span class="chip ok">OK</span></div><p>CSP, HSTS con preload, X-Frame-Options DENY, nosniff, Referrer-Policy y Permissions-Policy activos en producción. Sin cabecera X-Powered-By.</p></div>
+        <div class="check"><div class="t">Control de acceso <span class="chip ok">OK</span></div><p>Google como único proveedor, allowlist de admins y staff, proxy en /dashboard y cada página y server action vuelve a verificar la sesión en el servidor.</p></div>
+        <div class="check"><div class="t">Secretos <span class="chip ok">OK</span></div><p>El historial de git no contiene claves. <code>.env</code> está ignorado y el service role solo se usa en módulos server-only.</p></div>
+        <div class="check"><div class="t">Integridad de ventas y stock <span class="chip ok">OK</span></div><p>Transacciones serializables, validación de stock, totales calculados en servidor y trazabilidad completa en StockMovement.</p></div>
+        <div class="check"><div class="t">Validación de entrada <span class="chip ok">OK</span></div><p>Zod en todas las acciones. URLs externas limitadas a hosts permitidos. Imágenes de producto solo WebP hasta 2 MB.</p></div>
+        <div class="check"><div class="t">Archivos privados <span class="chip ok">OK</span></div><p>Buckets privados de Supabase con URLs firmadas de 10 minutos y comprobación de propietario u oferta seleccionada.</p></div>
+        <div class="check"><div class="t">Calidad de código <span class="chip ok">OK</span></div><p>ESLint sin avisos, TypeScript estricto sin errores, build de producción limpio y 14 pruebas unitarias en verde.</p></div>
+        <div class="check"><div class="t">Rutas de API <span class="chip ok">OK</span></div><p>Comprobación de mismo origen en sesión y logout, cron protegido por Bearer y respuestas con no-store.</p></div>
+        <div class="check"><div class="t">Consentimiento de cookies <span class="chip ok">OK</span></div><p>Diálogo claro, rechazo posible, sin cookies de terceros ni analítica, política publicada.</p></div>
+      </div>
+    </section>
+
+    <section id="hallazgos">
+      <span class="eyebrow">Hallazgos priorizados</span>
+      <h2>Qué corregir y en qué orden</h2>
+      <p class="prose">Cada hallazgo indica dónde está, qué riesgo real supone y la corrección concreta. Los de prioridad alta conviene cerrarlos antes de publicitar el dominio.</p>
+
+      <div class="findings">
+
+        <article class="finding crit">
+          <div class="finding-head"><span class="chip crit">Alta</span><h3>Dependencias con vulnerabilidades altas en Next.js</h3><span class="id">A1</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd><code>npm audit</code> reporta 7 vulnerabilidades altas y 1 moderada. Todas vienen de <code>postcss</code> y <code>sharp</code> empaquetados dentro de <code>next@16.2.9</code>. <code>sharp</code> procesa las imágenes de <code>next/image</code> en producción.</dd>
+            <dt>Corrección</dt><dd>Subir a <code>next@16.3.4</code> y <code>eslint-config-next@16.3.4</code>, volver a ejecutar audit, build y pruebas. Aprovechar para actualizar <code>@supabase/ssr</code>, <code>@supabase/supabase-js</code> y <code>zod</code> a sus últimas versiones menores. No saltar a Prisma 7 todavía: es un cambio mayor y no aporta nada urgente.</dd>
+            <dt>Archivos</dt><dd class="files"><code>package.json</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding crit">
+          <div class="finding-head"><span class="chip crit">Alta</span><h3>Google no puede indexar los productos: todas las páginas comparten título y descripción</h3><span class="id">A2</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>La ficha del módulo XL4015 en producción devuelve el título "Nubel Store" y la descripción genérica del sitio. No hay canonical, Open Graph ni <code>metadataBase</code>. Los campos <code>metaTitle</code> y <code>metaDescription</code> existen en la base de datos y el formulario, pero ninguna página los usa.</dd>
+            <dt>Corrección</dt><dd>Añadir <code>generateMetadata</code> en la ficha de producto y en el catálogo con título, descripción, canonical y <code>openGraph.images</code> usando la primera imagen del producto. Definir <code>metadataBase</code> desde <code>NEXT_PUBLIC_SITE_URL</code> en el layout raíz y un <code>title.template</code> del tipo "%s · Nubel Store". Añadir JSON-LD de tipo Product con precio en BOB y disponibilidad para aparecer con rich results.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/layout.tsx</code><code>src/app/productos/[slug]/page.tsx</code><code>src/app/productos/page.tsx</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding crit">
+          <div class="finding-head"><span class="chip crit">Alta</span><h3>No existen robots.txt ni sitemap.xml</h3><span class="id">A3</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Ambas rutas responden 404 en producción. Sin sitemap, Search Console no tendrá lista de productos y el rastreo dependerá de enlaces internos.</dd>
+            <dt>Corrección</dt><dd>Crear <code>src/app/robots.ts</code> que permita todo salvo <code>/dashboard</code>, <code>/cuenta</code>, <code>/api</code> y <code>/auth</code>, y <code>src/app/sitemap.ts</code> que liste la home, el catálogo, la cotización 3D, la política de cookies y todos los productos activos con su <code>updatedAt</code>. Enviar el sitemap en Search Console al activar el dominio.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/robots.ts</code><code>src/app/sitemap.ts</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding crit">
+          <div class="finding-head"><span class="chip crit">Alta</span><h3>La portada descarga 9,4 MB de imágenes PNG sin optimizar</h3><span class="id">A4</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Cuatro fondos definidos en <code>globals.css</code> pesan entre 2,1 y 2,6 MB cada uno y se cargan todos en la primera visita, también en móvil con datos. Al ser fondos CSS, <code>next/image</code> no interviene. Esto hunde LCP y la puntuación de Lighthouse, que Google usa como señal de ranking.</dd>
+            <dt>Corrección</dt><dd>Convertir las cuatro imágenes a WebP o AVIF con un ancho máximo de 1600 px y calidad 75, objetivo menor de 200 KB cada una. Reemplazar los fondos CSS por <code>next/image</code> con <code>fill</code>, <code>sizes</code> y <code>priority</code> solo en la primera. Borrar de <code>public/</code> los archivos que no se usan: <code>vendoedoramadre.png</code> (2,5 MB), <code>ejemplodelogoejemplo.png</code> (1,1 MB), <code>nubel-store-logo.png</code>, <code>nubel_store_logo_black_yellow.svg</code> y los SVG de ejemplo de Next y Vercel.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/globals.css</code><code>src/app/page.tsx</code><code>public/</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding crit">
+          <div class="finding-head"><span class="chip crit">Alta</span><h3>Verificar que el cron diario de manufactura realmente se ejecuta</h3><span class="id">A5</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>La ruta responde 401 correctamente sin cabecera. Vercel solo envía el Bearer si <code>CRON_SECRET</code> está definido en el proyecto. El contexto del proyecto indica que aún estaba pendiente de configurar, y si falta, el cron devuelve 401 cada noche sin avisar: las reservas de material vencidas nunca se liberan y las cotizaciones abandonadas nunca se borran del storage.</dd>
+            <dt>Corrección</dt><dd>En Vercel, confirmar que existen <code>CRON_SECRET</code> (32 caracteres aleatorios o más) y <code>MANUFACTURER_INVITE_PEPPER</code>. Revisar en Vercel → Cron Jobs → Logs que la última ejecución devolvió 200. Añadir un aviso en Vercel Observability o un simple log de error cuando falle.</dd>
+            <dt>Dónde</dt><dd>Vercel → Settings → Environment Variables y Cron Jobs.</dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>Faltan política de privacidad, términos y página de contacto</h3><span class="id">M1</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Solo existe la política de cookies. La pantalla de consentimiento de Google OAuth exige una URL de política de privacidad y de página principal en el dominio propio para salir del modo de prueba, y una tienda que guarda nombre, correo, teléfono y ciudad de clientes debe explicar qué hace con esos datos.</dd>
+            <dt>Corrección</dt><dd>Crear <code>/politica-de-privacidad</code>, <code>/terminos</code> y <code>/contacto</code> con datos reales de Nubel Systems: razón social, ciudad, correo, WhatsApp y horario. Enlazarlas desde un pie de página común, que hoy tampoco existe.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/politica-de-privacidad/page.tsx</code><code>src/app/terminos/page.tsx</code><code>src/app/contacto/page.tsx</code><code>src/components/PublicFooter.tsx</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>Página 404 genérica en inglés y sin manejo de errores</h3><span class="id">M2</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Una URL inexistente muestra "404: This page could not be found." sin cabecera ni enlace de vuelta. No hay <code>error.tsx</code> ni <code>global-error.tsx</code>: si la base de datos falla, el cliente ve la pantalla por defecto de Next.</dd>
+            <dt>Corrección</dt><dd>Añadir <code>not-found.tsx</code> con la cabecera pública, buscador y enlace al catálogo; <code>error.tsx</code> con botón de reintentar; y un <code>global-error.tsx</code> mínimo.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/not-found.tsx</code><code>src/app/error.tsx</code><code>src/app/global-error.tsx</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>El logo se recorta en la cabecera en móvil</h3><span class="id">M3</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>A 375 px de ancho el bloque de marca queda cortado ("NUB / STO") porque los tres botones de la derecha ocupan el espacio. Es lo primero que ve un cliente desde el teléfono.</dd>
+            <dt>Corrección</dt><dd>Por debajo de 640 px mostrar solo el isotipo, agrupar "Ingresar" y "Crear cuenta" en un único botón o menú, y dar al texto de marca <code>white-space: nowrap</code> con <code>min-width: 0</code> en el contenedor.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/components/PublicHeader.tsx</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>Imágenes de producto sin optimización, sin carga diferida y sin dimensiones</h3><span class="id">M4</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Tarjetas y galería usan <code>&lt;img&gt;</code> plano apuntando a Supabase. Cada imagen llega a tamaño completo, sin <code>loading="lazy"</code> ni <code>width</code>/<code>height</code>, lo que provoca saltos de layout (CLS) al cargar el catálogo.</dd>
+            <dt>Corrección</dt><dd>Usar <code>next/image</code> con <code>images.remotePatterns</code> para el host de Supabase en <code>next.config.ts</code>, definir <code>sizes</code> por breakpoint y dejar <code>priority</code> solo para la primera imagen de la ficha. Mantener <code>&lt;img&gt;</code> únicamente en el visor ampliado.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/components/ProductCard.tsx</code><code>src/components/ProductGallery.tsx</code><code>next.config.ts</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>Sin límite de peticiones en rutas públicas que escriben o suben archivos</h3><span class="id">M5</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>La cotización 3D acepta modelos de hasta 100 MB por usuario autenticado y la ruta de actividad de sesión escribe en la base de datos. No hay rate limiting de aplicación ni de plataforma. Un bot con una cuenta de Google podría llenar el storage o agotar el pool de conexiones.</dd>
+            <dt>Corrección</dt><dd>Activar Vercel Firewall con una regla de rate limit sobre <code>/api/*</code> y <code>/cotizar-impresion-3d</code>. Añadir un tope por cuenta y día de cotizaciones y de megabytes subidos en <code>startManufacturingQuote</code>.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/actions/manufacturing.ts</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>Las páginas públicas se renderizan en cada visita y nunca se cachean en el CDN</h3><span class="id">M6</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Home, catálogo y ficha usan <code>force-dynamic</code> y responden con <code>Cache-Control: private, no-store</code>. Cada visita pasa por la función serverless y consulta la base de datos. Además, la regla de cabeceras para <code>/products/:path*</code> en <code>next.config.ts</code> nunca coincide porque las rutas reales son <code>/productos</code>.</dd>
+            <dt>Corrección</dt><dd>Quitar <code>force-dynamic</code> de la ficha y la home y usar <code>revalidate = 300</code>; las etiquetas <code>products</code> ya invalidan al guardar. El catálogo con búsqueda puede seguir dinámico. Corregir la regla a <code>/productos/:path*</code> o eliminarla.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/page.tsx</code><code>src/app/productos/[slug]/page.tsx</code><code>next.config.ts</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>Sin pruebas de ventas, stock ni flujos de extremo a extremo</h3><span class="id">M7</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Las 14 pruebas cubren solo cálculos de manufactura. La lógica que mueve dinero y stock, es decir <code>createSale</code> y <code>adjustStock</code>, no tiene pruebas. Playwright está instalado pero no hay ningún test E2E.</dd>
+            <dt>Corrección</dt><dd>Añadir pruebas de integración contra una base de datos de prueba para venta completada, venta con stock insuficiente y ajuste manual. Un E2E de humo con Playwright: home carga, catálogo busca, ficha abre WhatsApp, dashboard redirige sin sesión.</dd>
+            <dt>Archivos</dt><dd class="files"><code>tests/</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding warn">
+          <div class="finding-head"><span class="chip warn">Media</span><h3>Índices ausentes en la tabla de productos</h3><span class="id">M8</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Los filtros de catálogo usan <code>isActive</code>, <code>category</code>, <code>isFeatured</code> y <code>createdAt</code>, y la búsqueda hace <code>contains</code> insensible sobre siete columnas. Ningún índice cubre eso. Con cientos de productos no se nota; con miles, cada búsqueda escanea toda la tabla.</dd>
+            <dt>Corrección</dt><dd>Añadir <code>@@index([isActive, category])</code> e <code>@@index([isActive, isFeatured, createdAt])</code>. Para búsqueda de texto, activar <code>pg_trgm</code> en Supabase y un índice GIN sobre nombre y SKU cuando el catálogo supere el millar.</dd>
+            <dt>Archivos</dt><dd class="files"><code>prisma/schema.prisma</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding low">
+          <div class="finding-head"><span class="chip low">Baja</span><h3>Variables obsoletas en el .env local y faltantes en el ejemplo</h3><span class="id">B1</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd><code>ADMIN_PASSWORD</code>, <code>ADMIN_EMAIL</code> y <code>AUTH_SECRET</code> siguen en <code>.env</code> aunque el código ya no las lee. Faltan localmente <code>MANUFACTURER_INVITE_PEPPER</code>, <code>CRON_SECRET</code> y <code>ALLOWED_EXTERNAL_URL_HOSTS</code>.</dd>
+            <dt>Corrección</dt><dd>Eliminar las tres obsoletas y, si la contraseña antigua se reutilizó en otro sitio, rotarla. Completar las tres que faltan para que el entorno local se comporte igual que producción.</dd>
+          </dl>
+        </article>
+
+        <article class="finding low">
+          <div class="finding-head"><span class="chip low">Baja</span><h3>Archivos ajenos al código en la raíz del repositorio</h3><span class="id">B2</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd><code>Fabricio/3D_Platform_Proposal.pdf</code> y <code>.codex-remote-attachments/</code> aparecen sin seguimiento. Un <code>git add .</code> descuidado los subiría a GitHub.</dd>
+            <dt>Corrección</dt><dd>Mover el PDF a <code>docs/</code> si es parte del proyecto, o fuera del repo, y añadir <code>.codex-remote-attachments/</code> y <code>Fabricio/</code> a <code>.gitignore</code>.</dd>
+          </dl>
+        </article>
+
+        <article class="finding low">
+          <div class="finding-head"><span class="chip low">Baja</span><h3>El cambio de idioma duplica todo el texto en el HTML</h3><span class="id">B3</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd><code>LocalizedText</code> renderiza los dos idiomas y CSS oculta uno. El HTML declara <code>lang="es"</code> siempre. Los buscadores y lectores de pantalla reciben el texto en español e inglés a la vez.</dd>
+            <dt>Corrección</dt><dd>A corto plazo, añadir <code>aria-hidden</code> y <code>hidden</code> al idioma inactivo. A medio plazo, si el inglés importa comercialmente, migrar a rutas <code>/en</code> con <code>hreflang</code>; si no, retirar el toggle y simplificar.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/components/LocalizedText.tsx</code><code>src/app/globals.css</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding low">
+          <div class="finding-head"><span class="chip low">Baja</span><h3>El visor 3D entra en el bundle de la página de cotización sin división de código</h3><span class="id">B4</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>El chunk más grande del build pesa 644 KB y corresponde a three.js. Solo afecta a <code>/cotizar-impresion-3d</code>, pero se descarga antes de que el usuario haya elegido un archivo.</dd>
+            <dt>Corrección</dt><dd>Cargar <code>PrintQuoteWorkspace</code> con <code>next/dynamic</code> y <code>ssr: false</code>, y el visor 3D solo cuando haya un modelo cargado.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/app/cotizar-impresion-3d/page.tsx</code><code>src/components/PrintQuoteWorkspace.tsx</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding low">
+          <div class="finding-head"><span class="chip low">Baja</span><h3>Cierre de sesión por inactividad a los 15 minutos también para clientes</h3><span class="id">B5</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd>Es una buena política para el dashboard, pero un cliente que deja la pestaña abierta mientras compara precios vuelve y encuentra la sesión cerrada. Además cada minuto de actividad genera una escritura en la base de datos por usuario.</dd>
+            <dt>Corrección</dt><dd>Mantener 15 minutos para <code>/dashboard</code> y subir a 8 horas para clientes, o desactivar el guard en páginas públicas. Es una decisión de producto, no un fallo.</dd>
+            <dt>Archivos</dt><dd class="files"><code>src/lib/session.ts</code><code>src/components/PublicHeader.tsx</code></dd>
+          </dl>
+        </article>
+
+        <article class="finding low">
+          <div class="finding-head"><span class="chip low">Baja</span><h3>Página de configuración vacía y CSP con scripts inline permitidos</h3><span class="id">B6</span></div>
+          <dl class="finding-body">
+            <dt>Evidencia</dt><dd><code>/dashboard/configuracion</code> solo muestra un párrafo. La CSP incluye <code>'unsafe-inline'</code> en <code>script-src</code>, necesario para Next sin nonces, pero reduce el valor de la política.</dd>
+            <dt>Corrección</dt><dd>Ocultar la página de configuración hasta que tenga contenido real, o usarla para mostrar el estado de las variables de entorno y el último cron. Migrar a CSP con nonce en el proxy cuando haya tiempo; no es bloqueante.</dd>
+          </dl>
+        </article>
+
+      </div>
+    </section>
+
+    <section id="dominio">
+      <span class="eyebrow">Checklist del dominio</span>
+      <h2>Comprar el dominio y migrar sin romper el login</h2>
+      <p class="prose">Sigue el orden. Los pasos 4 a 6 son los que rompen el inicio de sesión con Google si se olvidan. Las casillas se guardan en este navegador para que puedas ir marcando.</p>
+      <ol class="steps" id="domain-steps">
+        <li><div class="st"><h3><label><input type="checkbox" data-step="1"> Elegir y registrar el dominio</label></h3><p>Para Bolivia conviene el <code>.com</code> por precio y confianza, o <code>.com.bo</code> a través de NIC Bolivia si quieres marca local. Registradores recomendables: Cloudflare Registrar (precio de coste, sin renovaciones infladas), Porkbun o Namecheap.</p><ul><li>Activar renovación automática y guardar una tarjeta válida.</li><li>Activar privacidad WHOIS, bloqueo de transferencia y 2FA en la cuenta del registrador.</li><li>Comprobar que el nombre no colisiona con marcas registradas en SENAPI.</li></ul></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="2"> Añadir el dominio en Vercel</label></h3><p>Vercel → Project → Settings → Domains. Añadir <code>tudominio.com</code> y <code>www.tudominio.com</code>. Elegir el dominio raíz como canónico y dejar que Vercel redirija <code>www</code>. Vercel emite el certificado TLS solo.</p><span class="where">DNS: A 76.76.21.21 para el raíz y CNAME cname.vercel-dns.com para www, o delegar los nameservers a Vercel.</span></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="3"> Redirigir el dominio antiguo de Vercel</label></h3><p>En Vercel → Domains, marcar <code>tiendaelectronica.vercel.app</code> para que redirija con 308 al nuevo dominio. Así los enlaces ya compartidos por WhatsApp siguen funcionando y Google consolida la autoridad en un solo host.</p></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="4"> Actualizar NEXT_PUBLIC_SITE_URL en Vercel</label></h3><p>Environment Variables → Production → <code>NEXT_PUBLIC_SITE_URL=https://tudominio.com</code>. Es la base para <code>metadataBase</code>, el sitemap y el fallback del redirect de OAuth. Requiere un nuevo deploy.</p></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="5"> Actualizar Supabase Auth</label></h3><p>Supabase → Authentication → URL Configuration. Site URL: <code>https://tudominio.com</code>. Redirect URLs: añadir <code>https://tudominio.com/auth/callback</code> y <code>https://tudominio.com/**</code>. Mantener las de <code>vercel.app</code> durante la transición y borrarlas después.</p><span class="where">Si se olvida, Google devuelve al usuario a la URL antigua y el login falla con error=oauth.</span></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="6"> Actualizar Google Cloud OAuth y publicar la app</label></h3><p>Google Cloud Console → APIs y servicios → Credenciales → cliente OAuth. En orígenes autorizados añadir <code>https://tudominio.com</code>. La URI de redirección sigue siendo la de Supabase (<code>https://&lt;proyecto&gt;.supabase.co/auth/v1/callback</code>), no cambia.</p><ul><li>Pantalla de consentimiento: dominio autorizado, página principal, política de privacidad y términos en el dominio nuevo.</li><li>Pasar la app de "Testing" a "In production". En modo prueba solo entran 100 usuarios y aparece la pantalla "aplicación no verificada".</li></ul></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="7"> Completar variables faltantes en Vercel</label></h3><p>Confirmar <code>CRON_SECRET</code>, <code>MANUFACTURER_INVITE_PEPPER</code> (32 caracteres o más) y <code>ALLOWED_EXTERNAL_URL_HOSTS</code>. Verificar el cron con:</p><pre><code>curl -i -H "Authorization: Bearer $CRON_SECRET" https://tudominio.com/api/cron/manufactura/cleanup</code></pre></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="8"> Registros DNS de correo, aunque no envíes correo todavía</label></h3><p>Sin estos registros cualquiera puede enviar correos falsos "desde" tu dominio. Si más adelante usas Google Workspace, se reemplazan por los suyos.</p><pre><code>TXT  @        "v=spf1 -all"
+TXT  _dmarc   "v=DMARC1; p=reject; rua=mailto:erlan514@gmail.com"
+CAA  @        0 issue "letsencrypt.org"</code></pre></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="9"> Registrar el sitio en Google Search Console</label></h3><p>Verificar por DNS (registro TXT), enviar <code>https://tudominio.com/sitemap.xml</code> y activar Google Business Profile con la dirección física de la tienda para aparecer en Maps. Repetir en Bing Webmaster Tools, que importa la configuración de Search Console.</p></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="10"> Prueba de humo tras la migración</label></h3><ul><li>Abrir la home desde el móvil con datos, no con wifi.</li><li>Iniciar sesión con Google como cliente y como admin, comprobar que vuelve al dominio nuevo.</li><li>Abrir una ficha y pulsar el botón de WhatsApp.</li><li>Crear una venta de prueba en el dashboard y anularla.</li><li>Comprobar que <code>https://www.tudominio.com</code> y el dominio antiguo redirigen.</li></ul></div></li>
+        <li><div class="st"><h3><label><input type="checkbox" data-step="11"> Opcional: enviar el dominio a la lista HSTS preload</label></h3><p>La cabecera ya incluye <code>preload</code>. Enviarlo en hstspreload.org obliga a HTTPS en todos los navegadores. Es casi irreversible: hazlo solo cuando estés seguro de que ningún subdominio necesitará HTTP.</p></div></li>
+      </ol>
+      <div class="note"><strong>Cambio en el código.</strong> Nada del código depende del nombre del dominio salvo <code>NEXT_PUBLIC_SITE_URL</code>. El redirect de OAuth usa la cabecera Origin de la petición, así que funciona en cualquier host que Supabase tenga en su lista.</div>
+    </section>
+
+    <section id="plan">
+      <span class="eyebrow">Plan de maduración</span>
+      <h2>Tres fases para dejarlo redondo</h2>
+      <div class="phases">
+        <div class="phase"><span class="eyebrow">Fase 1 · antes de anunciar</span><h3>Cerrar lo visible</h3><ul><li>A1 actualizar Next y auditar</li><li>A2 metadatos por producto y JSON-LD</li><li>A3 robots y sitemap</li><li>A4 imágenes de portada optimizadas</li><li>A5 confirmar cron y variables</li><li>M1 privacidad, términos y contacto</li><li>M2 páginas 404 y error</li><li>M3 cabecera en móvil</li></ul></div>
+        <div class="phase"><span class="eyebrow">Fase 2 · primer mes</span><h3>Rendimiento y protección</h3><ul><li>M4 next/image en catálogo</li><li>M5 rate limiting en Vercel Firewall</li><li>M6 caché ISR en home y fichas</li><li>M7 pruebas de ventas y E2E de humo</li><li>B1 y B2 limpieza de entorno y repo</li><li>Medir con Lighthouse y Vercel Speed Insights</li></ul></div>
+        <div class="phase"><span class="eyebrow">Fase 3 · cuando crezca</span><h3>Escala y producto</h3><ul><li>M8 índices y búsqueda con pg_trgm</li><li>B3 decidir el idioma inglés</li><li>B4 carga diferida del visor 3D</li><li>B5 política de sesión para clientes</li><li>Pedidos en línea con carrito y pago, hoy todo pasa por WhatsApp</li><li>Copias de seguridad programadas de Supabase y prueba de restauración</li></ul></div>
+      </div>
+    </section>
+
+    <section id="evidencia">
+      <span class="eyebrow">Evidencia técnica</span>
+      <h2>Resultados de las comprobaciones</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comprobación</th><th>Resultado</th><th>Detalle</th></tr></thead>
+          <tbody>
+            <tr><td>ESLint</td><td><span class="chip ok">OK</span></td><td>0 avisos, 0 errores</td></tr>
+            <tr><td>TypeScript estricto</td><td><span class="chip ok">OK</span></td><td>0 errores</td></tr>
+            <tr><td>Pruebas unitarias</td><td><span class="chip ok">OK</span></td><td class="num">14 / 14 en 1,0 s</td></tr>
+            <tr><td>Build de producción</td><td><span class="chip ok">OK</span></td><td>30 rutas, 12 estáticas, chunk mayor 644 KB (three.js)</td></tr>
+            <tr><td>npm audit (producción)</td><td><span class="chip crit">Falla</span></td><td class="num">7 altas, 1 moderada, todas vía next 16.2.9</td></tr>
+            <tr><td>Secretos en historial git</td><td><span class="chip ok">OK</span></td><td>Sin claves, tokens ni cadenas de conexión</td></tr>
+            <tr><td>Cabeceras de seguridad en producción</td><td><span class="chip ok">OK</span></td><td>CSP, HSTS 2 años preload, XFO DENY, nosniff, Referrer, Permissions</td></tr>
+            <tr><td>Rutas protegidas sin sesión</td><td><span class="chip ok">OK</span></td><td>/dashboard y /cuenta redirigen con 307; cron responde 401</td></tr>
+            <tr><td>robots.txt y sitemap.xml</td><td><span class="chip crit">404</span></td><td>No existen</td></tr>
+            <tr><td>Metadatos de ficha de producto</td><td><span class="chip crit">Falla</span></td><td>Título y descripción genéricos, sin canonical ni Open Graph</td></tr>
+            <tr><td>Peso de la portada</td><td><span class="chip crit">9,4 MB</span></td><td>4 PNG de fondo entre 2,1 y 2,6 MB</td></tr>
+            <tr><td>Tiempo de respuesta del servidor</td><td><span class="chip warn">0,5 a 1,4 s</span></td><td>Sin caché CDN; cada visita consulta la base de datos</td></tr>
+            <tr><td>Errores de consola en navegador</td><td><span class="chip ok">OK</span></td><td>Ninguno en home ni catálogo</td></tr>
+            <tr><td>Cabecera en móvil (375 px)</td><td><span class="chip warn">Recorte</span></td><td>Logo cortado por los botones de sesión</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>Auditoría generada el 2026-09-04 sobre el commit 95a5bf4. Las casillas del checklist se guardan solo en este navegador.</footer>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var KEY = "nubel-domain-steps";
+    var boxes = document.querySelectorAll("#domain-steps input[type=checkbox]");
+    var state = {};
+    try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+    boxes.forEach(function (box) {
+      var li = box.closest("li");
+      if (state[box.dataset.step]) { box.checked = true; li.classList.add("done"); }
+      box.addEventListener("change", function () {
+        li.classList.toggle("done", box.checked);
+        state[box.dataset.step] = box.checked;
+        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      });
+    });
+  })();
+</script>
